@@ -6,11 +6,13 @@ import com.badlogic.gdx.files.FileHandle;
 import com.badlogic.gdx.math.Affine2;
 import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Vector2;
+import com.badlogic.gdx.physics.box2d.*;
 import com.gwel.spacegame.MyRenderer;
 
 
 public class Spaceship extends PhysicBody {
-	public float MAX_SPEED = 1.0f;
+	public final float MAX_VEL = 200.0f;
+	public final float MAX_ANG_VEL = 4.0f;
 	//PShape sprite;
 	float angle;
 	public float speed_mag;
@@ -23,14 +25,25 @@ public class Spaceship extends PhysicBody {
 	Vector2 p3_tmp;
 	Affine2 transform;
 	float[][] triangles;
+	//Body body;
+	
+	public Spaceship(World world, Vector2 pos) {
+		super(world, pos);
+		bodyDef.angle = (float) (Math.PI/2.0f);
+		body = this.world.createBody(bodyDef);
+		PolygonShape shape = new PolygonShape();
+		shape.setAsBox(2.0f, 1.0f);
+		// Create a fixture definition to apply our shape to
+		FixtureDef fixtureDef = new FixtureDef();
+		fixtureDef.shape = shape;
+		fixtureDef.density = 0.1f; 
+		fixtureDef.friction = 0.4f;
+		fixtureDef.restitution = 0.6f; // Make it bounce a little bit
 
-	public Spaceship(Vector2 startPos) {
-		super();
-		//this.sprite = loadShape("spaceship.svg");
-		this.position.set(startPos);
-		this.angle = MathUtils.PI/2;
-		this.speed_mag = 0.0f;
-		this.mass = 0.1f;
+		// Create our fixture and attach it to the body
+		Fixture fixture = body.createFixture(fixtureDef);
+		shape.dispose();
+
 		p1 = new Vector2(-size.x/2.0f, -size.y/2.0f);
 		p2 = new Vector2(0.0f, size.y/2.0f);
 		p3 = new Vector2(size.x/2.0f, -size.y/2.0f);
@@ -43,42 +56,42 @@ public class Spaceship extends PhysicBody {
 	}
 
 	public void steer(float amount) {
-		this.angle += amount;
-		if (angle<0)
-			this.angle += MathUtils.PI2;
-		if (angle>MathUtils.PI2)
-			this.angle -= MathUtils.PI2;
+		if (amount > 0 && body.getAngularVelocity() < MAX_ANG_VEL) {
+			body.applyTorque(amount, true);
+		} else {
+			if (amount < 0 && body.getAngularVelocity() > -MAX_ANG_VEL)
+				body.applyTorque(amount, true);
+		}
 	}
 
 	public void accelerate(float amount) {
 		//System.out.println("ship accelerate");
 		Vector2 direction = new Vector2(1.0f, 1.0f);
-		direction.setAngleRad(angle);
-		this.accel.add(direction.scl(amount));
+		direction.setAngleRad(getAngle());
+		body.applyForceToCenter(direction.scl(amount), true);
+		float speed = getSpeed().len2();
+		if (speed > MAX_VEL) {
+			body.setLinearVelocity(getSpeed().scl(MAX_VEL/speed));
+		}
 	}
 
 	public Projectile fire() {
 		Vector2 force = new Vector2(1.0f, 1.0f);
 		force.setAngleRad(angle);
-		Vector2 pos = position.cpy();
+		Vector2 pos = this.getPosition();
 		pos.add(force); // Translate the projectile starting position
-		Projectile proj = new Projectile(pos);
+		Projectile proj = new Projectile(world, pos);
 		proj.push(force);
 		return proj;
 	}
 
 	@Override
 	public void update() {
-		this.speed.add(accel);
-		this.speed.limit(MAX_SPEED);
-		this.speed_mag = speed.len2();
-		this.accel.set(0.0f, 0.0f);
-		this.position.add(speed);
-
-		transform.idt();
-		transform.translate(position.x, position.y);
-		transform.rotateRad(angle + MathUtils.PI/2);
-		transform.scale(0.01f, 0.01f);
+		//this.speed.add(accel);
+		//this.speed.limit(MAX_SPEED);
+		//this.speed_mag = speed.len2();
+		//this.accel.set(0.0f, 0.0f);
+		//this.position.add(speed);	
 	}
 
 	private void readShapeFromFile() {
@@ -105,8 +118,10 @@ public class Spaceship extends PhysicBody {
 
 	public void render(MyRenderer renderer) {
 		//Vector2 pos = cam.world_to_camera(position);
-		//System.out.println("Rendering ship");
-
+		transform.idt();
+		transform.translate(body.getPosition());
+		transform.rotateRad(body.getAngle() + MathUtils.PI/2);
+		transform.scale(0.01f, 0.01f);
 		for (int i=0; i<triangles.length; i++) {
 			p1_tmp.set(triangles[i][0], triangles[i][1]);
 			transform.applyTo(p1_tmp);

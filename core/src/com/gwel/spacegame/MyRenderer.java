@@ -180,13 +180,13 @@ public class MyRenderer {
 		mesh.dispose();
 	}
 
-	/** Calls {@link #circle(float, float, float, int)} by estimating the number of segments needed for a smooth circle. */
-	public void circle (float x, float y, float radius) {
-		circle(x, y, radius, Math.max(1, (int)(6 * (float)Math.cbrt(radius*camera.PPU))));
+	/** Calls circle(Vector2, float, int)} by estimating the number of segments needed for a smooth circle. */
+	public void circle (Vector2 pos, float radius) {
+		circle(pos, radius, Math.max(1, (int)(6 * (float)Math.cbrt(radius*camera.PPU))));
 	}
 
 	/** Draws a circle using {@link ShapeType#Line} or {@link ShapeType#Filled}. */
-	public void circle (float x, float y, float radius, int segments) {
+	public void circle (Vector2 pos, float radius, int segments) {
 		//System.out.println("Rendering circle");
 		if (segments <= 0) throw new IllegalArgumentException("segments must be > 0.");
 		//float colorBits = color.toFloatBits();
@@ -194,26 +194,22 @@ public class MyRenderer {
 		float cos = MathUtils.cos(angle);
 		float sin = MathUtils.sin(angle);
 		float cx = radius, cy = 0;
-		Vector2 center = new Vector2(x, y);
 		Vector2 p1 = new Vector2();
 		Vector2 p2 = new Vector2();
 		segments--;
 		for (int i = 0; i < segments; i++) {
-			p1.set(x + cx, y + cy);
+			p1.set(pos.x + cx, pos.y + cy);
 			float temp = cx;
 			cx = cos * cx - sin * cy;
 			cy = sin * temp + cos * cy;
-			p2.set(x + cx, y + cy);
-			triangle(center, p1, p2);
+			p2.set(pos.x + cx, pos.y + cy);
+			triangle(pos, p1, p2);
 		}
 		// Ensure the last segment is identical to the first.
 		
-		p1.set(x + cx, y + cy);
-		float temp = cx;
-		cx = radius;
-		cy = 0;
-		p2.set(x + cx, y + cy);
-		triangle(center, p1, p2);
+		p1.set(pos.x + cx, pos.y + cy);
+		p2.set(pos.x + radius, pos.y);
+		triangle(pos, p1, p2);
 	}
 
 	public void line(float x, float y, float x2, float y2) {

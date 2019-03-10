@@ -88,6 +88,5 @@ public class MyCamera {
 		affine.idt();
 		affine.scale(2.0f*PPU/width, 2.0f*PPU/height);
 		affine.translate(-center.x, -center.y);
-		
 	}
 }

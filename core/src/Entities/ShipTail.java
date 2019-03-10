@@ -32,14 +32,13 @@ public class ShipTail {
 
 	public void update() {
 		Vector2[] points = new Vector2[2];
+		rotate.idt();
+		rotate.rotateRad(ship.getAngle() + MathUtils.PI/2);
 		tmp.set(local_pos);
 		rotate.applyTo(tmp);
-		tmp.add(ship.position);
-		rotate.idt();
-		rotate.rotateRad(ship.angle + MathUtils.PI/2);
-		
-		Vector2 tmp2 = new Vector2();
-		tmp2.set(ship.speed.y, -ship.speed.x).nor().scl(radius);
+		tmp.add(ship.getPosition());
+		Vector2 tmp2 = ship.getSpeed();
+		tmp2.set(-tmp2.y, tmp2.x).nor().scl(radius);
 		points[0] = new Vector2(tmp).add(tmp2);
 		points[1] = new Vector2(tmp).sub(tmp2);
 		table[t_index] = points;

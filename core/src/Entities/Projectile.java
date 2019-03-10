@@ -1,14 +1,14 @@
 package Entities;
 
-import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.math.Vector2;
+import com.badlogic.gdx.physics.box2d.World;
 import com.gwel.spacegame.MyRenderer;
 
 public class Projectile extends PhysicBody {  
-	public Projectile(Vector2 position) {
-		super();
+	public Projectile(World world, Vector2 pos) {
+		super(world, pos);
 		this.mass = 0.5f;
-		this.position = position;
+		position = pos;
 	}
 
 	@Override
