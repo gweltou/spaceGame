@@ -105,11 +105,16 @@ public class SpaceGame extends Game {
 		}
 		//System.out.println(local_sats.size());
 		// Check for planets that exited the local zone
-		ArrayList<Planet> exited = new ArrayList<Planet>();
 		for (Planet pl : local_planets_prev) {
 			if (!local_range.containsPoint(pl.getPosition())) {
-				exited.add(pl);
+				pl.dispose();
 			}
+		}
+		// Removing satellites belonging to planets outside of local zone
+		sat_iter = local_sats.listIterator();
+		while (sat_iter.hasNext()) {
+			if (sat_iter.next().disposable)
+				sat_iter.remove();
 		}
 		// Applying gravity to every objects
 		for (Planet pl: local_planets) {
@@ -274,6 +279,24 @@ public class SpaceGame extends Game {
 			BufferUtils.copy(pixels, 0, pixmap.getPixels(), pixels.length);
 			PixmapIO.writePNG(Gdx.files.external("screenshot.png"), pixmap);
 			pixmap.dispose();
+		}
+		
+		if (Gdx.input.isKeyPressed(Keys.UP)) {
+			ship.accelerate(1.0f);
+		}
+		if (Gdx.input.isKeyPressed(Keys.LEFT)) {
+			ship.steer(1.0f);
+		}
+		if (Gdx.input.isKeyPressed(Keys.RIGHT)) {
+			ship.steer(-1.0f);
+		}
+		if (Gdx.input.isKeyPressed(Keys.A)) {
+			camera.zoom(1.04f);
+			camera.autozoom = false;
+		}
+		if (Gdx.input.isKeyPressed(Keys.Z)) {
+			camera.zoom(0.95f);
+			camera.autozoom = false;
 		}
 	}
 

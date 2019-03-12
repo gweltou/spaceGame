@@ -6,15 +6,15 @@ import com.badlogic.gdx.physics.box2d.BodyDef.BodyType;
 import com.gwel.spacegame.MyRenderer;
 
 public abstract class PhysicBody {
-	//protected World world;
 	protected BodyDef bodyDef;
 	protected Body body;
+	public boolean disposable;
 
 	PhysicBody(Vector2 pos) {
-		//this.world = world;
 		bodyDef = new BodyDef();
 		bodyDef.type = BodyType.DynamicBody;
 		bodyDef.position.set(pos);
+		disposable = false;
 	}
 
 	public Vector2 getPosition() {
@@ -41,5 +41,7 @@ public abstract class PhysicBody {
 	
 	public void dispose() {
 		body.getWorld().destroyBody(body);
+		disposable = true;
+		System.out.println("Body disposed");
 	}
 }

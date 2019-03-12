@@ -69,8 +69,7 @@ public class Planet {
 	}
 
 	public ArrayList<Satellite> activateSatellites(World world) {
-		// Awaken satellites for animation and physics
-		
+		// Awaken satellites for physics
 		for (int i=0; i<sat_orbit.length; i++) {
 			System.out.println("Activating satellite");
 			float angle = MathUtils.random(0, MathUtils.PI2);
@@ -121,5 +120,7 @@ public class Planet {
 			sat.dispose();
 		}
 		body.getWorld().destroyBody(body);
+		satellites.clear();
+		System.out.println("Planet disposed");
 	}
 }
