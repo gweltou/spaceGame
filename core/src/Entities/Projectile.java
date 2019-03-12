@@ -5,15 +5,13 @@ import com.badlogic.gdx.physics.box2d.World;
 import com.gwel.spacegame.MyRenderer;
 
 public class Projectile extends PhysicBody {  
-	public Projectile(World world, Vector2 pos) {
-		super(world, pos);
-		this.mass = 0.5f;
-		position = pos;
+	public Projectile(Vector2 pos) {
+		super(pos);
 	}
 
 	@Override
 	public void render(MyRenderer renderer) {
 		// TODO Auto-generated method stub
-		renderer.line(position, pposition);
+		//renderer.line(position, pposition);
 	}
 }

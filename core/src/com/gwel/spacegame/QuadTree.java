@@ -27,7 +27,7 @@ public class QuadTree {
 
 	boolean insert(Planet p) {
 		// Ignore objects that do not belong in this quad tree
-		if (!boundary.containsPoint(p.position))
+		if (!boundary.containsPoint(p.getPosition()))
 			return false;
 
 		// If there is space in this quad tree and if doesn't have subdivisions, add the object here
@@ -67,11 +67,11 @@ public class QuadTree {
 
 	ArrayList<Planet> query(AABB range) {
 		ArrayList<Planet> inrange = new ArrayList<Planet>();
-
+		
 		if (boundary.intersectsAABB(range) == false)
 			return inrange;
 
-		if (element != null && range.containsPoint(element.position))
+		if (element != null && range.containsPoint(element.getPosition()))
 			inrange.add(element);
 
 		if (nw == null)

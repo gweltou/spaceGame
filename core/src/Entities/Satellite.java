@@ -11,11 +11,13 @@ public class Satellite extends PhysicBody {
 	public Planet parent;
 	public float radius;
 	private Color color;
-	private Body body;
 
 	public Satellite(World world, Planet parent, Vector2 pos, float rad, Color col) {
-		super(world, pos);
-		//body = world.createBody(bodyDef);
+		super(pos);
+		radius = rad;
+		//bodyDef.linearVelocity.set(vel);
+		body = world.createBody(bodyDef);
+		//body.setAwake(true);
 		CircleShape circle = new CircleShape();
 		circle.setRadius(rad);
 		FixtureDef fixtureDef = new FixtureDef();
@@ -23,23 +25,16 @@ public class Satellite extends PhysicBody {
 		fixtureDef.density = 1.0f; 
 		fixtureDef.friction = 0.4f;
 		fixtureDef.restitution = 0.6f;
-		//Fixture fixture = body.createFixture(fixtureDef);
+		Fixture fixture = body.createFixture(fixtureDef);
 		circle.dispose();
 		
 		this.parent = parent;
 		color = col;
 	}
 	
-	public void update() {
-		boolean wake = false;
-		body.applyForceToCenter(parent.getGravityForce(body.getPosition()), wake);
-	}
-	
 	public void render(MyRenderer renderer) {
-		//Vector2 pos = cam.world_to_camera(this.position);
 		//System.out.println("Rendering satellite");
-		
 		renderer.setColor(color);
-		renderer.circle(position, radius);
+		renderer.circle(getPosition(), radius);
 	}
 }

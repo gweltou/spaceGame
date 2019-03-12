@@ -31,7 +31,6 @@ import Entities.ShipTail;
 
 public class SpaceGame extends Game {
 	MyCamera camera;
-	
 	MyRenderer renderer;
 	Controller controller;
 	boolean hasController;
@@ -40,13 +39,12 @@ public class SpaceGame extends Game {
 	final static float UNIVERSE_SIZE = 100000.0f;
 	final static float GRAVITY_ACTIVE_RADIUS = 800.0f;
 	final static int NUMBER_PLANETS = 10000;
-	float local_radius = GRAVITY_ACTIVE_RADIUS;
-	float exit_radius = GRAVITY_ACTIVE_RADIUS+200.0f;
+	final static float LOCAL_RADIUS = GRAVITY_ACTIVE_RADIUS;
+	final static float exit_radius = GRAVITY_ACTIVE_RADIUS+200.0f;
 	QuadTree Qt;
 	World b2dWorld;
 	Spaceship ship;
 	ShipTail tail1, tail2;
-	//Box2DDebugRenderer debugRenderer = new Box2DDebugRenderer();
 	
 	// For Physics
 	ArrayList<Planet> local_planets = new ArrayList<Planet>();
@@ -65,35 +63,47 @@ public class SpaceGame extends Game {
             controller = Controllers.getControllers().first();
             hasController = true;
         }
-		b2dWorld = new World(new Vector2(0.0f, 0.0f), true);
+		
 		AABB universe_boundary = new AABB(new Vector2(0, 0), new Vector2(UNIVERSE_SIZE, UNIVERSE_SIZE));
 		Qt = new QuadTree(universe_boundary);
 		populateUniverse(Qt);
+		b2dWorld = new World(new Vector2(0.0f, 0.0f), true);
 		
-		ship = new Spaceship(b2dWorld, new Vector2(UNIVERSE_SIZE/2, UNIVERSE_SIZE/2));
+		Vector2 universeCenter = new Vector2(UNIVERSE_SIZE/2, UNIVERSE_SIZE/2);
+		camera = new MyCamera(Gdx.graphics.getWidth(),Gdx.graphics.getHeight());
+		camera.setCenter(universeCenter);
+		camera.update();
+		renderer = new MyRenderer(camera);
+		
+		ship = new Spaceship(b2dWorld, universeCenter);
 		tail1 = new ShipTail(ship, new Vector2(0.8f, 0.2f), 0.2f);
 		tail2 = new ShipTail(ship, new Vector2(-0.70f, 0.2f), 0.2f);
-		
-		camera = new MyCamera(Gdx.graphics.getWidth(),Gdx.graphics.getHeight());
-		camera.setCenter(ship.getPosition());
-		camera.update();
 		free_bodies.add(ship);
-		
-		renderer = new MyRenderer(camera);
 	}
 
 	@Override
 	public void render () {
 		handleInput();
+		//System.out.println(ship.getPosition());
 
 		// UPDATING GAME STATE
-		AABB local_range = new AABB(ship.getPosition().sub(local_radius, local_radius),
-				ship.getPosition().add(local_radius, local_radius));
+		AABB local_range = new AABB(ship.getPosition().sub(LOCAL_RADIUS, LOCAL_RADIUS),
+				ship.getPosition().add(LOCAL_RADIUS, LOCAL_RADIUS));
 		AABB exit_range = new AABB(ship.getPosition().sub(exit_radius, exit_radius),
 				ship.getPosition().add(exit_radius, exit_radius));
 		local_planets_prev = local_planets;
 		local_planets = Qt.query(local_range);
-
+		
+		// Check for planets that newly entered the local zone
+		for (Planet pl : local_planets) {
+			if (!local_planets_prev.contains(pl)) {
+				// Planetary System has newly entered the local zone
+				System.out.println("New planet in local zone");
+				pl.activate(b2dWorld);
+				local_sats.addAll(pl.activateSatellites(b2dWorld));
+			}
+		}
+		//System.out.println(local_sats.size());
 		// Check for planets that exited the local zone
 		ArrayList<Planet> exited = new ArrayList<Planet>();
 		for (Planet pl : local_planets_prev) {
@@ -101,12 +111,15 @@ public class SpaceGame extends Game {
 				exited.add(pl);
 			}
 		}
-		//for (Planet pl: local_planets) {
-		//	pl.update(); // Updates children satellites as well
-		//}
-		//for (PhysicBody bod: free_bodies) {
-		//	bod.update();
-		//}
+		// Applying gravity to every objects
+		for (Planet pl: local_planets) {
+			//System.out.println("Applying gravity");
+			pl.update(); // Apply gravity force to attached satellites
+			for (PhysicBody bod: free_bodies) {
+				bod.push(pl.getGravityAccel(bod.getPosition()).scl(bod.getMass()));
+			}
+		}
+		b2dWorld.step(1/60f, 8, 3);
 		
 		// PHYSICS
 		/*
@@ -191,27 +204,22 @@ public class SpaceGame extends Game {
 		tail1.update();
 		tail2.update();
 
-		
 		//  Camera update
 		camera.glideTo(ship.getPosition());
 		if (camera.autozoom)
 			camera.zoomTo(100.0f/ship.getSpeed().len());
+		camera.update();
 		//stars.update(camera.getTravelling());
 		//stars.render(camera);
-		camera.update();
 		
 		// North and East directions are POSITIVE !
 		AABB camera_range = new AABB(camera.sw.cpy().sub(Planet.MAX_RADIUS, Planet.MAX_RADIUS), 
 				camera.ne.cpy().add(Planet.MAX_RADIUS, Planet.MAX_RADIUS));
 		ArrayList<Planet> planets_draw = Qt.query(camera_range);
-		//tail.render(camera);
-
-
+		
 		Gdx.gl.glClearColor(0, 0, 0, 1);
 		Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
 
-		//shapeRenderer.begin(ShapeType.Filled);
-		
 		for (Planet p : planets_draw) {
 			p.render(renderer);
 		}
@@ -222,17 +230,20 @@ public class SpaceGame extends Game {
 				b.render(renderer);
 			}
 		}
+		for (Satellite sat: local_sats) {
+			if (camera_range.containsPoint(sat.getPosition())) {
+				sat.render(renderer);
+			}
+		}
 		renderer.flush();
 		//System.out.println(free_bodies.size());
-		//debugRenderer.render(b2dWorld, camera.combined);
-		b2dWorld.step(1/60f, 6, 2);
+		
 	}
-	
 	
 	private void handleInput() {
 		if (hasController) {
 			if(controller.getButton(Ps4Controller.CROSS)) {
-				ship.accelerate(5.0f);
+				ship.accelerate(1.0f);
 				camera.autozoom = true;
 			}
 			PovDirection pov = controller.getPov(0);
@@ -247,7 +258,7 @@ public class SpaceGame extends Game {
 			float x_axis = controller.getAxis(Ps4Controller.LSTICK_X);
 			float y_axis = controller.getAxis(Ps4Controller.LSTICK_Y);
 			if (Math.abs(x_axis) > 0.25)
-				ship.steer(-50.0f*x_axis);
+				ship.steer(-x_axis);
 		}
 
 		if (Gdx.input.isKeyPressed(Keys.P)) {
@@ -295,13 +306,13 @@ public class SpaceGame extends Game {
 			ArrayList<Planet> neighbours = qt.query(range);
 			boolean empty = true;
 			for (Planet p : neighbours) {
-				if (position.dst2(p.position) < min_dist*min_dist) {
+				if (position.dst2(p.getPosition()) < min_dist*min_dist) {
 					empty = false;
 					break;
 				}
 			}
 			if (empty) {
-				Planet new_planet = new Planet(b2dWorld, position, radius);
+				Planet new_planet = new Planet(position, radius);
 				qt.insert(new_planet);
 				i += 1;
 			}

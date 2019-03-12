@@ -60,11 +60,11 @@ public class MyCamera {
 	}
 
 	void zoom(float z) {
-		this.PPU = MathUtils.clamp(this.PPU*z, 0.01f, 80.0f);
+		this.PPU = MathUtils.clamp(this.PPU*z, 0.01f, 100.0f);
 	}
 
 	void setZoom(float ppu) {
-		this.PPU = MathUtils.clamp(ppu, 0.01f, 80.0f);
+		this.PPU = MathUtils.clamp(ppu, 0.01f, 100.0f);
 	}
 
 	void zoomTo(float ppu) {
