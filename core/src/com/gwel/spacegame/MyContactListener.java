@@ -9,17 +9,24 @@ public class MyContactListener implements ContactListener {
 	public void beginContact(Contact contact) {
 		// TODO Auto-generated method stub
 		System.out.println("Contact");
-		Body b1 = contact.getFixtureA().getBody();
-		Body b2 = contact.getFixtureB().getBody();
+		Fixture f1 = contact.getFixtureA();
+		Fixture f2 = contact.getFixtureB();
 		
-		System.out.println(b1.getType()+" has hit "+ b2.getType());
-		if (b1.getUserData().getClass() == Satellite.class) {
+		System.out.println(f1.getUserData() + " has hit "+ f2.getUserData());
+		if (f1.getUserData() == "Satellite") {
 			System.out.println("hit a satellite");
-			((Satellite) b1.getUserData()).detach();
+			((Satellite) f1.getBody().getUserData()).detach();
 		}
-		if (b2.getUserData().getClass() == Satellite.class) {
+		if (f2.getUserData() == "Satellite") {
 			System.out.println("hit a satellite");
-			((Satellite) b2.getUserData()).detach();
+			((Satellite) f2.getBody().getUserData()).detach();
+		}
+		
+		if (f1.getUserData() == "Landing" && f2.getUserData() == "Ship") {
+			System.out.println("In landing zone");
+		}
+		if (f1.getUserData() == "Ship" && f2.getUserData() == "Landing") {
+			System.out.println("In landing zone");
 		}
 	}
 

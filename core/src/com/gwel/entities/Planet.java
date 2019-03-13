@@ -58,7 +58,17 @@ public class Planet {
 		fixtureDef.friction = 0.4f;
 		fixtureDef.restitution = 0.6f;
 		Fixture fixture = body.createFixture(fixtureDef);
+		fixture.setUserData("Planet");
 		circle.dispose();
+		
+		CircleShape landingZone = new CircleShape();
+		landingZone.setRadius(radius + 2);
+		fixtureDef = new FixtureDef();
+		fixtureDef.shape = landingZone;
+		fixtureDef.isSensor = true;
+		fixture = body.createFixture(fixtureDef);
+		fixture.setUserData("Landing");
+		landingZone.dispose();
 	}
 
 	public Vector2 getGravityAccel(Vector2 pos) {

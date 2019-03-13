@@ -37,10 +37,9 @@ public class Spaceship extends PhysicBody {
 		fixtureDef.shape = shape;
 		fixtureDef.density = 0.1f; 
 		fixtureDef.friction = 0.4f;
-		fixtureDef.restitution = 0.6f; // Make it bounce a little bit
-
-		// Create our fixture and attach it to the body
+		fixtureDef.restitution = 0.6f;
 		Fixture fixture = body.createFixture(fixtureDef);
+		fixture.setUserData("Ship");
 		shape.dispose();
 
 		p1 = new Vector2(-size.x/2.0f, -size.y/2.0f);

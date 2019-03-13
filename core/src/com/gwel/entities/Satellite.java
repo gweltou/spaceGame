@@ -28,6 +28,7 @@ public class Satellite extends PhysicBody {
 		fixtureDef.friction = 0.4f;
 		fixtureDef.restitution = 0.6f;
 		Fixture fixture = body.createFixture(fixtureDef);
+		fixture.setUserData("Satellite");
 		circle.dispose();
 		detached = false;
 		
