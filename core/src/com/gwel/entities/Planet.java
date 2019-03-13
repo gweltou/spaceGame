@@ -1,4 +1,4 @@
-package Entities;
+package com.gwel.entities;
 
 import java.util.ArrayList;
 import com.badlogic.gdx.math.Vector2;
@@ -49,6 +49,7 @@ public class Planet {
 		bodyDef.type = BodyType.StaticBody;
 		bodyDef.position.set(position);
 		body = world.createBody(bodyDef);
+		body.setUserData(this);
 		CircleShape circle = new CircleShape();
 		circle.setRadius(radius);
 		FixtureDef fixtureDef = new FixtureDef();
@@ -121,6 +122,6 @@ public class Planet {
 		}
 		body.getWorld().destroyBody(body);
 		satellites.clear();
-		System.out.println("Planet disposed");
+		//System.out.println("Planet disposed");
 	}
 }

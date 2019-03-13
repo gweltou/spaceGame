@@ -3,8 +3,7 @@ package com.gwel.spacegame;
 import java.util.ArrayList;
 
 import com.badlogic.gdx.math.Vector2;
-
-import Entities.Planet;
+import com.gwel.entities.Planet;
 
 public class QuadTree {
 	AABB boundary;

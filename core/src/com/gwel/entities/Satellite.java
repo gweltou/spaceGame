@@ -1,4 +1,4 @@
-package Entities;
+package com.gwel.entities;
 
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.math.Vector2;
@@ -11,25 +11,33 @@ public class Satellite extends PhysicBody {
 	public Planet parent;
 	public float radius;
 	private Color color;
+	public boolean detached;
 
 	public Satellite(World world, Planet parent, Vector2 pos, float rad, Color col) {
 		super(pos);
 		radius = rad;
 		//bodyDef.linearVelocity.set(vel);
 		body = world.createBody(bodyDef);
+		body.setUserData(this);
 		//body.setAwake(true);
 		CircleShape circle = new CircleShape();
 		circle.setRadius(rad);
 		FixtureDef fixtureDef = new FixtureDef();
 		fixtureDef.shape = circle;
-		fixtureDef.density = 1.0f; 
+		fixtureDef.density = 0.6f; 
 		fixtureDef.friction = 0.4f;
 		fixtureDef.restitution = 0.6f;
 		Fixture fixture = body.createFixture(fixtureDef);
 		circle.dispose();
+		detached = false;
 		
 		this.parent = parent;
 		color = col;
+	}
+	
+	public void detach() {
+		parent.satellites.remove(this);
+		detached = true;
 	}
 	
 	public void render(MyRenderer renderer) {

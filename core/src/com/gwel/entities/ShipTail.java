@@ -1,4 +1,4 @@
-package Entities;
+package com.gwel.entities;
 
 import com.badlogic.gdx.math.Affine2;
 import com.badlogic.gdx.math.MathUtils;

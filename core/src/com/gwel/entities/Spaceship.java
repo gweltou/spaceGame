@@ -1,4 +1,4 @@
-package Entities;
+package com.gwel.entities;
 
 
 import com.badlogic.gdx.Gdx;
@@ -30,6 +30,7 @@ public class Spaceship extends PhysicBody {
 		super(pos);
 		bodyDef.angle = (float) (Math.PI/2.0f); // Initially pointing up
 		body = world.createBody(bodyDef);
+		body.setUserData(this);
 		PolygonShape shape = readShapeFromFile();
 		// Create a fixture definition to apply our shape to
 		FixtureDef fixtureDef = new FixtureDef();
@@ -64,7 +65,7 @@ public class Spaceship extends PhysicBody {
 		//System.out.println("ship accelerate");
 		Vector2 direction = new Vector2(1.0f, 1.0f);
 		direction.setAngleRad(getAngle());
-		push(direction.scl(amount));
+		push(direction.scl(amount*1.5f));
 		float speed = getSpeed().len2();
 		if (speed > MAX_VEL) {
 			body.setLinearVelocity(getSpeed().scl(MAX_VEL/speed));

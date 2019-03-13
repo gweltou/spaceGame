@@ -20,13 +20,8 @@ import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.utils.BufferUtils;
 import com.badlogic.gdx.utils.ScreenUtils;
 import com.badlogic.gdx.utils.TimeUtils;
+import com.gwel.entities.*;
 import com.badlogic.gdx.physics.box2d.*;
-
-import Entities.PhysicBody;
-import Entities.Planet;
-import Entities.Satellite;
-import Entities.Spaceship;
-import Entities.ShipTail;
 
 
 public class SpaceGame extends Game {
@@ -68,6 +63,7 @@ public class SpaceGame extends Game {
 		Qt = new QuadTree(universe_boundary);
 		populateUniverse(Qt);
 		b2dWorld = new World(new Vector2(0.0f, 0.0f), true);
+		b2dWorld.setContactListener(new MyContactListener());
 		
 		Vector2 universeCenter = new Vector2(UNIVERSE_SIZE/2, UNIVERSE_SIZE/2);
 		camera = new MyCamera(Gdx.graphics.getWidth(),Gdx.graphics.getHeight());
@@ -113,8 +109,11 @@ public class SpaceGame extends Game {
 		// Removing satellites belonging to planets outside of local zone
 		sat_iter = local_sats.listIterator();
 		while (sat_iter.hasNext()) {
-			if (sat_iter.next().disposable)
+			Satellite sat = sat_iter.next(); // Can be optimized by declaring a tmp variable
+			if (sat.disposable || sat.detached)
 				sat_iter.remove();
+			if (sat.detached)
+				free_bodies.add(sat);
 		}
 		// Applying gravity to every objects
 		for (Planet pl: local_planets) {

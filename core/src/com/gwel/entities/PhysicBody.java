@@ -1,4 +1,4 @@
-package Entities;
+package com.gwel.entities;
 
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.physics.box2d.*;
@@ -42,6 +42,6 @@ public abstract class PhysicBody {
 	public void dispose() {
 		body.getWorld().destroyBody(body);
 		disposable = true;
-		System.out.println("Body disposed");
+		//System.out.println("Body disposed");
 	}
 }
