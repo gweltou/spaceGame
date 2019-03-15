@@ -69,15 +69,14 @@ public class MyRenderer {
 	private int idx;
 	
 	private MyCamera camera;
-	//private ShapeRenderer shapeRenderer;
 	private Mesh mesh;
 	private ShaderProgram shader;
 	private Color col;
+	private Matrix4 projMatrix;
 	
 	
 	public MyRenderer(MyCamera camera) {
 		this.camera = camera;
-		//shapeRenderer = new ShapeRenderer();
 		idx = 0;
 		mesh = new Mesh(true, MAX_VERTS, 0, 
 				new VertexAttribute(Usage.Position, POSITION_COMPONENTS, "a_position"),
@@ -89,6 +88,10 @@ public class MyRenderer {
 
 	public void setColor(float i, float j, float k, float l) {
 		this.col.set(i, j, k, l);
+	}
+	
+	public void setProjectionMatrix(Matrix4 proj) {
+		projMatrix = proj;
 	}
 	
 	public void setColor(Color color) {
@@ -104,7 +107,6 @@ public class MyRenderer {
 	}
 	
 	public void triangle(float x1, float y1, float x2, float y2, float x3, float y3, Color color) {
-		//System.out.println("Rendering triangle");
 		//we don't want to hit any index out of bounds exception...
 		//so we need to flush the batch if we can't store any more verts
 		if (idx==verts.length)
@@ -161,8 +163,7 @@ public class MyRenderer {
 		shader.begin();
 
 		//update the projection matrix so our triangles are rendered in 2D
-		shader.setUniformMatrix("u_projTrans", new Matrix4().set(camera.affine));
-		//shader.setUniformMatrix("u_projTrans", new Matrix4().idt()); // XXX
+		shader.setUniformMatrix("u_projTrans", projMatrix);
 		
 		//render the mesh
 		mesh.render(shader, GL20.GL_TRIANGLES, 0, vertexCount);

@@ -55,9 +55,8 @@ public class Spaceship extends PhysicBody {
 	public void steer(float amount) {
 		if (amount > 0 && body.getAngularVelocity() < MAX_ANG_VEL) {
 			body.applyTorque(amount, true);
-		} else {
-			if (amount < 0 && body.getAngularVelocity() > -MAX_ANG_VEL)
-				body.applyTorque(amount, true);
+		} else if (amount < 0 && body.getAngularVelocity() > -MAX_ANG_VEL) {
+			body.applyTorque(amount, true);
 		}
 	}
 

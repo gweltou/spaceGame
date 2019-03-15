@@ -4,6 +4,7 @@ import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.physics.box2d.*;
 import com.badlogic.gdx.physics.box2d.BodyDef.BodyType;
 import com.gwel.spacegame.MyRenderer;
+import com.gwel.spacegame.utils;
 
 public abstract class PhysicBody {
 	protected BodyDef bodyDef;
@@ -25,8 +26,16 @@ public abstract class PhysicBody {
 		return body.getLinearVelocity().cpy();
 	}
 	
+	public float getAngularSpeed() {
+		return body.getAngularVelocity();
+	}
+	
 	public float getAngle() {
 		return body.getAngle();
+	}
+	
+	public float getAngleDiff(float refAngle) {
+		return utils.wrapAngleAroundZero(refAngle-body.getAngle());
 	}
 	
 	public float getMass() {

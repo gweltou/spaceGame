@@ -1,28 +1,17 @@
 package com.gwel.spacegame;
 
 import java.util.ArrayList;
-import java.util.LinkedList;
-import java.util.ListIterator;
 
-import com.badlogic.gdx.ApplicationAdapter;
 import com.badlogic.gdx.Game;
 import com.badlogic.gdx.Gdx;
-import com.badlogic.gdx.Input.Keys;
 import com.badlogic.gdx.controllers.Controller;
 import com.badlogic.gdx.controllers.Controllers;
-import com.badlogic.gdx.controllers.PovDirection;
-//import com.badlogic.gdx.controllers.PovDirection;
-import com.badlogic.gdx.graphics.GL20;
-import com.badlogic.gdx.graphics.Pixmap;
-import com.badlogic.gdx.graphics.PixmapIO;
 import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Vector2;
-import com.badlogic.gdx.utils.BufferUtils;
-import com.badlogic.gdx.utils.ScreenUtils;
 import com.badlogic.gdx.utils.TimeUtils;
 import com.gwel.entities.*;
 import com.gwel.screens.ScreenInSpace;
-import com.badlogic.gdx.physics.box2d.*;
+import com.gwel.screens.ScreenOnPlanet;
 
 
 public class SpaceGame extends Game {
@@ -30,6 +19,7 @@ public class SpaceGame extends Game {
 	public MyRenderer renderer;
 	public Controller controller;
 	public boolean hasController;
+	public GameState gameState;
 	
 	// GAME UNIVERSE VARIABLES
 	final static float UNIVERSE_SIZE = 100000.0f;
@@ -42,6 +32,8 @@ public class SpaceGame extends Game {
 	
 	@Override
 	public void create () {
+		//gameState = new GameState();
+		
 		if(Controllers.getControllers().size == 0)
             hasController = false;
         else {
@@ -59,7 +51,7 @@ public class SpaceGame extends Game {
 		camera.update();
 		renderer = new MyRenderer(camera);
 		
-		this.setScreen(new ScreenInSpace(this));
+		setScreen(new ScreenInSpace(this));
 	}
 
 	@Override
@@ -80,6 +72,13 @@ public class SpaceGame extends Game {
 		 renderer.dispose();
 	}
 
+	void land(Planet p) {
+		if (getScreen() != null) {
+			getScreen().dispose();
+		}
+		setScreen(new ScreenOnPlanet(this, p));
+	}
+	
 	void populateUniverse(QuadTree qt) {
 		long start_time = TimeUtils.millis();
 		int i=0;

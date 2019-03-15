@@ -1,12 +1,17 @@
 package com.gwel.spacegame;
 
-import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.physics.box2d.*;
+import com.gwel.entities.Planet;
 import com.gwel.entities.Satellite;
 
 public class MyContactListener implements ContactListener {
-
+	SpaceGame game;
+	
+	public MyContactListener(SpaceGame game) {
+		this.game = game;
+	}
+	
 	@Override
 	public void beginContact(Contact contact) {
 		// TODO Auto-generated method stub
@@ -27,7 +32,7 @@ public class MyContactListener implements ContactListener {
 			float normal_speed = normal.dot(f2.getBody().getLinearVelocity());
 			float tangent_speed = Math.abs(tangent.dot(f2.getBody().getLinearVelocity()));
 			if (normal_speed < 2.0f && tangent_speed < 1.0f) {
-				System.out.println("LANDED !");
+				game.land((Planet) f1.getBody().getUserData());
 			}
 		} else if (f2.getUserData() == "Planet" && f1.getUserData() == "Ship") {
 			Vector2 normal = f2.getBody().getPosition().sub(f1.getBody().getPosition()).nor();
@@ -35,7 +40,7 @@ public class MyContactListener implements ContactListener {
 			float normal_speed = normal.dot(f1.getBody().getLinearVelocity());
 			float tangent_speed = Math.abs(tangent.dot(f1.getBody().getLinearVelocity()));
 			if (normal_speed < 2.0f && tangent_speed < 1.0f) {
-				System.out.println("LANDED !");
+				game.land((Planet) f2.getBody().getUserData());
 			}
 		}
 	}
@@ -57,5 +62,4 @@ public class MyContactListener implements ContactListener {
 		// TODO Auto-generated method stub
 		
 	}
-
 }

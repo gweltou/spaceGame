@@ -11,6 +11,8 @@ import com.badlogic.gdx.controllers.PovDirection;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.Pixmap;
 import com.badlogic.gdx.graphics.PixmapIO;
+import com.badlogic.gdx.math.MathUtils;
+import com.badlogic.gdx.math.Matrix4;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.physics.box2d.World;
 import com.badlogic.gdx.utils.BufferUtils;
@@ -23,14 +25,15 @@ import com.gwel.spacegame.SpaceGame;
 
 
 public class ScreenInSpace implements Screen {
-	SpaceGame game;
+	final SpaceGame game;
 	private World b2world;
+	private boolean destroy;
 	
 	private ArrayList<Planet> local_planets = new ArrayList<Planet>();
 	private ArrayList<Planet> local_planets_prev;
 	private LinkedList<Satellite> local_sats = new LinkedList<Satellite>();
 	private LinkedList<PhysicBody> free_bodies = new LinkedList<PhysicBody>();
-	private ListIterator<PhysicBody> bod_iter;
+	//private ListIterator<PhysicBody> bod_iter;
 	private ListIterator<Satellite> sat_iter;
 	
 	private Spaceship ship;
@@ -39,9 +42,10 @@ public class ScreenInSpace implements Screen {
 	
 	public ScreenInSpace(final SpaceGame game) {
 		this.game = game;
+		destroy = false;
 		
 		b2world = new World(new Vector2(0.0f, 0.0f), true);
-		b2world.setContactListener(new MyContactListener());
+		b2world.setContactListener(new MyContactListener(game));
 		
 		ship = new Spaceship(b2world, game.camera.center);
 		tail1 = new ShipTail(ship, new Vector2(0.8f, 0.2f), 0.2f);
@@ -51,7 +55,12 @@ public class ScreenInSpace implements Screen {
 	
 	@Override
 	public void dispose() {
-		b2world.dispose();	
+		// This test case prevents the world from being destroyed during a step
+		if (destroy) {
+			b2world.dispose();
+		} else {
+			destroy = true;
+		}
 	}
 
 	@Override
@@ -68,11 +77,14 @@ public class ScreenInSpace implements Screen {
 
 	@Override
 	public void render(float arg0) {
+		if (destroy)
+			dispose();
+		
 		handleInput();
 
 		// UPDATING GAME STATE
-		AABB local_range = new AABB(ship.getPosition().sub(game.LOCAL_RADIUS, game.LOCAL_RADIUS),
-				ship.getPosition().add(game.LOCAL_RADIUS, game.LOCAL_RADIUS));
+		AABB local_range = new AABB(ship.getPosition().sub(SpaceGame.LOCAL_RADIUS, SpaceGame.LOCAL_RADIUS),
+				ship.getPosition().add(SpaceGame.LOCAL_RADIUS, SpaceGame.LOCAL_RADIUS));
 		//AABB exit_range = new AABB(ship.getPosition().sub(exit_radius, exit_radius),
 		//		ship.getPosition().add(exit_radius, exit_radius));
 		local_planets_prev = local_planets;
@@ -81,9 +93,9 @@ public class ScreenInSpace implements Screen {
 		// Check for planets that newly entered the local zone
 		for (Planet pl : local_planets) {
 			if (!local_planets_prev.contains(pl)) {
-				// Planetary System has newly entered the local zone
 				System.out.println("New planet in local zone");
 				pl.activate(b2world);
+				// Register its satellites
 				local_sats.addAll(pl.activateSatellites(b2world));
 			}
 		}
@@ -94,18 +106,19 @@ public class ScreenInSpace implements Screen {
 				pl.dispose();
 			}
 		}
-		// Removing satellites belonging to planets outside of local zone
+		
 		sat_iter = local_sats.listIterator();
 		while (sat_iter.hasNext()) {
 			Satellite sat = sat_iter.next(); // Can be optimized by declaring a tmp variable
+			// Removing satellites belonging to planets outside of local zone
 			if (sat.disposable || sat.detached)
 				sat_iter.remove();
+			// Register detached satellites as free bodies 
 			if (sat.detached)
 				free_bodies.add(sat);
 		}
-		// Applying gravity to every objects
+		// Applying gravity to free bodies
 		for (Planet pl: local_planets) {
-			//System.out.println("Applying gravity");
 			pl.update(); // Apply gravity force to attached satellites
 			for (PhysicBody bod: free_bodies) {
 				bod.push(pl.getGravityAccel(bod.getPosition()).scl(bod.getMass()));
@@ -113,7 +126,6 @@ public class ScreenInSpace implements Screen {
 		}
 		b2world.step(1/60f, 8, 3);
 
-		
 		tail1.update();
 		tail2.update();
 
@@ -122,21 +134,19 @@ public class ScreenInSpace implements Screen {
 		if (game.camera.autozoom)
 			game.camera.zoomTo(100.0f/ship.getSpeed().len());
 		game.camera.update();
-		
+		game.renderer.setProjectionMatrix(new Matrix4().set(game.camera.affine));
 		
 		// North and East directions are POSITIVE !
 		AABB camera_range = new AABB(game.camera.sw.cpy().sub(Planet.MAX_RADIUS, Planet.MAX_RADIUS), 
 				game.camera.ne.cpy().add(Planet.MAX_RADIUS, Planet.MAX_RADIUS));
-		ArrayList<Planet> planets_draw = game.Qt.query(camera_range);
-
-		
 		
 		Gdx.gl.glClearColor(0, 0, 0, 1);
 		Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
 		
 		//stars.update(camera.getTravelling());
 		//stars.render(camera);
-		for (Planet p : planets_draw) {
+		
+		for (Planet p : game.Qt.query(camera_range)) {
 			p.render(game.renderer);
 		}
 		tail1.render(game.renderer);
@@ -151,6 +161,7 @@ public class ScreenInSpace implements Screen {
 				sat.render(game.renderer);
 			}
 		}
+		
 		game.renderer.flush();
 	}
 
@@ -209,13 +220,30 @@ public class ScreenInSpace implements Screen {
 		}
 		
 		if (Gdx.input.isKeyPressed(Keys.UP)) {
-			ship.accelerate(1.0f);
+			float angle = ship.getAngleDiff(MathUtils.PI/2.0f);
+			float force = MathUtils.clamp(angle-ship.getAngularSpeed()*0.2f, -1.0f, 1.0f);
+			ship.steer(force);
+			ship.accelerate(1.0f-Math.abs(angle)/MathUtils.PI);
 		}
 		if (Gdx.input.isKeyPressed(Keys.LEFT)) {
-			ship.steer(1.0f);
+			//ship.steer(1.0f);
+			float angle = ship.getAngleDiff(MathUtils.PI);
+			float force = MathUtils.clamp(angle-ship.getAngularSpeed()*0.2f, -1.0f, 1.0f);
+			ship.steer(force);
+			ship.accelerate(1.0f-Math.abs(angle)/MathUtils.PI);
 		}
 		if (Gdx.input.isKeyPressed(Keys.RIGHT)) {
-			ship.steer(-1.0f);
+			//ship.steer(-1.0f);
+			float angle = ship.getAngleDiff(0.0f);
+			float force = MathUtils.clamp(angle-ship.getAngularSpeed()*0.2f, -1.0f, 1.0f);
+			ship.steer(force);
+			ship.accelerate(1.0f-Math.abs(angle)/MathUtils.PI);
+		}
+		if (Gdx.input.isKeyPressed(Keys.DOWN)) {
+			float angle = ship.getAngleDiff(-MathUtils.PI/2.0f);
+			float force = MathUtils.clamp(angle-ship.getAngularSpeed()*0.2f, -1.0f, 1.0f);
+			ship.steer(force);
+			ship.accelerate(1.0f-Math.abs(angle)/MathUtils.PI);
 		}
 		if (Gdx.input.isKeyPressed(Keys.A)) {
 			game.camera.zoom(1.04f);

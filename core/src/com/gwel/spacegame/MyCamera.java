@@ -20,7 +20,7 @@ public class MyCamera {
 	private final Vector3 tmp;
 	private final Vector3 direction;
 	private final Vector3 up;
-	Affine2 affine;
+	public Affine2 affine;
 
 	float PPU = 10.0f ; // Pixel per game unit
 
