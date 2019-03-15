@@ -64,7 +64,7 @@ public class QuadTree {
 		this.se = new QuadTree(new AABB(bottom, right));
 	}
 
-	ArrayList<Planet> query(AABB range) {
+	public ArrayList<Planet> query(AABB range) {
 		ArrayList<Planet> inrange = new ArrayList<Planet>();
 		
 		if (boundary.intersectsAABB(range) == false)

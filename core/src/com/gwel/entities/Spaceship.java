@@ -38,6 +38,7 @@ public class Spaceship extends PhysicBody {
 		fixtureDef.density = 0.1f; 
 		fixtureDef.friction = 0.4f;
 		fixtureDef.restitution = 0.6f;
+		fixtureDef.filter.categoryBits = 0x0002;
 		Fixture fixture = body.createFixture(fixtureDef);
 		fixture.setUserData("Ship");
 		shape.dispose();

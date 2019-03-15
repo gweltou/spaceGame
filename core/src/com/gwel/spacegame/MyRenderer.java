@@ -138,7 +138,7 @@ public class MyRenderer {
 		verts[idx++] = color.a;
 	}
 	
-	void flush() {
+	public void flush() {
 		//System.out.println("Renderer flushing");
 		//if we've already flushed
 		if (idx==0)

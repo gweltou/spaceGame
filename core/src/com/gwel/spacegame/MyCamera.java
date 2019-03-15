@@ -7,11 +7,11 @@ import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.math.Vector3;
 
 public class MyCamera {
-	Vector2 sw;
-	Vector2 ne;
-	Vector2 center;
-	Vector2 pCenter;  // Previous center (in game unit coordinates)
-	boolean autozoom;
+	public Vector2 sw;
+	public Vector2 ne;
+	public Vector2 center;
+	private Vector2 pCenter;  // Previous center (in game unit coordinates)
+	public boolean autozoom;
 	public int width;
 	public int height;
 	public final Matrix4 projection;
@@ -55,11 +55,11 @@ public class MyCamera {
 		center.add(dx, dy);
 	}
 	
-	void glideTo(Vector2 pos) {
+	public void glideTo(Vector2 pos) {
 		setCenter(center.cpy().lerp(pos, 0.5f));
 	}
 
-	void zoom(float z) {
+	public void zoom(float z) {
 		this.PPU = MathUtils.clamp(this.PPU*z, 0.01f, 100.0f);
 	}
 
@@ -67,7 +67,7 @@ public class MyCamera {
 		this.PPU = MathUtils.clamp(ppu, 0.01f, 100.0f);
 	}
 
-	void zoomTo(float ppu) {
+	public void zoomTo(float ppu) {
 		setZoom(MathUtils.lerp(PPU, ppu, 0.02f));
 	}
 
@@ -76,7 +76,7 @@ public class MyCamera {
 		return travelling.scl(PPU);
 	}
 	
-	void update() {
+	public void update() {
 		// North and East directions are POSITIVE !
 		this.sw = new Vector2(center.x-width/(2.0f*PPU), center.y-height/(2.0f*PPU));
 		this.ne = new Vector2(center.x+width/(2.0f*PPU), center.y+height/(2.0f*PPU));

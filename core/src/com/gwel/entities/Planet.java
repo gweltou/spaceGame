@@ -54,21 +54,22 @@ public class Planet {
 		circle.setRadius(radius);
 		FixtureDef fixtureDef = new FixtureDef();
 		fixtureDef.shape = circle;
-		//fixtureDef.density = 1.0f; 
 		fixtureDef.friction = 0.4f;
 		fixtureDef.restitution = 0.6f;
 		Fixture fixture = body.createFixture(fixtureDef);
 		fixture.setUserData("Planet");
 		circle.dispose();
-		
+		/*
 		CircleShape landingZone = new CircleShape();
 		landingZone.setRadius(radius + 2);
 		fixtureDef = new FixtureDef();
 		fixtureDef.shape = landingZone;
 		fixtureDef.isSensor = true;
+		fixtureDef.filter.maskBits = 0x0002; // Collides with ship only
 		fixture = body.createFixture(fixtureDef);
 		fixture.setUserData("Landing");
 		landingZone.dispose();
+		*/
 	}
 
 	public Vector2 getGravityAccel(Vector2 pos) {
@@ -82,7 +83,7 @@ public class Planet {
 	public ArrayList<Satellite> activateSatellites(World world) {
 		// Awaken satellites for physics
 		for (int i=0; i<sat_orbit.length; i++) {
-			System.out.println("Activating satellite");
+			//System.out.println("Activating satellite");
 			float angle = MathUtils.random(0, MathUtils.PI2);
 			// Sets the absolute world position of the satellite
 			Vector2 pos = new Vector2(sat_orbit[i] * MathUtils.cos(angle),
