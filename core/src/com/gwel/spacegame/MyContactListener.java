@@ -31,7 +31,7 @@ public class MyContactListener implements ContactListener {
 			Vector2 tangent = new Vector2(-normal.y, normal.x).nor();
 			float normal_speed = normal.dot(f2.getBody().getLinearVelocity());
 			float tangent_speed = Math.abs(tangent.dot(f2.getBody().getLinearVelocity()));
-			if (normal_speed < 2.0f && tangent_speed < 1.0f) {
+			if (normal_speed < 1.0f && tangent_speed < 0.5f) {
 				game.land((Planet) f1.getBody().getUserData());
 			}
 		} else if (f2.getUserData() == "Planet" && f1.getUserData() == "Ship") {
@@ -39,7 +39,7 @@ public class MyContactListener implements ContactListener {
 			Vector2 tangent = new Vector2(-normal.y, normal.x).nor();
 			float normal_speed = normal.dot(f1.getBody().getLinearVelocity());
 			float tangent_speed = Math.abs(tangent.dot(f1.getBody().getLinearVelocity()));
-			if (normal_speed < 2.0f && tangent_speed < 1.0f) {
+			if (normal_speed < 1.0f && tangent_speed < 0.5f) {
 				game.land((Planet) f2.getBody().getUserData());
 			}
 		}

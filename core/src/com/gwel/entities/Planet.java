@@ -13,6 +13,7 @@ public class Planet {
 	public static final float MAX_RADIUS = 100.0f;
 	static final int MAX_SAT = 5;
 	
+	private int seed;
 	private Body body;
 	public Vector2 position;
 	private float mass;
@@ -25,9 +26,10 @@ public class Planet {
 	ArrayList<Satellite> satellites;
 	
 
-	public Planet(Vector2 pos, float rad) {
+	public Planet(Vector2 pos, float rad, int seed) {
 		position = pos.cpy();
 		radius = rad;
+		this.seed = seed;
 		color = new Color(MathUtils.random(), MathUtils.random(), MathUtils.random(), 1.0f);
 		mass = (float) Math.PI * rad * rad;
 		// Create satellites configuration, if any (not the actual Satellite instances)

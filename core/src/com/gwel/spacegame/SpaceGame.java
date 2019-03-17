@@ -19,7 +19,6 @@ public class SpaceGame extends Game {
 	public MyRenderer renderer;
 	public Controller controller;
 	public boolean hasController;
-	public GameState gameState;
 	
 	// GAME UNIVERSE VARIABLES
 	final static float UNIVERSE_SIZE = 100000.0f;
@@ -100,7 +99,7 @@ public class SpaceGame extends Game {
 				}
 			}
 			if (empty) {
-				Planet new_planet = new Planet(position, radius);
+				Planet new_planet = new Planet(position, radius, i);
 				qt.insert(new_planet);
 				i += 1;
 			}

@@ -184,6 +184,10 @@ public class ScreenInSpace implements Screen {
 	}
 
 	private void handleInput() {
+		float x_axis = 0.0f;
+		float y_axis = 0.0f;
+		boolean accel = false;
+		
 		if (game.hasController) {
 			if(game.controller.getButton(Ps4Controller.CROSS)) {
 				ship.accelerate(1.0f);
@@ -198,8 +202,8 @@ public class ScreenInSpace implements Screen {
 				game.camera.zoom(0.95f);
 				game.camera.autozoom = false;
 			}
-			float x_axis = game.controller.getAxis(Ps4Controller.LSTICK_X);
-			float y_axis = game.controller.getAxis(Ps4Controller.LSTICK_Y);
+			x_axis = game.controller.getAxis(Ps4Controller.LSTICK_X);
+			y_axis = game.controller.getAxis(Ps4Controller.LSTICK_Y);
 			if (Math.abs(x_axis) > 0.25)
 				ship.steer(-x_axis);
 		}
@@ -220,31 +224,22 @@ public class ScreenInSpace implements Screen {
 		}
 		
 		if (Gdx.input.isKeyPressed(Keys.UP)) {
-			float angle = ship.getAngleDiff(MathUtils.PI/2.0f);
-			float force = MathUtils.clamp(angle-ship.getAngularSpeed()*0.2f, -1.0f, 1.0f);
-			ship.steer(force);
-			ship.accelerate(1.0f-Math.abs(angle)/MathUtils.PI);
-		}
-		if (Gdx.input.isKeyPressed(Keys.LEFT)) {
-			//ship.steer(1.0f);
-			float angle = ship.getAngleDiff(MathUtils.PI);
-			float force = MathUtils.clamp(angle-ship.getAngularSpeed()*0.2f, -1.0f, 1.0f);
-			ship.steer(force);
-			ship.accelerate(1.0f-Math.abs(angle)/MathUtils.PI);
-		}
-		if (Gdx.input.isKeyPressed(Keys.RIGHT)) {
-			//ship.steer(-1.0f);
-			float angle = ship.getAngleDiff(0.0f);
-			float force = MathUtils.clamp(angle-ship.getAngularSpeed()*0.2f, -1.0f, 1.0f);
-			ship.steer(force);
-			ship.accelerate(1.0f-Math.abs(angle)/MathUtils.PI);
+			y_axis += 1.0f;
+			accel = true;
 		}
 		if (Gdx.input.isKeyPressed(Keys.DOWN)) {
-			float angle = ship.getAngleDiff(-MathUtils.PI/2.0f);
-			float force = MathUtils.clamp(angle-ship.getAngularSpeed()*0.2f, -1.0f, 1.0f);
-			ship.steer(force);
-			ship.accelerate(1.0f-Math.abs(angle)/MathUtils.PI);
+			y_axis -= 1.0f;
+			accel = true;
 		}
+		if (Gdx.input.isKeyPressed(Keys.LEFT)) {
+			x_axis -= 1.0f;
+			accel = true;
+		}
+		if (Gdx.input.isKeyPressed(Keys.RIGHT)) {
+			x_axis += 1.0f;
+			accel = true;
+		}
+		
 		if (Gdx.input.isKeyPressed(Keys.A)) {
 			game.camera.zoom(1.04f);
 			game.camera.autozoom = false;
@@ -252,6 +247,13 @@ public class ScreenInSpace implements Screen {
 		if (Gdx.input.isKeyPressed(Keys.Z)) {
 			game.camera.zoom(0.95f);
 			game.camera.autozoom = false;
+		}
+		
+		if (accel) {
+			float angle = ship.getAngleDiff(MathUtils.atan2(y_axis, x_axis));
+			float force = MathUtils.clamp(angle-ship.getAngularSpeed()*0.2f, -1.0f, 1.0f);
+			ship.steer(force);
+			ship.accelerate(1.0f-Math.abs(angle)/MathUtils.PI);
 		}
 	}
 }
