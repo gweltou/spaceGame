@@ -68,7 +68,7 @@ public class MyRenderer {
 	//The index position
 	private int idx;
 	
-	private MyCamera camera;
+	public MyCamera camera;
 	private Mesh mesh;
 	private ShaderProgram shader;
 	private Color col;

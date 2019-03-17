@@ -38,6 +38,7 @@ public class ScreenInSpace implements Screen {
 	
 	private Spaceship ship;
 	private ShipTail tail1, tail2;
+	private Starfield starfield;
 
 	
 	public ScreenInSpace(final SpaceGame game) {
@@ -46,6 +47,8 @@ public class ScreenInSpace implements Screen {
 		
 		b2world = new World(new Vector2(0.0f, 0.0f), true);
 		b2world.setContactListener(new MyContactListener(game));
+		
+		starfield = new Starfield(Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
 		
 		ship = new Spaceship(b2world, game.camera.center);
 		tail1 = new ShipTail(ship, new Vector2(0.8f, 0.2f), 0.2f);
@@ -93,7 +96,6 @@ public class ScreenInSpace implements Screen {
 		// Check for planets that newly entered the local zone
 		for (Planet pl : local_planets) {
 			if (!local_planets_prev.contains(pl)) {
-				System.out.println("New planet in local zone");
 				pl.activate(b2world);
 				// Register its satellites
 				local_sats.addAll(pl.activateSatellites(b2world));
@@ -128,13 +130,14 @@ public class ScreenInSpace implements Screen {
 
 		tail1.update();
 		tail2.update();
-
+		starfield.update(game.camera.getTravelling());
+		
 		//  Camera update
 		game.camera.glideTo(ship.getPosition());
 		if (game.camera.autozoom)
 			game.camera.zoomTo(100.0f/ship.getSpeed().len());
 		game.camera.update();
-		game.renderer.setProjectionMatrix(new Matrix4().set(game.camera.affine));
+		
 		
 		// North and East directions are POSITIVE !
 		AABB camera_range = new AABB(game.camera.sw.cpy().sub(Planet.MAX_RADIUS, Planet.MAX_RADIUS), 
@@ -143,9 +146,9 @@ public class ScreenInSpace implements Screen {
 		Gdx.gl.glClearColor(0, 0, 0, 1);
 		Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
 		
-		//stars.update(camera.getTravelling());
-		//stars.render(camera);
+		starfield.render(game.renderer);
 		
+		game.renderer.setProjectionMatrix(new Matrix4().set(game.camera.affine));
 		for (Planet p : game.Qt.query(camera_range)) {
 			p.render(game.renderer);
 		}
@@ -161,14 +164,12 @@ public class ScreenInSpace implements Screen {
 				sat.render(game.renderer);
 			}
 		}
-		
 		game.renderer.flush();
 	}
 
 	@Override
-	public void resize(int arg0, int arg1) {
-		// TODO Auto-generated method stub
-
+	public void resize(int width, int height) {
+		starfield = new Starfield(width, height);
 	}
 
 	@Override

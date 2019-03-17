@@ -14,29 +14,15 @@ public class MyCamera {
 	public boolean autozoom;
 	public int width;
 	public int height;
-	public final Matrix4 projection;
-	public final Matrix4 view;
-	public final Matrix4 combined;
-	private final Vector3 tmp;
-	private final Vector3 direction;
-	private final Vector3 up;
 	public Affine2 affine;
 
-	float PPU = 10.0f ; // Pixel per game unit
+	public float PPU = 10.0f ; // Pixel per game unit
 
 	public MyCamera(int width, int height) {
-		this.center = new Vector2();
-		this.pCenter = new Vector2();
-		this.autozoom = true;
+		center = new Vector2();
+		autozoom = true;
 		this.width = width;
 		this.height = height;
-		
-		projection = new Matrix4();
-		view = new Matrix4();
-		combined = new Matrix4();
-		tmp = new Vector3();
-		direction = new Vector3(0, 0, -1);
-		up = new Vector3(0, 1, 0);
 		affine = new Affine2();
 	}
 
@@ -47,8 +33,11 @@ public class MyCamera {
 	}
 
 	void setCenter(Vector2 pos) {
-		this.pCenter.set(center);
-		this.center.set(pos);
+		if (pCenter == null)
+			pCenter = pos.cpy();
+		else
+			pCenter.set(center);
+		center.set(pos);
 	}
 
 	void translate(float dx, float dy) {
@@ -71,7 +60,7 @@ public class MyCamera {
 		setZoom(MathUtils.lerp(PPU, ppu, 0.02f));
 	}
 
-	Vector2 getTravelling() {
+	public Vector2 getTravelling() {
 		Vector2 travelling = center.cpy().sub(pCenter);
 		return travelling.scl(PPU);
 	}
@@ -80,11 +69,6 @@ public class MyCamera {
 		// North and East directions are POSITIVE !
 		this.sw = new Vector2(center.x-width/(2.0f*PPU), center.y-height/(2.0f*PPU));
 		this.ne = new Vector2(center.x+width/(2.0f*PPU), center.y+height/(2.0f*PPU));
-		projection.setToOrtho(-PPU*width/2, PPU*width/2, PPU*height/2, -PPU*height/2, -1, 1);
-		view.setToLookAt(new Vector3(center, 0.0f), tmp.set(center, 0.0f).add(direction), up);
-		combined.set(projection);
-		Matrix4.mul(combined.val, view.val);
-		
 		affine.idt();
 		affine.scale(2.0f*PPU/width, 2.0f*PPU/height);
 		affine.translate(-center.x, -center.y);

@@ -60,7 +60,7 @@ public class SpaceGame extends Game {
 	
 	@Override
 	public void resize (int width, int height) {
-		System.out.println("Resizing camera viewport");
+		super.resize(width, height);
 		camera.width = width;
 		camera.height = height;
 		camera.update();
