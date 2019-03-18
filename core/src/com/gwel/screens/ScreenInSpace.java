@@ -55,8 +55,8 @@ public class ScreenInSpace implements Screen {
 		starfield = new Starfield(Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
 		
 		ship = new Spaceship(b2world, game.camera.center);
-		tail1 = new ShipTail(ship, new Vector2(0.8f, 0.2f), 0.2f);
-		tail2 = new ShipTail(ship, new Vector2(-0.70f, 0.2f), 0.2f);
+		tail1 = new ShipTail(ship, new Vector2(0.7f, 0.08f), 0.2f);
+		tail2 = new ShipTail(ship, new Vector2(-0.7f, 0.08f), 0.2f);
 		free_bodies.add(ship);
 	}
 	

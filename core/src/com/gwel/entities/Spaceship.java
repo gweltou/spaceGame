@@ -16,11 +16,11 @@ import com.gwel.spacegame.MyRenderer;
 public class Spaceship extends PhysicBody {
 	public final float MAX_VEL = 50.0f;
 	public final float MAX_ANG_VEL = 6.0f;
-	private final float SCALE = 0.01f;
+	//private final float SCALE = 0.01f;
 	private final float FIRE_COOLDOWN = 200.0f; // In milliseconds
 	
 	public float speed_mag;
-	//private Vector2 size = new Vector2(1.5f, 2.0f);  // Size of spaceship in game units
+	private Vector2 size = new Vector2(1.7f, 1.8f);  // Size of spaceship in game units
 	private Vector2 p1_tmp;
 	private Vector2 p2_tmp;
 	private Vector2 p3_tmp;
@@ -112,19 +112,12 @@ public class Spaceship extends PhysicBody {
 					triangle[ii++] = Float.parseFloat(values[i]);
 				}
 			}
-			// Scale vertices coordinates
-			triangle[0] *= SCALE;
-			triangle[1] *= SCALE;
-			triangle[2] *= SCALE;
-			triangle[3] *= SCALE;
-			triangle[4] *= SCALE;
-			triangle[5] *= SCALE;
-			
+
 			// Normalize color values (last 3 values)
 			triangle[6] /= 255;
 			triangle[7] /= 255;
 			triangle[8] /= 255;
-			triangle[9] = 1.0f;
+			triangle[9] = 1.0f; // Add alpha value
 			
 			// Look for extreme vertices values
 			for (int i=0; i<6; i+=2) {
@@ -139,6 +132,30 @@ public class Spaceship extends PhysicBody {
 			}
 			triangles[j] = triangle;
 		}
+		
+		// Correct all coordinates so ship is of right size and centered at 0,0
+		float width = rightmost.x - leftmost.x;
+		float height = highest.y - lowest.y;
+		// transformation are in inverse order
+		Affine2 transform = new Affine2().idt();
+		transform.translate(-size.x/2f, -size.y/2f);
+		transform.scale(size.x/width, size.y/height);
+		transform.translate(-leftmost.x, -lowest.y);
+		
+		for (float[] triangle: triangles) {
+			for (int i=0; i<6; i+=2) {
+				Vector2 point = new Vector2(triangle[i], triangle[i+1]);
+				transform.applyTo(point);
+				triangle[i] = point.x;
+				triangle[i+1] = point.y;
+			}
+		}
+		transform.applyTo(highest);
+		transform.applyTo(lowest);
+		transform.applyTo(leftmost);
+		transform.applyTo(rightmost);
+		
+		// Polygon used for box2d
 		Vector2[] vertices = {highest, leftmost, lowest, rightmost};
 		PolygonShape shape = new PolygonShape();
 		shape.set(vertices);
