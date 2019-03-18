@@ -4,6 +4,7 @@ import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.physics.box2d.*;
 import com.gwel.entities.Planet;
 import com.gwel.entities.Satellite;
+import com.gwel.entities.Spaceship;
 
 public class MyContactListener implements ContactListener {
 	SpaceGame game;
@@ -14,7 +15,6 @@ public class MyContactListener implements ContactListener {
 	
 	@Override
 	public void beginContact(Contact contact) {
-		// TODO Auto-generated method stub
 		Fixture f1 = contact.getFixtureA();
 		Fixture f2 = contact.getFixtureB();
 		
@@ -25,6 +25,7 @@ public class MyContactListener implements ContactListener {
 		if (f2.getUserData() == "Satellite") {
 			((Satellite) f2.getBody().getUserData()).detach();
 		}
+		
 		// Ship entered the planet's landing zone
 		if (f1.getUserData() == "Planet" && f2.getUserData() == "Ship") {
 			Vector2 normal = f1.getBody().getPosition().sub(f2.getBody().getPosition()).nor();
@@ -59,7 +60,22 @@ public class MyContactListener implements ContactListener {
 
 	@Override
 	public void postSolve(Contact contact, ContactImpulse impulse) {
-		// TODO Auto-generated method stub
+		Fixture f1 = contact.getFixtureA();
+		Fixture f2 = contact.getFixtureB();
 		
+		float hitforce = 0.0f;
+		hitforce += impulse.getNormalImpulses()[0];
+		hitforce += impulse.getTangentImpulses()[0];
+		/*
+		for (float force: impulse.getNormalImpulses())
+			hitforce += force;
+		*/
+		// Ship collision damage
+		if (f1.getUserData() == "Ship" && hitforce >= 1.0f) {
+			((Spaceship) f1.getBody().getUserData()).hit(hitforce*hitforce);
+		}
+		if (f2.getUserData() == "Ship" && hitforce >= 1.0f) {
+			((Spaceship) f1.getBody().getUserData()).hit(hitforce*hitforce);
+		}
 	}
 }

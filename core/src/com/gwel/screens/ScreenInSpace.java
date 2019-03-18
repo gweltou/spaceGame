@@ -28,13 +28,16 @@ public class ScreenInSpace implements Screen {
 	final SpaceGame game;
 	private World b2world;
 	private boolean destroy;
+	private float game_speed;	// set to <1.0 for slow-mo
 	
 	private ArrayList<Planet> local_planets = new ArrayList<Planet>();
 	private ArrayList<Planet> local_planets_prev;
 	private LinkedList<Satellite> local_sats = new LinkedList<Satellite>();
-	private LinkedList<PhysicBody> free_bodies = new LinkedList<PhysicBody>();
-	//private ListIterator<PhysicBody> bod_iter;
 	private ListIterator<Satellite> sat_iter;
+	private LinkedList<PhysicBody> free_bodies = new LinkedList<PhysicBody>();
+	private ListIterator<PhysicBody> bod_iter;
+	private LinkedList<Projectile> projectiles = new LinkedList<Projectile>();
+	private ListIterator<Projectile> proj_iter;
 	
 	private Spaceship ship;
 	private ShipTail tail1, tail2;
@@ -44,6 +47,7 @@ public class ScreenInSpace implements Screen {
 	public ScreenInSpace(final SpaceGame game) {
 		this.game = game;
 		destroy = false;
+		game_speed = 1.0f;
 		
 		b2world = new World(new Vector2(0.0f, 0.0f), true);
 		b2world.setContactListener(new MyContactListener(game));
@@ -79,7 +83,7 @@ public class ScreenInSpace implements Screen {
 	}
 
 	@Override
-	public void render(float arg0) {
+	public void render(float delta_time) {
 		if (destroy)
 			dispose();
 		
@@ -101,32 +105,44 @@ public class ScreenInSpace implements Screen {
 				local_sats.addAll(pl.activateSatellites(b2world));
 			}
 		}
-		//System.out.println(local_sats.size());
 		// Check for planets that exited the local zone
 		for (Planet pl : local_planets_prev) {
 			if (!local_range.containsPoint(pl.getPosition())) {
 				pl.dispose();
 			}
 		}
-		
 		sat_iter = local_sats.listIterator();
 		while (sat_iter.hasNext()) {
 			Satellite sat = sat_iter.next(); // Can be optimized by declaring a tmp variable
 			// Removing satellites belonging to planets outside of local zone
-			if (sat.disposable || sat.detached)
+			if (sat.disposable || sat.detachable)
 				sat_iter.remove();
 			// Register detached satellites as free bodies 
-			if (sat.detached)
+			if (sat.detachable)
 				free_bodies.add(sat);
 		}
-		// Applying gravity to free bodies
+		// Removing free bodies outside of local zone
+		bod_iter = free_bodies.listIterator();
+		while (bod_iter.hasNext()) {
+			if (!local_range.containsPoint(bod_iter.next().getPosition()))
+				bod_iter.remove();
+		}
+		// Applying gravity to the free bodies
 		for (Planet pl: local_planets) {
 			pl.update(); // Apply gravity force to attached satellites
 			for (PhysicBody bod: free_bodies) {
 				bod.push(pl.getGravityAccel(bod.getPosition()).scl(bod.getMass()));
 			}
 		}
-		b2world.step(1/60f, 8, 3);
+		proj_iter = projectiles.listIterator();
+		while (proj_iter.hasNext()) {
+			Projectile proj = proj_iter.next();
+			if (!local_range.containsPoint(proj.position) || proj.disposable)
+				proj_iter.remove();
+			else
+			    proj.update(b2world, game_speed);
+		}
+		b2world.step(game_speed/60f, 8, 3);
 
 		tail1.update();
 		tail2.update();
@@ -163,6 +179,10 @@ public class ScreenInSpace implements Screen {
 			if (camera_range.containsPoint(sat.getPosition())) {
 				sat.render(game.renderer);
 			}
+		}
+		for (Projectile proj: projectiles) {
+			if (camera_range.containsPoint(proj.position))
+				proj.render(game.renderer);
 		}
 		game.renderer.flush();
 	}
@@ -248,6 +268,10 @@ public class ScreenInSpace implements Screen {
 		if (Gdx.input.isKeyPressed(Keys.Z)) {
 			game.camera.zoom(0.95f);
 			game.camera.autozoom = false;
+		}
+		
+		if (Gdx.input.isKeyPressed(Keys.SPACE)) {
+			ship.fire(projectiles);
 		}
 		
 		if (accel) {

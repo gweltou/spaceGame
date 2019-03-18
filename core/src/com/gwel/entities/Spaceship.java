@@ -1,30 +1,34 @@
 package com.gwel.entities;
 
 
+import java.util.LinkedList;
+
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.files.FileHandle;
 import com.badlogic.gdx.math.Affine2;
 import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.physics.box2d.*;
+import com.badlogic.gdx.utils.TimeUtils;
 import com.gwel.spacegame.MyRenderer;
 
 
 public class Spaceship extends PhysicBody {
-	public final float MAX_VEL = 500.0f;
-	public final float MAX_ANG_VEL = 4.0f;
+	public final float MAX_VEL = 50.0f;
+	public final float MAX_ANG_VEL = 6.0f;
 	private final float SCALE = 0.01f;
+	private final float FIRE_COOLDOWN = 200.0f; // In milliseconds
 	
 	public float speed_mag;
-	Vector2 size = new Vector2(1.5f, 2.0f);  // Size of spaceship in game units
-	Vector2 p1;
-	Vector2 p2;
-	Vector2 p3;
-	Vector2 p1_tmp;
-	Vector2 p2_tmp;
-	Vector2 p3_tmp;
-	Affine2 transform;
+	//private Vector2 size = new Vector2(1.5f, 2.0f);  // Size of spaceship in game units
+	private Vector2 p1_tmp;
+	private Vector2 p2_tmp;
+	private Vector2 p3_tmp;
+	private Affine2 transform;
 	float[][] triangles;
+	
+	private float hitpoints;
+	private long last_fire;
 	
 	public Spaceship(World world, Vector2 pos) {
 		super(pos);
@@ -43,13 +47,13 @@ public class Spaceship extends PhysicBody {
 		fixture.setUserData("Ship");
 		shape.dispose();
 
-		p1 = new Vector2(-size.x/2.0f, -size.y/2.0f);
-		p2 = new Vector2(0.0f, size.y/2.0f);
-		p3 = new Vector2(size.x/2.0f, -size.y/2.0f);
 		p1_tmp = new Vector2();
 		p2_tmp = new Vector2();
 		p3_tmp = new Vector2();
 		transform = new Affine2();
+		
+		hitpoints = 200.0f;
+		last_fire = TimeUtils.millis();
 	}
 
 	public void steer(float amount) {
@@ -61,24 +65,30 @@ public class Spaceship extends PhysicBody {
 	}
 
 	public void accelerate(float amount) {
-		//System.out.println("ship accelerate");
 		Vector2 direction = new Vector2(1.0f, 1.0f);
 		direction.setAngleRad(getAngle());
 		push(direction.scl(amount*1.5f));
 		float speed = getSpeed().len2();
 		if (speed > MAX_VEL) {
-			body.setLinearVelocity(getSpeed().scl(MAX_VEL/speed));
+			body.setLinearVelocity(getSpeed().limit(MAX_VEL));
 		}
 	}
 
-	public Projectile fire() {
-		Vector2 force = new Vector2(1.0f, 1.0f);
-		force.setAngleRad(getAngle());
-		Vector2 pos = this.getPosition();
-		pos.add(force); // Translate the projectile starting position
-		Projectile proj = new Projectile(pos);
-		proj.push(force);
-		return proj;
+	public void hit(float hp) {
+		hitpoints -= hp;
+		System.out.println(hitpoints);
+	}
+	
+	public void fire(LinkedList<Projectile> projectiles) {
+		long now = TimeUtils.millis();
+		if (now-last_fire >= FIRE_COOLDOWN) {
+			Vector2 dir = new Vector2(2.0f, 0.0f); // Here we set the bullet's velocity
+			dir.setAngleRad(getAngle());
+			Vector2 pos = this.getPosition();
+			Projectile proj = new Projectile(this, pos, dir, 10.0f);
+			projectiles.add(proj);
+			last_fire = now;
+		}
 	}
 
 	private PolygonShape readShapeFromFile() {

@@ -11,7 +11,7 @@ public class Satellite extends PhysicBody {
 	public Planet parent;
 	public float radius;
 	private Color color;
-	public boolean detached;
+	public boolean detachable;
 
 	public Satellite(World world, Planet parent, Vector2 pos, float rad, Color col) {
 		super(pos);
@@ -30,7 +30,7 @@ public class Satellite extends PhysicBody {
 		Fixture fixture = body.createFixture(fixtureDef);
 		fixture.setUserData("Satellite");
 		circle.dispose();
-		detached = false;
+		detachable = false;
 		
 		this.parent = parent;
 		color = col;
@@ -38,7 +38,7 @@ public class Satellite extends PhysicBody {
 	
 	public void detach() {
 		parent.satellites.remove(this);
-		detached = true;
+		detachable = true;
 	}
 	
 	public void render(MyRenderer renderer) {
