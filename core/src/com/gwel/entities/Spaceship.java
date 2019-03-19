@@ -16,7 +16,6 @@ import com.gwel.spacegame.MyRenderer;
 public class Spaceship extends PhysicBody {
 	public final float MAX_VEL = 50.0f;
 	public final float MAX_ANG_VEL = 6.0f;
-	//private final float SCALE = 0.01f;
 	private final float FIRE_COOLDOWN = 200.0f; // In milliseconds
 	
 	public float speed_mag;
@@ -67,7 +66,7 @@ public class Spaceship extends PhysicBody {
 	public void accelerate(float amount) {
 		Vector2 direction = new Vector2(1.0f, 1.0f);
 		direction.setAngleRad(getAngle());
-		push(direction.scl(amount*1.5f));
+		push(direction.scl(amount*8.0f));
 		float speed = getSpeed().len2();
 		if (speed > MAX_VEL) {
 			body.setLinearVelocity(getSpeed().limit(MAX_VEL));

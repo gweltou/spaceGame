@@ -134,6 +134,7 @@ public class ScreenInSpace implements Screen {
 				bod.push(pl.getGravityAccel(bod.getPosition()).scl(bod.getMass()));
 			}
 		}
+		// Removing projectiles outside of local zone
 		proj_iter = projectiles.listIterator();
 		while (proj_iter.hasNext()) {
 			Projectile proj = proj_iter.next();
@@ -159,7 +160,7 @@ public class ScreenInSpace implements Screen {
 		AABB camera_range = new AABB(game.camera.sw.cpy().sub(Planet.MAX_RADIUS, Planet.MAX_RADIUS), 
 				game.camera.ne.cpy().add(Planet.MAX_RADIUS, Planet.MAX_RADIUS));
 		
-		Gdx.gl.glClearColor(0, 0, 0, 1);
+		Gdx.gl.glClearColor(0.95f, 0.95f, 0.95f, 1f);
 		Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
 		
 		starfield.render(game.renderer);
