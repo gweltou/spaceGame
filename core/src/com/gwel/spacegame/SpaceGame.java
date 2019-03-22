@@ -6,7 +6,9 @@ import com.badlogic.gdx.Game;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.controllers.Controller;
 import com.badlogic.gdx.controllers.Controllers;
+import com.badlogic.gdx.files.FileHandle;
 import com.badlogic.gdx.math.MathUtils;
+import com.badlogic.gdx.math.RandomXS128;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.utils.TimeUtils;
 import com.gwel.entities.*;
@@ -27,6 +29,7 @@ public class SpaceGame extends Game {
 	public final static float LOCAL_RADIUS = GRAVITY_ACTIVE_RADIUS;
 	final static float exit_radius = GRAVITY_ACTIVE_RADIUS+200.0f;
 	public QuadTree Qt;
+	ArrayList<ArrayList<String>> godNames;
 	
 	
 	@Override
@@ -43,6 +46,8 @@ public class SpaceGame extends Game {
 		AABB universe_boundary = new AABB(new Vector2(0, 0), new Vector2(UNIVERSE_SIZE, UNIVERSE_SIZE));
 		Qt = new QuadTree(universe_boundary);
 		populateUniverse(Qt);
+		godNames = new ArrayList<ArrayList<String>>();
+		loadGodNames();
 		
 		Vector2 universeCenter = new Vector2(UNIVERSE_SIZE/2, UNIVERSE_SIZE/2);
 		camera = new MyCamera(Gdx.graphics.getWidth(),Gdx.graphics.getHeight());
@@ -56,6 +61,7 @@ public class SpaceGame extends Game {
 	@Override
 	public void render () {
 		super.render();
+		System.out.println(getPlanetName(TimeUtils.millis()));
 	}
 	
 	@Override
@@ -106,5 +112,60 @@ public class SpaceGame extends Game {
 		}
 		System.out.print("time spent populating (ms): ");
 		System.out.println(TimeUtils.millis()-start_time);
+	}
+	
+	void loadGodNames() {
+		String[] god_files = {"albanian", "celts", "egyptian", "greek", "hindu", "japanese", "mesopotamian", "norse", "roman"};
+		
+		long start_time = TimeUtils.millis();
+		int num = 0;
+		for (String filename: god_files) {
+			ArrayList<String> array = new ArrayList<String>();
+			FileHandle file = Gdx.files.internal("gods/" + filename + ".txt");
+			String content = file.readString();
+			String[] lines = content.split("\n");
+			for (String line: lines) {
+				String name = line.split("\t")[0];
+				//name = name.strip();
+				if (!name.isEmpty()) {
+					num++;
+					array.add(name);
+				}
+			}
+			godNames.add(array);
+		}
+		System.out.print("Parsed " + String.valueOf(num) + " mythological names (ms): ");
+		System.out.println(TimeUtils.millis()-start_time);
+	}
+	
+	String getPlanetName(long seed) {
+		RandomXS128 generator = new RandomXS128(seed);
+		int totNames = 0;
+		for (ArrayList<String> array: godNames) {
+			totNames += array.size();
+		}
+		// Create probability weight array
+		String name = "";
+		float r = generator.nextFloat();
+		for (int i=0; i<godNames.size(); i++) {
+			int numNames = godNames.get(i).size();
+			float prob = (float) numNames/totNames;
+			if (r < prob) {
+				name = godNames.get(i).get(generator.nextInt(numNames));
+				break;
+			}
+			r -= prob;
+		}
+		
+		
+		if (generator.nextFloat() < 0.2) {
+			// Add a sci-fi number
+			int i = generator.nextInt(1000);
+			String str = " ";
+			str = str.concat(String.valueOf(i));
+			name = name.concat(str);
+		}
+		
+		return name;
 	}
 }

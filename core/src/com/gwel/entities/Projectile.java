@@ -44,7 +44,7 @@ public class Projectile {
 				sat.detach();
 				sat.push(speed.cpy().scl(damage*damage));
 			}
-			return 1;
+			return fraction;
 		}
 	};
 	
