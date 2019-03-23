@@ -6,7 +6,8 @@ import com.badlogic.gdx.physics.box2d.BodyDef.BodyType;
 import com.gwel.spacegame.MyRenderer;
 import com.gwel.spacegame.utils;
 
-public abstract class PhysicBody {
+
+public abstract class PhysicBody implements MovingObject {
 	protected BodyDef bodyDef;
 	protected Body body;
 	public boolean disposable;

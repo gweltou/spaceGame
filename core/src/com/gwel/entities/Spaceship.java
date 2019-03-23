@@ -9,52 +9,97 @@ import com.badlogic.gdx.math.Affine2;
 import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.physics.box2d.*;
+import com.badlogic.gdx.physics.box2d.BodyDef.BodyType;
 import com.badlogic.gdx.utils.TimeUtils;
 import com.gwel.spacegame.MyRenderer;
+import com.gwel.spacegame.utils;
 
 
-public class Spaceship extends PhysicBody {
+public class Spaceship implements MovingObject {
 	public final float MAX_VEL = 50.0f;
 	public final float MAX_ANG_VEL = 6.0f;
 	private final float FIRE_COOLDOWN = 200.0f; // In milliseconds
 	
-	public float speed_mag;
+	//public float speed_mag;
 	private Vector2 size = new Vector2(1.7f, 1.8f);  // Size of spaceship in game units
-	private Vector2 p1_tmp;
-	private Vector2 p2_tmp;
-	private Vector2 p3_tmp;
-	private Affine2 transform;
-	float[][] triangles;
+	private float angle;
+	private Vector2 position;
 	
 	private float hitpoints;
 	private long last_fire;
 	
-	public Spaceship(World world, Vector2 pos) {
-		super(pos);
-		bodyDef.angle = (float) (Math.PI/2.0f); // Initially pointing up
-		body = world.createBody(bodyDef);
-		body.setUserData(this);
-		PolygonShape shape = readShapeFromFile();
-		// Create a fixture definition to apply our shape to
-		FixtureDef fixtureDef = new FixtureDef();
-		fixtureDef.shape = shape;
-		fixtureDef.density = 0.1f; 
-		fixtureDef.friction = 0.4f;
-		fixtureDef.restitution = 0.6f;
-		fixtureDef.filter.categoryBits = 0x0002;
-		Fixture fixture = body.createFixture(fixtureDef);
-		fixture.setUserData("Ship");
-		shape.dispose();
-
-		p1_tmp = new Vector2();
-		p2_tmp = new Vector2();
-		p3_tmp = new Vector2();
+	private Affine2 transform;
+	private float[][] triangles;
+	private Vector2[] vertices;	// Used to set Box2D bounding shape
+	private Vector2 p1_tmp = new Vector2();
+	private Vector2 p2_tmp = new Vector2();
+	private Vector2 p3_tmp = new Vector2();
+	
+	private Body body;
+	public boolean disposable;
+	
+	
+	public Spaceship(Vector2 pos) {
+		angle = (float) (Math.PI/2.0f); // Initially pointing up
+		position = pos;
+		
 		transform = new Affine2();
+		vertices = new Vector2[4];
 		
 		hitpoints = 200.0f;
 		last_fire = TimeUtils.millis();
+		
+		readShapeFromFile();
+		disposable = false;
 	}
 
+	@Override
+	public Vector2 getPosition() {
+		if (body != null)
+			return body.getPosition().cpy();
+		return position.cpy();
+	}
+
+	@Override
+	public Vector2 getSpeed() {
+		if (body != null)
+			return body.getLinearVelocity().cpy();
+		return null;
+	}
+
+	@Override
+	public float getAngularSpeed() {
+		if (body != null)
+			return body.getAngularVelocity();
+		return 0;
+	}
+
+	@Override
+	public float getAngle() {
+		if (body != null)
+			return body.getAngle();
+		return angle;
+	}
+
+	@Override
+	public float getAngleDiff(float refAngle) {
+		if (body != null)
+			return utils.wrapAngleAroundZero(refAngle-body.getAngle());
+		return utils.wrapAngleAroundZero(refAngle-angle);
+	}
+
+	@Override
+	public float getMass() {
+		if (body != null)
+			return body.getMass();
+		return 0;
+	}
+
+	@Override
+	public void push(Vector2 force) {
+		body.applyForceToCenter(force, true);
+	}
+	
 	public void steer(float amount) {
 		if (amount > 0 && body.getAngularVelocity() < MAX_ANG_VEL) {
 			body.applyTorque(amount, true);
@@ -89,8 +134,31 @@ public class Spaceship extends PhysicBody {
 			last_fire = now;
 		}
 	}
+	
+	public void initBody(World world) {
+		BodyDef bodyDef = new BodyDef();
+		bodyDef.type = BodyType.DynamicBody;
+		bodyDef.position.set(position);
+		bodyDef.angle = angle;
+		body = world.createBody(bodyDef);
+		body.setUserData(this);
+		
+		PolygonShape shape = new PolygonShape();
+		shape.set(vertices);
+		
+		FixtureDef fixtureDef = new FixtureDef();
+		fixtureDef.shape = shape;
+		fixtureDef.density = 0.1f; 
+		fixtureDef.friction = 0.4f;
+		fixtureDef.restitution = 0.6f;
+		fixtureDef.filter.categoryBits = 0x0002;
+		
+		Fixture fixture = body.createFixture(fixtureDef);
+		fixture.setUserData("Ship");
+		shape.dispose();
+	}
 
-	private PolygonShape readShapeFromFile() {
+	private void readShapeFromFile() {
 		// Extreme vertices used for B2D collision shape
 		Vector2 highest = new Vector2(0.0f, -1.0f);
 		Vector2 lowest = new Vector2(0.0f, 1.0f);
@@ -149,16 +217,15 @@ public class Spaceship extends PhysicBody {
 				triangle[i+1] = point.y;
 			}
 		}
-		transform.applyTo(highest);
-		transform.applyTo(lowest);
-		transform.applyTo(leftmost);
-		transform.applyTo(rightmost);
 		
-		// Polygon used for box2d
-		Vector2[] vertices = {highest, leftmost, lowest, rightmost};
-		PolygonShape shape = new PolygonShape();
-		shape.set(vertices);
-		return shape;
+		// Anti-clockwise
+		vertices[0] = highest;
+		vertices[1] = leftmost;
+		vertices[2] = lowest;
+		vertices[3] = rightmost;
+		for (Vector2 vert: vertices) {
+			transform.applyTo(vert);
+		}
 	}
 
 	public void render(MyRenderer renderer) {
@@ -175,5 +242,14 @@ public class Spaceship extends PhysicBody {
 			renderer.setColor(triangles[i][6], triangles[i][7], triangles[i][8], triangles[i][9]);
 			renderer.triangle(p1_tmp, p2_tmp, p3_tmp);
 		}
+	}
+	
+	@Override
+	public void dispose() {
+		angle = getAngle();
+		position = getPosition();
+		body.getWorld().destroyBody(body);
+		body = null;
+		disposable = true;
 	}
 }

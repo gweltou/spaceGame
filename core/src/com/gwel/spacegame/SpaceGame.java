@@ -31,6 +31,8 @@ public class SpaceGame extends Game {
 	public QuadTree Qt;
 	ArrayList<ArrayList<String>> godNames;
 	
+	public Spaceship ship;
+	
 	
 	@Override
 	public void create () {
@@ -55,13 +57,14 @@ public class SpaceGame extends Game {
 		camera.update();
 		renderer = new MyRenderer(camera);
 		
+		ship = new Spaceship(universeCenter);
+		
 		setScreen(new ScreenInSpace(this));
 	}
 
 	@Override
 	public void render () {
 		super.render();
-		System.out.println(getPlanetName(TimeUtils.millis()));
 	}
 	
 	@Override

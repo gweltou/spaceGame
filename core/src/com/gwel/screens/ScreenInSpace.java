@@ -34,12 +34,11 @@ public class ScreenInSpace implements Screen {
 	private ArrayList<Planet> local_planets_prev;
 	private LinkedList<Satellite> local_sats = new LinkedList<Satellite>();
 	private ListIterator<Satellite> sat_iter;
-	private LinkedList<PhysicBody> free_bodies = new LinkedList<PhysicBody>();
-	private ListIterator<PhysicBody> bod_iter;
+	private LinkedList<MovingObject> free_bodies = new LinkedList<MovingObject>();
+	private ListIterator<MovingObject> bod_iter;
 	private LinkedList<Projectile> projectiles = new LinkedList<Projectile>();
 	private ListIterator<Projectile> proj_iter;
 	
-	private Spaceship ship;
 	private ShipTail tail1, tail2;
 	private Starfield starfield;
 
@@ -54,10 +53,11 @@ public class ScreenInSpace implements Screen {
 		
 		starfield = new Starfield(Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
 		
-		ship = new Spaceship(b2world, game.camera.center);
-		tail1 = new ShipTail(ship, new Vector2(0.7f, 0.08f), 0.2f);
-		tail2 = new ShipTail(ship, new Vector2(-0.7f, 0.08f), 0.2f);
-		free_bodies.add(ship);
+		game.ship.initBody(b2world);
+		
+		tail1 = new ShipTail(game.ship, new Vector2(0.7f, 0.08f), 0.2f);
+		tail2 = new ShipTail(game.ship, new Vector2(-0.7f, 0.08f), 0.2f);
+		free_bodies.add(game.ship);
 	}
 	
 	@Override
@@ -90,8 +90,8 @@ public class ScreenInSpace implements Screen {
 		handleInput();
 
 		// UPDATING GAME STATE
-		AABB local_range = new AABB(ship.getPosition().sub(SpaceGame.LOCAL_RADIUS, SpaceGame.LOCAL_RADIUS),
-				ship.getPosition().add(SpaceGame.LOCAL_RADIUS, SpaceGame.LOCAL_RADIUS));
+		AABB local_range = new AABB(game.ship.getPosition().sub(SpaceGame.LOCAL_RADIUS, SpaceGame.LOCAL_RADIUS),
+				game.ship.getPosition().add(SpaceGame.LOCAL_RADIUS, SpaceGame.LOCAL_RADIUS));
 		//AABB exit_range = new AABB(ship.getPosition().sub(exit_radius, exit_radius),
 		//		ship.getPosition().add(exit_radius, exit_radius));
 		local_planets_prev = local_planets;
@@ -130,7 +130,7 @@ public class ScreenInSpace implements Screen {
 		// Applying gravity to the free bodies
 		for (Planet pl: local_planets) {
 			pl.update(); // Apply gravity force to attached satellites
-			for (PhysicBody bod: free_bodies) {
+			for (MovingObject bod: free_bodies) {
 				bod.push(pl.getGravityAccel(bod.getPosition()).scl(bod.getMass()));
 			}
 		}
@@ -150,9 +150,9 @@ public class ScreenInSpace implements Screen {
 		starfield.update(game.camera.getTravelling());
 		
 		//  Camera update
-		game.camera.glideTo(ship.getPosition());
+		game.camera.glideTo(game.ship.getPosition());
 		if (game.camera.autozoom)
-			game.camera.zoomTo(100.0f/ship.getSpeed().len());
+			game.camera.zoomTo(100.0f/game.ship.getSpeed().len());
 		game.camera.update();
 		
 		
@@ -160,7 +160,7 @@ public class ScreenInSpace implements Screen {
 		AABB camera_range = new AABB(game.camera.sw.cpy().sub(Planet.MAX_RADIUS, Planet.MAX_RADIUS), 
 				game.camera.ne.cpy().add(Planet.MAX_RADIUS, Planet.MAX_RADIUS));
 		
-		Gdx.gl.glClearColor(0.95f, 0.95f, 0.95f, 1f);
+		Gdx.gl.glClearColor(0.96f, 0.96f, 0.96f, 1f);
 		Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
 		
 		starfield.render(game.renderer);
@@ -171,7 +171,7 @@ public class ScreenInSpace implements Screen {
 		}
 		tail1.render(game.renderer);
 		tail2.render(game.renderer);
-		for (PhysicBody b : free_bodies) {
+		for (MovingObject b : free_bodies) {
 			if (camera_range.containsPoint(b.getPosition())) {
 				b.render(game.renderer);
 			}
@@ -212,7 +212,7 @@ public class ScreenInSpace implements Screen {
 		
 		if (game.hasController) {
 			if(game.controller.getButton(Ps4Controller.CROSS)) {
-				ship.accelerate(1.0f);
+				game.ship.accelerate(1.0f);
 				game.camera.autozoom = true;
 			}
 			PovDirection pov = game.controller.getPov(0);
@@ -227,7 +227,7 @@ public class ScreenInSpace implements Screen {
 			x_axis = game.controller.getAxis(Ps4Controller.LSTICK_X);
 			y_axis = game.controller.getAxis(Ps4Controller.LSTICK_Y);
 			if (Math.abs(x_axis) > 0.25)
-				ship.steer(-x_axis);
+				game.ship.steer(-x_axis);
 		}
 
 		if (Gdx.input.isKeyPressed(Keys.P)) {
@@ -272,14 +272,14 @@ public class ScreenInSpace implements Screen {
 		}
 		
 		if (Gdx.input.isKeyPressed(Keys.SPACE)) {
-			ship.fire(projectiles);
+			game.ship.fire(projectiles);
 		}
 		
 		if (accel) {
-			float angle = ship.getAngleDiff(MathUtils.atan2(y_axis, x_axis));
-			float force = MathUtils.clamp(angle-ship.getAngularSpeed()*0.2f, -1.0f, 1.0f);
-			ship.steer(force);
-			ship.accelerate(1.0f-Math.abs(angle)/MathUtils.PI);
+			float angle = game.ship.getAngleDiff(MathUtils.atan2(y_axis, x_axis));
+			float force = MathUtils.clamp(angle-game.ship.getAngularSpeed()*0.2f, -1.0f, 1.0f);
+			game.ship.steer(force);
+			game.ship.accelerate(1.0f-Math.abs(angle)/MathUtils.PI);
 		}
 	}
 }

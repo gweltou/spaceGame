@@ -37,11 +37,15 @@ public class ScreenOnPlanet implements Screen {
 
 	@Override
 	public void render(float arg0) {
-		// TODO Auto-generated method stub
-		game.renderer.setProjectionMatrix(new Matrix4().idt());
-		Gdx.gl.glClearColor(0, 0, 0, 1);
+	//  Camera update
+		game.camera.glideTo(game.ship.getPosition());
+		game.camera.zoomTo(200.0f);
+		game.camera.update();
+
+		game.renderer.setProjectionMatrix(new Matrix4().set(game.camera.affine));
+		Gdx.gl.glClearColor(0.6f, 0.6f, 0.6f, 1);
 		Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
-		game.renderer.triangle(-0.5f, -0.5f, 0.0f, 0.5f, 0.5f, -0.5f);
+		game.ship.render(game.renderer);
 		game.renderer.flush();
 	}
 
