@@ -25,25 +25,6 @@ public class MyContactListener implements ContactListener {
 		if (f2.getUserData() == "Satellite") {
 			((Satellite) f2.getBody().getUserData()).detach();
 		}
-		
-		// Ship entered the planet's landing zone
-		if (f1.getUserData() == "Planet" && f2.getUserData() == "Ship") {
-			Vector2 normal = f1.getBody().getPosition().sub(f2.getBody().getPosition()).nor();
-			Vector2 tangent = new Vector2(-normal.y, normal.x).nor();
-			float normal_speed = normal.dot(f2.getBody().getLinearVelocity());
-			float tangent_speed = Math.abs(tangent.dot(f2.getBody().getLinearVelocity()));
-			if (normal_speed < 1.0f && tangent_speed < 0.5f) {
-				game.land((Planet) f1.getBody().getUserData());
-			}
-		} else if (f2.getUserData() == "Planet" && f1.getUserData() == "Ship") {
-			Vector2 normal = f2.getBody().getPosition().sub(f1.getBody().getPosition()).nor();
-			Vector2 tangent = new Vector2(-normal.y, normal.x).nor();
-			float normal_speed = normal.dot(f1.getBody().getLinearVelocity());
-			float tangent_speed = Math.abs(tangent.dot(f1.getBody().getLinearVelocity()));
-			if (normal_speed < 1.0f && tangent_speed < 0.5f) {
-				game.land((Planet) f2.getBody().getUserData());
-			}
-		}
 	}
 
 	@Override
@@ -54,8 +35,6 @@ public class MyContactListener implements ContactListener {
 
 	@Override
 	public void preSolve(Contact contact, Manifold oldManifold) {
-		// TODO Auto-generated method stub
-		
 	}
 
 	@Override
@@ -76,6 +55,29 @@ public class MyContactListener implements ContactListener {
 		}
 		if (f2.getUserData() == "Ship" && hitforce >= 1.0f) {
 			((Spaceship) f1.getBody().getUserData()).hit(hitforce*hitforce);
+		}
+		
+		// Detect landing
+		if (f1.getUserData() == "Planet" && f2.getUserData() == "Ship") {
+			Vector2 normal = f1.getBody().getPosition().sub(f2.getBody().getPosition()).nor();
+			Vector2 tangent = new Vector2(-normal.y, normal.x).nor();
+			float normal_speed = normal.dot(f2.getBody().getLinearVelocity());
+			float tangent_speed = Math.abs(tangent.dot(f2.getBody().getLinearVelocity()));
+			if (normal_speed < 0.1f && tangent_speed < 0.1f) {
+				game.land((Planet) f1.getBody().getUserData());
+			}
+			System.out.println(normal_speed);
+			System.out.println(tangent_speed);
+		} else if (f2.getUserData() == "Planet" && f1.getUserData() == "Ship") {
+			Vector2 normal = f2.getBody().getPosition().sub(f1.getBody().getPosition()).nor();
+			Vector2 tangent = new Vector2(-normal.y, normal.x).nor();
+			float normal_speed = normal.dot(f1.getBody().getLinearVelocity());
+			float tangent_speed = Math.abs(tangent.dot(f1.getBody().getLinearVelocity()));
+			if (normal_speed < 0.1f && tangent_speed < 0.1f) {
+				game.land((Planet) f2.getBody().getUserData());
+			}
+			System.out.println(normal_speed);
+			System.out.println(tangent_speed);
 		}
 	}
 }

@@ -1,6 +1,7 @@
 package com.gwel.spacegame;
 
 public class Ps4Controller {
+	public static final String ID = "Sony Interactive Entertainment Wireless Controller";
 	public static final int CROSS = 0;
 	public static final int CIRCLE = 1;
 	public static final int TRIANGLE = 2;

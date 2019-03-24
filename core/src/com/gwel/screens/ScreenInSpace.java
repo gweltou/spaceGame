@@ -20,7 +20,6 @@ import com.badlogic.gdx.utils.ScreenUtils;
 import com.gwel.entities.*;
 import com.gwel.spacegame.AABB;
 import com.gwel.spacegame.MyContactListener;
-import com.gwel.spacegame.Ps4Controller;
 import com.gwel.spacegame.SpaceGame;
 
 
@@ -152,7 +151,7 @@ public class ScreenInSpace implements Screen {
 		//  Camera update
 		game.camera.glideTo(game.ship.getPosition());
 		if (game.camera.autozoom)
-			game.camera.zoomTo(100.0f/game.ship.getSpeed().len());
+			game.camera.zoomTo(200.0f/game.ship.getSpeed().len());
 		game.camera.update();
 		
 		
@@ -195,23 +194,19 @@ public class ScreenInSpace implements Screen {
 
 	@Override
 	public void resume() {
-		// TODO Auto-generated method stub
-
 	}
 
 	@Override
 	public void show() {
-		// TODO Auto-generated method stub
-
 	}
 
 	private void handleInput() {
 		float x_axis = 0.0f;
 		float y_axis = 0.0f;
-		boolean accel = false;
+		float amp = 1.0f;
 		
 		if (game.hasController) {
-			if(game.controller.getButton(Ps4Controller.CROSS)) {
+			if(game.controller.getButton(game.PAD_BOOST)) {
 				game.ship.accelerate(1.0f);
 				game.camera.autozoom = true;
 			}
@@ -224,42 +219,26 @@ public class ScreenInSpace implements Screen {
 				game.camera.zoom(0.95f);
 				game.camera.autozoom = false;
 			}
-			x_axis = game.controller.getAxis(Ps4Controller.LSTICK_X);
-			y_axis = game.controller.getAxis(Ps4Controller.LSTICK_Y);
-			if (Math.abs(x_axis) > 0.25)
-				game.ship.steer(-x_axis);
-		}
-
-		if (Gdx.input.isKeyPressed(Keys.P)) {
-			System.out.println("Screenshot");
-			byte[] pixels = ScreenUtils.getFrameBufferPixels(0, 0, Gdx.graphics.getBackBufferWidth(), Gdx.graphics.getBackBufferHeight(), true);
-
-			// this loop makes sure the whole screenshot is opaque and looks exactly like what the user is seeing
-			for(int i = 4; i < pixels.length; i += 4) {
-				pixels[i - 1] = (byte) 255;
+			
+			// Fire
+			if (game.controller.getButton(game.PAD_FIRE)) {
+				game.ship.fire(projectiles);
 			}
-
-			Pixmap pixmap = new Pixmap(Gdx.graphics.getBackBufferWidth(), Gdx.graphics.getBackBufferHeight(), Pixmap.Format.RGBA8888);
-			BufferUtils.copy(pixels, 0, pixmap.getPixels(), pixels.length);
-			PixmapIO.writePNG(Gdx.files.external("screenshot.png"), pixmap);
-			pixmap.dispose();
+			x_axis = game.controller.getAxis(game.PAD_XAXIS);
+			y_axis = -game.controller.getAxis(game.PAD_YAXIS);
 		}
 		
 		if (Gdx.input.isKeyPressed(Keys.UP)) {
 			y_axis += 1.0f;
-			accel = true;
 		}
 		if (Gdx.input.isKeyPressed(Keys.DOWN)) {
 			y_axis -= 1.0f;
-			accel = true;
 		}
 		if (Gdx.input.isKeyPressed(Keys.LEFT)) {
 			x_axis -= 1.0f;
-			accel = true;
 		}
 		if (Gdx.input.isKeyPressed(Keys.RIGHT)) {
 			x_axis += 1.0f;
-			accel = true;
 		}
 		
 		if (Gdx.input.isKeyPressed(Keys.A)) {
@@ -275,11 +254,29 @@ public class ScreenInSpace implements Screen {
 			game.ship.fire(projectiles);
 		}
 		
-		if (accel) {
-			float angle = game.ship.getAngleDiff(MathUtils.atan2(y_axis, x_axis));
-			float force = MathUtils.clamp(angle-game.ship.getAngularSpeed()*0.2f, -1.0f, 1.0f);
-			game.ship.steer(force);
-			game.ship.accelerate(1.0f-Math.abs(angle)/MathUtils.PI);
+		amp = (float) Math.sqrt(x_axis*x_axis + y_axis*y_axis);
+		if (amp > 1.0f)
+			amp = 1.0f;
+		// Calculate angle between ship angle and directional stick angle
+		float dAngle = game.ship.getAngleDiff(MathUtils.atan2(y_axis, x_axis));
+		float steering = 4.0f*dAngle-game.ship.getAngularSpeed();
+		game.ship.steer(steering*amp*amp);
+		game.ship.accelerate((1.0f-Math.abs(dAngle)/MathUtils.PI)*amp*amp);
+		
+		
+		if (Gdx.input.isKeyPressed(Keys.P)) {
+			System.out.println("Screenshot");
+			byte[] pixels = ScreenUtils.getFrameBufferPixels(0, 0, Gdx.graphics.getBackBufferWidth(), Gdx.graphics.getBackBufferHeight(), true);
+
+			// this loop makes sure the whole screenshot is opaque and looks exactly like what the user is seeing
+			for(int i = 4; i < pixels.length; i += 4) {
+				pixels[i - 1] = (byte) 255;
+			}
+
+			Pixmap pixmap = new Pixmap(Gdx.graphics.getBackBufferWidth(), Gdx.graphics.getBackBufferHeight(), Pixmap.Format.RGBA8888);
+			BufferUtils.copy(pixels, 0, pixmap.getPixels(), pixels.length);
+			PixmapIO.writePNG(Gdx.files.external("screenshot.png"), pixmap);
+			pixmap.dispose();
 		}
 	}
 }

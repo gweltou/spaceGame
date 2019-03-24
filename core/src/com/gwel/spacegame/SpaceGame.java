@@ -6,6 +6,7 @@ import com.badlogic.gdx.Game;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.controllers.Controller;
 import com.badlogic.gdx.controllers.Controllers;
+import com.badlogic.gdx.controllers.mappings.Xbox;
 import com.badlogic.gdx.files.FileHandle;
 import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.RandomXS128;
@@ -21,6 +22,7 @@ public class SpaceGame extends Game {
 	public MyRenderer renderer;
 	public Controller controller;
 	public boolean hasController;
+	public String controllerName;
 	
 	// GAME UNIVERSE VARIABLES
 	final static float UNIVERSE_SIZE = 100000.0f;
@@ -30,6 +32,12 @@ public class SpaceGame extends Game {
 	final static float exit_radius = GRAVITY_ACTIVE_RADIUS+200.0f;
 	public QuadTree Qt;
 	ArrayList<ArrayList<String>> godNames;
+	
+	// Controller Mapping
+	public int PAD_XAXIS;
+	public int PAD_YAXIS;
+	public int PAD_BOOST;
+	public int PAD_FIRE;
 	
 	public Spaceship ship;
 	
@@ -43,6 +51,21 @@ public class SpaceGame extends Game {
         else {
             controller = Controllers.getControllers().first();
             hasController = true;
+            controllerName = controller.getName();
+            System.out.println("Controller detected : " + controllerName);
+            if (Xbox.isXboxController(controller)) {
+            	System.out.println("Xbox Controller detected");
+            	PAD_XAXIS = Xbox.L_STICK_HORIZONTAL_AXIS;
+            	PAD_YAXIS = Xbox.L_STICK_VERTICAL_AXIS;
+            	PAD_BOOST = Xbox.A;
+            	PAD_FIRE = Xbox.R_TRIGGER;
+            } else if (controllerName.toLowerCase().contains("sony")) {
+            	// Sony Ps4 controller
+            	PAD_XAXIS = Ps4Controller.LSTICK_X;
+            	PAD_YAXIS = Ps4Controller.LSTICK_Y;
+            	PAD_BOOST = Ps4Controller.CROSS;
+            	PAD_FIRE = Ps4Controller.R2;
+            }
         }
 		
 		AABB universe_boundary = new AABB(new Vector2(0, 0), new Vector2(UNIVERSE_SIZE, UNIVERSE_SIZE));
@@ -90,6 +113,7 @@ public class SpaceGame extends Game {
 	void populateUniverse(QuadTree qt) {
 		long start_time = TimeUtils.millis();
 		int i=0;
+		RandomXS128 randGenerator = new RandomXS128();
 		while (i<NUMBER_PLANETS) {
 			Vector2 position = new Vector2(MathUtils.random(UNIVERSE_SIZE), MathUtils.random(UNIVERSE_SIZE));
 			float radius = MathUtils.random(Planet.MIN_RADIUS, Planet.MAX_RADIUS);
@@ -108,7 +132,7 @@ public class SpaceGame extends Game {
 				}
 			}
 			if (empty) {
-				Planet new_planet = new Planet(position, radius, i);
+				Planet new_planet = new Planet(position, radius, randGenerator.nextLong());
 				qt.insert(new_planet);
 				i += 1;
 			}

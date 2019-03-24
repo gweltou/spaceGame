@@ -16,8 +16,8 @@ import com.gwel.spacegame.utils;
 
 
 public class Spaceship implements MovingObject {
-	public final float MAX_VEL = 50.0f;
-	public final float MAX_ANG_VEL = 6.0f;
+	public final float MAX_VEL = 20.0f;
+	public final float MAX_ANG_VEL = 4.0f;
 	private final float FIRE_COOLDOWN = 200.0f; // In milliseconds
 	
 	//public float speed_mag;
@@ -111,7 +111,7 @@ public class Spaceship implements MovingObject {
 	public void accelerate(float amount) {
 		Vector2 direction = new Vector2(1.0f, 1.0f);
 		direction.setAngleRad(getAngle());
-		push(direction.scl(amount*8.0f));
+		push(direction.scl(amount*4.0f));
 		float speed = getSpeed().len2();
 		if (speed > MAX_VEL) {
 			body.setLinearVelocity(getSpeed().limit(MAX_VEL));
@@ -229,6 +229,7 @@ public class Spaceship implements MovingObject {
 	}
 
 	public void render(MyRenderer renderer) {
+		//System.out.println(body.isAwake());
 		transform.idt();
 		transform.translate(getPosition());
 		transform.rotateRad(getAngle() + MathUtils.PI/2);
