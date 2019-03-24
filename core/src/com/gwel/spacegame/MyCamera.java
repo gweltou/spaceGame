@@ -13,6 +13,9 @@ public class MyCamera {
 	public int width;
 	public int height;
 	public Affine2 affine;
+	private float angle;
+	private float finalZoom;	// Camera continuously interpolates toward this values
+	private float finalAngle;
 
 	public float PPU = 10.0f ; // Pixel per game unit
 
@@ -22,6 +25,9 @@ public class MyCamera {
 		this.width = width;
 		this.height = height;
 		affine = new Affine2();
+		finalZoom = PPU;
+		angle = 0.0f;
+		finalAngle = 0.0f;
 	}
 
 	public Vector2 world_to_camera(Vector2 position) {
@@ -64,11 +70,19 @@ public class MyCamera {
 	}
 	
 	public void update() {
+		angle = MathUtils.lerp(angle, finalAngle, 0.02f);
 		// North and East directions are POSITIVE !
 		this.sw = new Vector2(center.x-width/(2.0f*PPU), center.y-height/(2.0f*PPU));
 		this.ne = new Vector2(center.x+width/(2.0f*PPU), center.y+height/(2.0f*PPU));
 		affine.idt();
+		
 		affine.scale(2.0f*PPU/width, 2.0f*PPU/height);
+		affine.rotateRad(angle);
 		affine.translate(-center.x, -center.y);
+		
+	}
+
+	public void rotateTo(float angleRad) {
+		finalAngle = angleRad;
 	}
 }

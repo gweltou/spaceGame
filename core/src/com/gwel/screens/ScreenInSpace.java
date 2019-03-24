@@ -63,6 +63,8 @@ public class ScreenInSpace implements Screen {
 	public void dispose() {
 		// This test case prevents the world from being destroyed during a step
 		if (destroy) {
+			System.out.println("Destroying space");
+			game.ship.dispose();	// Important, so the ship position and angle is saved
 			b2world.dispose();
 		} else {
 			destroy = true;
@@ -84,7 +86,7 @@ public class ScreenInSpace implements Screen {
 	@Override
 	public void render(float delta_time) {
 		if (destroy)
-			dispose();
+			dispose(); // doesn't work
 		
 		handleInput();
 
@@ -225,7 +227,7 @@ public class ScreenInSpace implements Screen {
 				game.ship.fire(projectiles);
 			}
 			x_axis = game.controller.getAxis(game.PAD_XAXIS);
-			y_axis = -game.controller.getAxis(game.PAD_YAXIS);
+			y_axis = game.PAD_YDIR * game.controller.getAxis(game.PAD_YAXIS);
 		}
 		
 		if (Gdx.input.isKeyPressed(Keys.UP)) {
@@ -257,6 +259,8 @@ public class ScreenInSpace implements Screen {
 		amp = (float) Math.sqrt(x_axis*x_axis + y_axis*y_axis);
 		if (amp > 1.0f)
 			amp = 1.0f;
+		//if (amp < 0.15)
+		//	amp = 0.0f;
 		// Calculate angle between ship angle and directional stick angle
 		float dAngle = game.ship.getAngleDiff(MathUtils.atan2(y_axis, x_axis));
 		float steering = 4.0f*dAngle-game.ship.getAngularSpeed();

@@ -36,10 +36,12 @@ public class SpaceGame extends Game {
 	// Controller Mapping
 	public int PAD_XAXIS;
 	public int PAD_YAXIS;
+	public float PAD_YDIR = 1f;
 	public int PAD_BOOST;
 	public int PAD_FIRE;
 	
 	public Spaceship ship;
+	private ScreenInSpace spaceScreen;
 	
 	
 	@Override
@@ -57,12 +59,14 @@ public class SpaceGame extends Game {
             	System.out.println("Xbox Controller detected");
             	PAD_XAXIS = Xbox.L_STICK_HORIZONTAL_AXIS;
             	PAD_YAXIS = Xbox.L_STICK_VERTICAL_AXIS;
+            	PAD_YDIR = -1.0f;
             	PAD_BOOST = Xbox.A;
             	PAD_FIRE = Xbox.R_TRIGGER;
             } else if (controllerName.toLowerCase().contains("sony")) {
             	// Sony Ps4 controller
             	PAD_XAXIS = Ps4Controller.LSTICK_X;
             	PAD_YAXIS = Ps4Controller.LSTICK_Y;
+            	PAD_YDIR = -1.0f;
             	PAD_BOOST = Ps4Controller.CROSS;
             	PAD_FIRE = Ps4Controller.R2;
             }
@@ -82,7 +86,8 @@ public class SpaceGame extends Game {
 		
 		ship = new Spaceship(universeCenter);
 		
-		setScreen(new ScreenInSpace(this));
+		spaceScreen = new ScreenInSpace(this);
+		setScreen(spaceScreen);
 	}
 
 	@Override
@@ -104,10 +109,15 @@ public class SpaceGame extends Game {
 	}
 
 	void land(Planet p) {
+		// Don't dispose of spaceScreen !
+		setScreen(new ScreenOnPlanet(this, p));
+	}
+	
+	public void takeOff() {
 		if (getScreen() != null) {
 			getScreen().dispose();
 		}
-		setScreen(new ScreenOnPlanet(this, p));
+		setScreen(spaceScreen);
 	}
 	
 	void populateUniverse(QuadTree qt) {

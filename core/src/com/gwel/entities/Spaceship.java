@@ -97,7 +97,7 @@ public class Spaceship implements MovingObject {
 
 	@Override
 	public void push(Vector2 force) {
-		body.applyForceToCenter(force, true);
+		body.applyForceToCenter(force, false);
 	}
 	
 	public void steer(float amount) {
@@ -140,6 +140,7 @@ public class Spaceship implements MovingObject {
 		bodyDef.type = BodyType.DynamicBody;
 		bodyDef.position.set(position);
 		bodyDef.angle = angle;
+		bodyDef.allowSleep = true;
 		body = world.createBody(bodyDef);
 		body.setUserData(this);
 		
@@ -229,7 +230,8 @@ public class Spaceship implements MovingObject {
 	}
 
 	public void render(MyRenderer renderer) {
-		//System.out.println(body.isAwake());
+		if (!body.isAwake())
+			System.out.println("sleeping");
 		transform.idt();
 		transform.translate(getPosition());
 		transform.rotateRad(getAngle() + MathUtils.PI/2);
@@ -252,5 +254,7 @@ public class Spaceship implements MovingObject {
 		body.getWorld().destroyBody(body);
 		body = null;
 		disposable = true;
+		System.out.println("ship disposed");
+		System.out.println(getPosition());
 	}
 }

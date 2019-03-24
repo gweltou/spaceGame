@@ -38,7 +38,7 @@ public class Planet {
 		sat_radius = new float[n_sat];
 		sat_color = new Color[n_sat];
 		for (int i=0; i<n_sat; i++) {
-			sat_orbit[i] = MathUtils.random(radius+Satellite.MAX_RADIUS+2.0f, radius*2);
+			sat_orbit[i] = MathUtils.random(radius+Satellite.MAX_RADIUS+5.0f, radius*2+Satellite.MAX_RADIUS);
 			sat_radius[i] = MathUtils.random(Satellite.MIN_RADIUS, Satellite.MAX_RADIUS);
 			sat_color[i] = new Color(MathUtils.random(), MathUtils.random(), MathUtils.random(), 1.0f);
 		}
@@ -56,8 +56,8 @@ public class Planet {
 		circle.setRadius(radius);
 		FixtureDef fixtureDef = new FixtureDef();
 		fixtureDef.shape = circle;
-		fixtureDef.friction = 0.4f;
-		fixtureDef.restitution = 0.6f;
+		fixtureDef.friction = 0.6f;
+		fixtureDef.restitution = 0.4f;
 		Fixture fixture = body.createFixture(fixtureDef);
 		fixture.setUserData("Planet");
 		circle.dispose();
