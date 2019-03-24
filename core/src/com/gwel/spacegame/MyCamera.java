@@ -75,11 +75,9 @@ public class MyCamera {
 		this.sw = new Vector2(center.x-width/(2.0f*PPU), center.y-height/(2.0f*PPU));
 		this.ne = new Vector2(center.x+width/(2.0f*PPU), center.y+height/(2.0f*PPU));
 		affine.idt();
-		
 		affine.scale(2.0f*PPU/width, 2.0f*PPU/height);
 		affine.rotateRad(angle);
 		affine.translate(-center.x, -center.y);
-		
 	}
 
 	public void rotateTo(float angleRad) {

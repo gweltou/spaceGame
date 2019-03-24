@@ -142,7 +142,6 @@ public class SpaceGame extends Game {
 			if (empty) {
 				Planet new_planet = new Planet(position, radius, randGenerator.nextLong());
 				qt.insert(new_planet);
-				System.out.println(getPlanetName(new_planet.seed));
 				i += 1;
 			}
 		}
@@ -151,7 +150,8 @@ public class SpaceGame extends Game {
 	}
 	
 	void loadGodNames() {
-		String[] god_files = {"albanian", "celts", "egyptian", "greek", "hindu", "japanese", "mesopotamian", "norse", "roman"};
+		String[] god_files = {"albanian", "celts", "egyptian", "greek", "hindu",
+				"japanese", "mesopotamian", "norse", "roman", "dedicaces"};
 		
 		long start_time = TimeUtils.millis();
 		int num = 0;

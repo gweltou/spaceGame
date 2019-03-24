@@ -188,7 +188,6 @@ public class MyRenderer {
 
 	/** Draws a circle using {@link ShapeType#Line} or {@link ShapeType#Filled}. */
 	public void circle (Vector2 pos, float radius, int segments) {
-		//System.out.println("Rendering circle");
 		if (segments <= 0) throw new IllegalArgumentException("segments must be > 0.");
 		//float colorBits = color.toFloatBits();
 		float angle = 2 * MathUtils.PI / segments;
