@@ -13,7 +13,7 @@ public class Planet {
 	public static final float MAX_RADIUS = 100.0f;
 	static final int MAX_SAT = 5;
 	
-	private long seed;
+	public long seed;
 	private Body body;
 	public Vector2 position;
 	private float mass;

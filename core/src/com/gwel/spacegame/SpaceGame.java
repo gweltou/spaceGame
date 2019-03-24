@@ -46,8 +46,6 @@ public class SpaceGame extends Game {
 	
 	@Override
 	public void create () {
-		//gameState = new GameState();
-		
 		if(Controllers.getControllers().size == 0)
             hasController = false;
         else {
@@ -72,11 +70,11 @@ public class SpaceGame extends Game {
             }
         }
 		
+		godNames = new ArrayList<ArrayList<String>>();
+		loadGodNames();
 		AABB universe_boundary = new AABB(new Vector2(0, 0), new Vector2(UNIVERSE_SIZE, UNIVERSE_SIZE));
 		Qt = new QuadTree(universe_boundary);
 		populateUniverse(Qt);
-		godNames = new ArrayList<ArrayList<String>>();
-		loadGodNames();
 		
 		Vector2 universeCenter = new Vector2(UNIVERSE_SIZE/2, UNIVERSE_SIZE/2);
 		camera = new MyCamera(Gdx.graphics.getWidth(),Gdx.graphics.getHeight());
@@ -144,6 +142,7 @@ public class SpaceGame extends Game {
 			if (empty) {
 				Planet new_planet = new Planet(position, radius, randGenerator.nextLong());
 				qt.insert(new_planet);
+				System.out.println(getPlanetName(new_planet.seed));
 				i += 1;
 			}
 		}
@@ -193,16 +192,65 @@ public class SpaceGame extends Game {
 			}
 			r -= prob;
 		}
-		
-		
+
+		// Add something at the beginning
+		if (generator.nextFloat() < 0.1) {
+			// Add a sci-fi number to the end
+			String str = null;
+			r = generator.nextFloat();
+			if (r < 0.6f) {
+				String greekChars = "αβγδεζηθλμξπρΣστυφχψΩω";
+				char c = greekChars.charAt(generator.nextInt(greekChars.length()));
+				str = String.valueOf(c) + "-";
+			} else if (r < 0.8f) {
+				str = "World of ";
+			} else if (r < 0.9f) {
+				str = "New ";
+			} else {
+				str = "Neo-";
+			}
+			name = str.concat(name);
+		}
+
+		// Add something in the end
 		if (generator.nextFloat() < 0.2) {
-			// Add a sci-fi number
-			int i = generator.nextInt(1000);
-			String str = " ";
-			str = str.concat(String.valueOf(i));
+			String[] romanNums = {"II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X", "XI", "XII", "XIII", "XIV", "XV"};
+			String str = null;
+			r = generator.nextFloat();
+			if (r < 0.1f) {
+				str = "'s Colony";
+			} else if (r < 0.2f) {
+				str  = " Minor";
+			} else if (r < 0.3f) {
+				str  = " Major";
+			} else if (r < 0.6f) {
+				// Roman numerals
+				str = " " + romanNums[generator.nextInt(romanNums.length)];
+			} else {
+				// Add a sci-fi number to the end
+				int i = generator.nextInt(1000);
+				r = generator.nextFloat();
+				if (r < 0.2f) {
+					str = " " + String.valueOf(i);
+				} else if (r < 0.4f) {
+					str = " " + String.valueOf((char) (generator.nextInt(26) + 'A')) + String.valueOf(i);
+				} else if (r < 0.6f) {
+					str = " " + String.valueOf((char) (generator.nextInt(26) + 'A')) + "-" + String.valueOf(i);
+				} else if (r < 0.8f) {
+					str = " " +
+							String.valueOf((char) (generator.nextInt(26) + 'A')) +
+							String.valueOf((char) (generator.nextInt(26) + 'A')) +
+							String.valueOf(i);
+				} else {
+					str = " " +
+							String.valueOf((char) (generator.nextInt(26) + 'A')) +
+							String.valueOf((char) (generator.nextInt(26) + 'A')) +
+							"-" +
+							String.valueOf(i);
+				}
+			}
 			name = name.concat(str);
 		}
-		
 		return name;
 	}
 }
