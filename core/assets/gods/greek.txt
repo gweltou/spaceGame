@@ -4,7 +4,7 @@ Acastus
 Aceso
 Achelois
 Achelous
-Acheron (Αχέρων)
+Acherons
 Achilles
 Achlys
 Achos
@@ -213,7 +213,7 @@ Celeus
 Centaurs
 Cephalus
 Cepheus
-Cephisso (Κεφισσώ)
+Cephisso
 Ceraon
 Cerberus
 Cercope
