@@ -11,16 +11,21 @@ public class Starfield {
 	int width, height;
 	Vector3[] stars;
 	Matrix4 transform;
+	private float speedScale;
+	private float sizeScale;
 
-	public Starfield(int width, int height) {
+	public Starfield(int width, int height, float density, float speedScale, float sizeScale) {
 		this.width = width;
 		this.height = height;
-		nStars = width*height/400;
+		this.speedScale = speedScale;
+		this.sizeScale = sizeScale;
+		nStars = (int) (width*height*density);
 		stars = new Vector3[nStars];
 		for (int i=0; i<nStars; i++) {
 			float x = MathUtils.random(width);
 			float y = MathUtils.random(height);
-			float z = (MathUtils.log(10, MathUtils.random(0.1f, 1))+3)*33; // logarithmic distribution on z axis
+			float z = MathUtils.random();
+			//float z = (MathUtils.log(10, MathUtils.random(0.1f, 1))+3)*33; // logarithmic distribution on z axis
 			stars[i] = new Vector3(x, y, z);
 		}
 		transform = new Matrix4().idt();
@@ -30,7 +35,7 @@ public class Starfield {
 	
 	public void update(Vector2 travelling) {
 		for (int i=0; i<nStars; i++) {
-			stars[i].sub(60*travelling.x/stars[i].z, 60*travelling.y/stars[i].z, 0.0f);
+			stars[i].sub(stars[i].z*travelling.x*speedScale*speedScale, stars[i].z*travelling.y*speedScale*speedScale, 0.0f);
 			if (stars[i].x > width)
 				stars[i].x -= width;
 			if (stars[i].x < 0)
@@ -43,14 +48,14 @@ public class Starfield {
 	}
 
 	public void render(MyRenderer renderer) {
-		renderer.setColor(0.2f, 0.2f, 0.2f, 0.5f);
 		renderer.setProjectionMatrix(transform);
-		float dh = (float) (1.0f*Math.sqrt(renderer.camera.PPU));	// Width
-		float dv = (float) (0.5f*Math.sqrt(renderer.camera.PPU));	// Height
+		float dh = (float) (1.0f*Math.sqrt(renderer.camera.PPU)*sizeScale*sizeScale);	// Width
+		float dv = (float) (0.5f*Math.sqrt(renderer.camera.PPU)*sizeScale*sizeScale);	// Height
 		
 		for (int i=0; i<nStars; i++) {
-			float dx = dh * (stars[i].z-100)/30;
-			float dy = dv * (stars[i].z-100)/30;
+			renderer.setColor(0.2f, 0.2f, 0.2f, 1f-stars[i].z);
+			float dx = dh * (stars[i].z)/1;
+			float dy = dv * (stars[i].z)/1;
 			renderer.triangle(stars[i].x-dx, stars[i].y-dy, stars[i].x, stars[i].y+dx, stars[i].x+dx, stars[i].y-dy);
 			renderer.triangle(stars[i].x-dx, stars[i].y+dy, stars[i].x, stars[i].y-dx, stars[i].x+dx, stars[i].y+dy);
 		}

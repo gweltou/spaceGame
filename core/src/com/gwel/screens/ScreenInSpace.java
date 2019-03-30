@@ -40,6 +40,7 @@ public class ScreenInSpace implements Screen {
 	
 	private ShipTail tail1, tail2;
 	private Starfield starfield;
+	private Starfield deepfield;
 
 	
 	public ScreenInSpace(final SpaceGame game) {
@@ -50,7 +51,8 @@ public class ScreenInSpace implements Screen {
 		b2world = new World(new Vector2(0.0f, 0.0f), true);
 		b2world.setContactListener(new MyContactListener(game));
 		
-		starfield = new Starfield(Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
+		//starfield = new Starfield(Gdx.graphics.getWidth(), Gdx.graphics.getHeight(), 0.001f, 1.0f, 1.0f);
+		//deepfield = new Starfield(Gdx.graphics.getWidth(), Gdx.graphics.getHeight(), 0.01f, 0.1f, 0.5f);
 		
 		game.ship.initBody(b2world);
 		
@@ -149,6 +151,7 @@ public class ScreenInSpace implements Screen {
 		tail1.update();
 		tail2.update();
 		starfield.update(game.camera.getTravelling());
+		deepfield.update(game.camera.getTravelling());
 		
 		//  Camera update
 		game.camera.glideTo(game.ship.getPosition());
@@ -165,6 +168,7 @@ public class ScreenInSpace implements Screen {
 		Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
 		
 		starfield.render(game.renderer);
+		deepfield.render(game.renderer);
 		
 		game.renderer.setProjectionMatrix(new Matrix4().set(game.camera.affine));
 		for (Planet p : game.Qt.query(camera_range)) {
@@ -191,7 +195,8 @@ public class ScreenInSpace implements Screen {
 
 	@Override
 	public void resize(int width, int height) {
-		starfield = new Starfield(width, height);
+		starfield = new Starfield(Gdx.graphics.getWidth(), Gdx.graphics.getHeight(), 0.0001f, 0.9f, 1.6f);
+		deepfield = new Starfield(Gdx.graphics.getWidth(), Gdx.graphics.getHeight(), 0.004f, 0.08f, 0.8f);
 	}
 
 	@Override

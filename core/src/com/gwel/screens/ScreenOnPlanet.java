@@ -55,7 +55,7 @@ public class ScreenOnPlanet implements Screen {
 		game.camera.update();
 
 		game.renderer.setProjectionMatrix(new Matrix4().set(game.camera.affine));
-		Gdx.gl.glClearColor(0.6f, 0.6f, 0.6f, 1);
+		Gdx.gl.glClearColor(0.2f, 1f, 0.9f, 1f);
 		Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
 		game.ship.render(game.renderer);
 		planet.render(game.renderer);
