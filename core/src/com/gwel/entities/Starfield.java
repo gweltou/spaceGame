@@ -30,7 +30,7 @@ public class Starfield {
 	
 	public void update(Vector2 travelling) {
 		for (int i=0; i<nStars; i++) {
-			stars[i].sub(32*travelling.x/stars[i].z, 32*travelling.y/stars[i].z, 0.0f);
+			stars[i].sub(60*travelling.x/stars[i].z, 60*travelling.y/stars[i].z, 0.0f);
 			if (stars[i].x > width)
 				stars[i].x -= width;
 			if (stars[i].x < 0)
@@ -43,12 +43,14 @@ public class Starfield {
 	}
 
 	public void render(MyRenderer renderer) {
-		renderer.setColor(0.4f, 0.5f, 0.0f, 0.6f);
+		renderer.setColor(0.2f, 0.2f, 0.2f, 0.5f);
 		renderer.setProjectionMatrix(transform);
-		float dx = (float) (1.0f*Math.sqrt(renderer.camera.PPU));	// Width
-		float dy = (float) (0.5f*Math.sqrt(renderer.camera.PPU));	// Height
+		float dh = (float) (1.0f*Math.sqrt(renderer.camera.PPU));	// Width
+		float dv = (float) (0.5f*Math.sqrt(renderer.camera.PPU));	// Height
 		
 		for (int i=0; i<nStars; i++) {
+			float dx = dh * (stars[i].z-100)/30;
+			float dy = dv * (stars[i].z-100)/30;
 			renderer.triangle(stars[i].x-dx, stars[i].y-dy, stars[i].x, stars[i].y+dx, stars[i].x+dx, stars[i].y-dy);
 			renderer.triangle(stars[i].x-dx, stars[i].y+dy, stars[i].x, stars[i].y-dx, stars[i].x+dx, stars[i].y+dy);
 		}
