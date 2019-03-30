@@ -7,6 +7,7 @@ import com.badlogic.gdx.graphics.Mesh;
 import com.badlogic.gdx.graphics.VertexAttribute;
 import com.badlogic.gdx.graphics.VertexAttributes.Usage;
 import com.badlogic.gdx.graphics.glutils.ShaderProgram;
+import com.badlogic.gdx.math.Affine2;
 import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Matrix4;
 import com.badlogic.gdx.math.Vector2;
@@ -56,20 +57,23 @@ public class MyRenderer {
 	public static final int MAX_TRIS = 2048;
 
 	//The maximum number of vertices our mesh will hold
-	public static final int MAX_VERTS = MAX_TRIS * 3;
+	//public static final int MAX_VERTS = MAX_TRIS * 3;
 
 	//The array which holds all the data, interleaved like so:
 	//    x, y, r, g, b, a
 	//    x, y, r, g, b, a, 
 	//    x, y, r, g, b, a, 
 	//    ... etc ...
-	private float[] verts = new float[MAX_VERTS * NUM_COMPONENTS];
+	private float[] verts_triangle = new float[3*MAX_TRIS * NUM_COMPONENTS];
+	private float[] verts_trianglestrip = new float[2*MAX_TRIS * NUM_COMPONENTS];
 
 	//The index position
-	private int idx;
+	private int idx_triangle;
+	private int idx_trianglestrip;
 	
 	public MyCamera camera;
-	private Mesh mesh;
+	private Mesh meshTriangles;
+	private Mesh meshTrianglestrip;
 	private ShaderProgram shader;
 	private Color col;
 	private Matrix4 projMatrix;
@@ -77,8 +81,12 @@ public class MyRenderer {
 	
 	public MyRenderer(MyCamera camera) {
 		this.camera = camera;
-		idx = 0;
-		mesh = new Mesh(true, MAX_VERTS, 0, 
+		idx_triangle = 0;
+		idx_trianglestrip = 0;
+		meshTriangles = new Mesh(true, 3*MAX_TRIS, 0, 
+				new VertexAttribute(Usage.Position, POSITION_COMPONENTS, "a_position"),
+				new VertexAttribute(Usage.ColorUnpacked, COLOR_COMPONENTS, "a_color"));
+		meshTrianglestrip = new Mesh(true, 2*MAX_TRIS, 0, 
 				new VertexAttribute(Usage.Position, POSITION_COMPONENTS, "a_position"),
 				new VertexAttribute(Usage.ColorUnpacked, COLOR_COMPONENTS, "a_color"));
 		shader = createMeshShader();
@@ -109,107 +117,259 @@ public class MyRenderer {
 	public void triangle(float x1, float y1, float x2, float y2, float x3, float y3, Color color) {
 		//we don't want to hit any index out of bounds exception...
 		//so we need to flush the batch if we can't store any more verts
-		if (idx==verts.length)
+		if (idx_triangle==verts_triangle.length)
 			flush();
 
 		//now we push the vertex data into our array
 		//we are assuming (0, 0) is lower left, and Y is up
 
 		//bottom left vertex
-		verts[idx++] = x1; 			//Position(x, y) 
-		verts[idx++] = y1;
-		verts[idx++] = color.r; 	//Color(r, g, b, a)
-		verts[idx++] = color.g;
-		verts[idx++] = color.b;
-		verts[idx++] = color.a;
+		verts_triangle[idx_triangle++] = x1; 			//Position(x, y) 
+		verts_triangle[idx_triangle++] = y1;
+		verts_triangle[idx_triangle++] = color.r; 	//Color(r, g, b, a)
+		verts_triangle[idx_triangle++] = color.g;
+		verts_triangle[idx_triangle++] = color.b;
+		verts_triangle[idx_triangle++] = color.a;
 
 		//top left vertex
-		verts[idx++] = x2; 			//Position(x, y) 
-		verts[idx++] = y2 ;
-		verts[idx++] = color.r; 	//Color(r, g, b, a)
-		verts[idx++] = color.g;
-		verts[idx++] = color.b;
-		verts[idx++] = color.a;
+		verts_triangle[idx_triangle++] = x2; 			//Position(x, y) 
+		verts_triangle[idx_triangle++] = y2 ;
+		verts_triangle[idx_triangle++] = color.r; 	//Color(r, g, b, a)
+		verts_triangle[idx_triangle++] = color.g;
+		verts_triangle[idx_triangle++] = color.b;
+		verts_triangle[idx_triangle++] = color.a;
 
 		//bottom right vertex
-		verts[idx++] = x3;	 //Position(x, y) 
-		verts[idx++] = y3;
-		verts[idx++] = color.r;		 //Color(r, g, b, a)
-		verts[idx++] = color.g;
-		verts[idx++] = color.b;
-		verts[idx++] = color.a;
+		verts_triangle[idx_triangle++] = x3;	 //Position(x, y) 
+		verts_triangle[idx_triangle++] = y3;
+		verts_triangle[idx_triangle++] = color.r;		 //Color(r, g, b, a)
+		verts_triangle[idx_triangle++] = color.g;
+		verts_triangle[idx_triangle++] = color.b;
+		verts_triangle[idx_triangle++] = color.a;
+	}
+	
+	public void triangleStrip(double x1, double y1, double x2, double y2) {
+		triangleStrip(x1, y1, x2, y2, col);
+	}
+	
+	private void triangleStrip(double x1, double y1, double x2, double y2, Color color) {
+		if (idx_trianglestrip==verts_trianglestrip.length)
+			flush();
+
+		verts_trianglestrip[idx_trianglestrip++] = (float) x1; 			//Position(x, y) 
+		verts_trianglestrip[idx_trianglestrip++] = (float) y1;
+		verts_trianglestrip[idx_trianglestrip++] = color.r; 	//Color(r, g, b, a)
+		verts_trianglestrip[idx_trianglestrip++] = color.g;
+		verts_trianglestrip[idx_trianglestrip++] = color.b;
+		verts_trianglestrip[idx_trianglestrip++] = color.a;
+
+		verts_trianglestrip[idx_trianglestrip++] = (float) x2; 			//Position(x, y) 
+		verts_trianglestrip[idx_trianglestrip++] = (float) y2 ;
+		verts_trianglestrip[idx_trianglestrip++] = color.r; 	//Color(r, g, b, a)
+		verts_trianglestrip[idx_trianglestrip++] = color.g;
+		verts_trianglestrip[idx_trianglestrip++] = color.b;
+		verts_trianglestrip[idx_trianglestrip++] = color.a;
 	}
 	
 	public void flush() {
-		//System.out.println("Renderer flushing");
-		//if we've already flushed
-		if (idx==0)
-			return;
+		//if we've not already flushed
+		if (idx_triangle>0 || idx_trianglestrip>0) {
+			//no need for depth...
+			Gdx.gl.glDepthMask(false);
 
-		//sends our vertex data to the mesh
-		mesh.setVertices(verts);
+			//enable blending, for alpha
+			Gdx.gl.glEnable(GL20.GL_BLEND);
+			Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA);
 
-		//no need for depth...
-		Gdx.gl.glDepthMask(false);
+			shader.begin();
+			shader.setUniformMatrix("u_projTrans", projMatrix);
+			if (idx_triangle>0) {
+				//number of vertices we need to render
+				int vertexCount = (idx_triangle/NUM_COMPONENTS);
+				meshTriangles.setVertices(verts_triangle);
+				meshTriangles.render(shader, GL20.GL_TRIANGLES, 0, vertexCount);
+				//reset index to zero
+				idx_triangle = 0;
+			}
+			if (idx_trianglestrip>0) {
+				System.out.println(idx_trianglestrip);
+				int vertexCount = (idx_trianglestrip/NUM_COMPONENTS);
+				meshTrianglestrip.setVertices(verts_trianglestrip);
+				meshTrianglestrip.render(shader, GL20.GL_TRIANGLE_STRIP, 0, vertexCount);
+				System.out.println("end");
+				idx_trianglestrip = 0;
+			}
+			shader.end();
 
-		//enable blending, for alpha
-		Gdx.gl.glEnable(GL20.GL_BLEND);
-		Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA);
-
-		//number of vertices we need to render
-		int vertexCount = (idx/NUM_COMPONENTS);
-
-		//start the shader before setting any uniforms
-		shader.begin();
-
-		//update the projection matrix so our triangles are rendered in 2D
-		shader.setUniformMatrix("u_projTrans", projMatrix);
-		
-		//render the mesh
-		mesh.render(shader, GL20.GL_TRIANGLES, 0, vertexCount);
-
-		shader.end();
-
-		//re-enable depth to reset states to their default
-		Gdx.gl.glDepthMask(true);
-
-		//reset index to zero
-		idx = 0;
+			//re-enable depth to reset states to their default
+			Gdx.gl.glDepthMask(true);
+		}
 	}
 	
 	public void dispose() {
-		mesh.dispose();
+		meshTriangles.dispose();
+		meshTrianglestrip.dispose();
 	}
 
 	/** Calls circle(Vector2, float, int)} by estimating the number of segments needed for a smooth circle. */
 	public void circle (Vector2 pos, float radius) {
-		circle(pos, radius, Math.max(1, (int)(6 * (float)Math.cbrt(radius*camera.PPU))));
+		circle(pos, radius, Math.max(1,  ((int) Math.sqrt(radius*camera.PPU))<<2 ));
 	}
 
 	/** Draws a circle using {@link ShapeType#Line} or {@link ShapeType#Filled}. */
-	public void circle (Vector2 pos, float radius, int segments) {
+	public void circle (Vector2 pos, final float radius, final int segments) {
 		if (segments <= 0) throw new IllegalArgumentException("segments must be > 0.");
 		//float colorBits = color.toFloatBits();
-		float angle = 2 * MathUtils.PI / segments;
-		float cos = MathUtils.cos(angle);
-		float sin = MathUtils.sin(angle);
-		float cx = radius, cy = 0;
-		Vector2 p1 = new Vector2();
-		Vector2 p2 = new Vector2();
-		segments--;
-		for (int i = 0; i < segments; i++) {
-			p1.set(pos.x + cx, pos.y + cy);
-			float temp = cx;
-			cx = cos * cx - sin * cy;
-			cy = sin * temp + cos * cy;
-			p2.set(pos.x + cx, pos.y + cy);
-			triangle(pos, p1, p2);
-		}
-		// Ensure the last segment is identical to the first.
 		
-		p1.set(pos.x + cx, pos.y + cy);
-		p2.set(pos.x + radius, pos.y);
-		triangle(pos, p1, p2);
+		//   6  |  7  |  8
+		// -----|-----|-----
+		//   4  | V.P |  5 
+		// -----|-----|-----
+		//   1  |  2  |  3
+		
+		//System.out.println(segments);
+		float angle = 2 * MathUtils.PI / segments;
+		double cos = Math.cos(angle);
+		double sin = Math.sin(angle);
+		Vector2 rotated = pos.cpy();
+		rotated.sub(camera.center);
+		rotated.rotate(-camera.angle);
+		rotated.add(camera.center);
+		if (rotated.x < camera.sw.x) {
+			// Circle center is outside the viewport, on the left
+			if (rotated.y < camera.sw.y) {
+				// Case 1
+				// Circle center is outside the viewport, on the bottom-left corner
+				double cx = radius;
+				double cy = 0;
+				// Draw a quarter circle only
+				for (int i=0; i<segments/4; i++) {
+					double newX = cx*cos - cy*sin;
+					double newY = cx*sin + cy*cos;
+					//triangleStrip(x+pos.x, camera.sw.y, newX+pos.x, newY+pos.y);
+					triangle(pos.x, pos.y,(float) cx+pos.x,(float) cy+pos.y,(float) newX+pos.x,(float) newY+pos.y);
+					cx = newX;
+					cy = newY;
+				}
+			} else if (rotated.y > camera.ne.y) {
+				// Case 6
+				// Circle center is outside the viewport, on the top-left corner
+				double cx = 0;
+				double cy = -radius;
+				// Draw a quarter circle only
+				for (int i=0; i<segments/4; i++) {
+					double newX = cx*cos - cy*sin;
+					double newY = cx*sin + cy*cos;
+					//triangleStrip(x+pos.x, camera.sw.y, newX+pos.x, newY+pos.y);
+					triangle(pos.x, pos.y,(float) cx+pos.x,(float) cy+pos.y,(float) newX+pos.x,(float) newY+pos.y);
+					cx = newX;
+					cy = newY;
+				}
+			} else {
+				// Case 4
+				// Circle center is outside the viewport, on the left side
+				double cx = 0;
+				double cy = -radius;
+				// Draw a half circle only
+				for (int i=0; i<segments/2; i++) {
+					double newX = cx*cos - cy*sin;
+					double newY = cx*sin + cy*cos;
+					//triangleStrip(x+pos.x, camera.sw.y, newX+pos.x, newY+pos.y);
+					triangle(pos.x, pos.y,(float) cx+pos.x,(float) cy+pos.y,(float) newX+pos.x,(float) newY+pos.y);
+					cx = newX;
+					cy = newY;
+				}
+			}
+		} else if (rotated.x > camera.ne.x) {
+			// Circle center is outside the viewport, on the right
+			if (rotated.y < camera.sw.y) {
+				// Case 3
+				// Circle center is outside the viewport, on the bottom-right corner
+				double x = 0;
+				double y = radius;
+				// Draw a quarter circle only
+				for (int i=0; i<segments/4; i++) {
+					double newX = x*cos - y*sin;
+					double newY = x*sin + y*cos;
+					//triangleStrip(x+pos.x, camera.sw.y, newX+pos.x, newY+pos.y);
+					triangle(pos.x, pos.y,(float) x+pos.x,(float) y+pos.y,(float) newX+pos.x,(float) newY+pos.y);
+					x = newX;
+					y = newY;
+				}
+			} else if (rotated.y > camera.ne.y) {
+				// Case 8
+				// Circle center is outside the viewport, on the top-right corner
+				double cx = -radius;
+				double cy = 0;
+				// Draw a quarter circle only
+				for (int i=0; i<segments/4; i++) {
+					double newX = cx*cos - cy*sin;
+					double newY = cx*sin + cy*cos;
+					//triangleStrip(x+pos.x, camera.sw.y, newX+pos.x, newY+pos.y);
+					triangle(pos.x, pos.y,(float) cx+pos.x,(float) cy+pos.y,(float) newX+pos.x,(float) newY+pos.y);
+					cx = newX;
+					cy = newY;
+				}
+			} else {
+				// Case 5
+				// Circle center is outside the viewport, on the right side
+				double cx = 0;
+				double cy = radius;
+				// Draw a half circle only
+				for (int i=0; i<segments/2; i++) {
+					double newX = cx*cos - cy*sin;
+					double newY = cx*sin + cy*cos;
+					//triangleStrip(x+pos.x, camera.sw.y, newX+pos.x, newY+pos.y);
+					triangle(pos.x, pos.y,(float) cx+pos.x,(float) cy+pos.y,(float) newX+pos.x,(float) newY+pos.y);
+					cx = newX;
+					cy = newY;
+				}
+			}
+		} else if (rotated.y < camera.sw.y) {
+			// Case 2
+			// Circle center is outside the viewport, under it
+			double cx = radius;
+			double cy = 0;
+			// Draw a half circle only
+			for (int i=0; i<segments/2; i++) {
+				double newX = cx*cos - cy*sin;
+				double newY = cx*sin + cy*cos;
+				//triangleStrip(x+pos.x, camera.sw.y, newX+pos.x, newY+pos.y);
+				triangle(pos.x, pos.y,(float) cx+pos.x,(float) cy+pos.y,(float) newX+pos.x,(float) newY+pos.y);
+				cx = newX;
+				cy = newY;
+			}
+		} else if (rotated.y > camera.ne.y) {
+			// Case 7
+			// Circle center is outside the viewport, above it
+			double cx = -radius;
+			double cy = 0;
+			// Draw a half circle only
+			for (int i=0; i<segments/2; i++) {
+				double newX = cx*cos - cy*sin;
+				double newY = cx*sin + cy*cos;
+				//triangleStrip(x+pos.x, camera.sw.y, newX+pos.x, newY+pos.y);
+				triangle(pos.x, pos.y,(float) cx+pos.x,(float) cy+pos.y,(float) newX+pos.x,(float) newY+pos.y);
+				cx = newX;
+				cy = newY;
+			}
+		} else {
+			// Case 0
+			// Circle center is in the viewport
+			double cx = radius;
+			double cy = 0;
+			double newX = 0;
+			double newY = 0;
+			for (int i = 0; i < segments-1; i++) {
+				newX = cos*cx - sin*cy;
+				newY = sin*cx + cos*cy;
+				triangle(pos.x, pos.y,(float) cx+pos.x,(float) cy+pos.y,(float) newX+pos.x,(float) newY+pos.y);
+				cx = newX;
+				cy = newY;
+			}
+			// Ensure the last segment is identical to the first.
+			triangle(pos.x, pos.y, (float) cx+pos.x,(float) cy+pos.y,(float) pos.x+radius, pos.y);
+		}
 	}
 
 	public void line(float x, float y, float x2, float y2) {

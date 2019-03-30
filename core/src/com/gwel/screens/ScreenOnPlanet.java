@@ -20,6 +20,7 @@ public class ScreenOnPlanet implements Screen {
 		this.game = game;
 		planet = p;
 		System.out.println("Switched to planet Screen");
+		System.out.println("Welcome to " + game.getPlanetName(planet.seed));
 		
 		Vector2 dPos = game.ship.getPosition().sub(planet.getPosition());
 		float cameraRotate = utils.wrapAngleAroundZero(MathUtils.PI*0.5f-dPos.angleRad());

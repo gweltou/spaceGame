@@ -13,7 +13,7 @@ public class MyCamera {
 	public int width;
 	public int height;
 	public Affine2 affine;
-	private float angle;
+	public float angle;
 	private float finalZoom;	// Camera continuously interpolates toward this values
 	private float finalAngle;
 
@@ -70,7 +70,7 @@ public class MyCamera {
 	}
 	
 	public void update() {
-		angle = MathUtils.lerp(angle, finalAngle, 0.02f);
+		angle = utils.wrapAngleAroundZero(MathUtils.lerp(angle, finalAngle, 0.02f));
 		// North and East directions are POSITIVE !
 		this.sw = new Vector2(center.x-width/(2.0f*PPU), center.y-height/(2.0f*PPU));
 		this.ne = new Vector2(center.x+width/(2.0f*PPU), center.y+height/(2.0f*PPU));
@@ -82,5 +82,10 @@ public class MyCamera {
 
 	public void rotateTo(float angleRad) {
 		finalAngle = angleRad;
+	}
+	
+	public boolean containsPoint(double x, double y) {
+		// North and East directions are POSITIVE !
+		return (x >= sw.x && x <= ne.x && y <= ne.y && y >= sw.y);
 	}
 }

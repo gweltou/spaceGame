@@ -140,7 +140,7 @@ public class Spaceship implements MovingObject {
 		bodyDef.type = BodyType.DynamicBody;
 		bodyDef.position.set(position);
 		bodyDef.angle = angle;
-		bodyDef.allowSleep = true;
+		//bodyDef.allowSleep = true;
 		body = world.createBody(bodyDef);
 		body.setUserData(this);
 		
@@ -230,8 +230,6 @@ public class Spaceship implements MovingObject {
 	}
 
 	public void render(MyRenderer renderer) {
-		if (!body.isAwake())
-			System.out.println("sleeping");
 		transform.idt();
 		transform.translate(getPosition());
 		transform.rotateRad(getAngle() + MathUtils.PI/2);

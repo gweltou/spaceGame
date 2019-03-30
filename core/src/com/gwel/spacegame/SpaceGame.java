@@ -174,7 +174,7 @@ public class SpaceGame extends Game {
 		System.out.println(TimeUtils.millis()-start_time);
 	}
 	
-	String getPlanetName(long seed) {
+	public String getPlanetName(long seed) {
 		RandomXS128 generator = new RandomXS128(seed);
 		int totNames = 0;
 		for (ArrayList<String> array: godNames) {
