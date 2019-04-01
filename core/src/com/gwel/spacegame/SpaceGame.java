@@ -15,9 +15,12 @@ import com.badlogic.gdx.utils.TimeUtils;
 import com.gwel.entities.*;
 import com.gwel.screens.ScreenInSpace;
 import com.gwel.screens.ScreenOnPlanet;
+import com.gwel.screens.ScreenTraining;
 
 
 public class SpaceGame extends Game {
+	final boolean TRAINING = true; 
+	
 	public MyCamera camera;
 	public MyRenderer renderer;
 	public Controller controller;
@@ -27,7 +30,6 @@ public class SpaceGame extends Game {
 	// GAME UNIVERSE VARIABLES
 	final static float UNIVERSE_SIZE = 100000.0f;
 	final static float GRAVITY_ACTIVE_RADIUS = 800.0f;
-	final static int NUMBER_PLANETS = 10000;
 	public final static float LOCAL_RADIUS = GRAVITY_ACTIVE_RADIUS;
 	final static float exit_radius = GRAVITY_ACTIVE_RADIUS+200.0f;
 	public QuadTree Qt;
@@ -69,6 +71,16 @@ public class SpaceGame extends Game {
             	PAD_FIRE = Ps4Controller.R2;
             }
         }
+		
+		if (TRAINING) {
+			camera = new MyCamera(Gdx.graphics.getWidth(),Gdx.graphics.getHeight());
+			camera.setCenter(new Vector2(0.0f, 0.0f));
+			camera.update();
+			renderer = new MyRenderer(camera);
+			System.out.println("training");
+			setScreen(new ScreenTraining(this));
+			return;
+		}
 		
 		godNames = new ArrayList<ArrayList<String>>();
 		loadGodNames();
@@ -122,12 +134,12 @@ public class SpaceGame extends Game {
 		long start_time = TimeUtils.millis();
 		int i=0;
 		RandomXS128 randGenerator = new RandomXS128();
-		while (i<NUMBER_PLANETS) {
+		while (i<Const.NUMBER_PLANETS) {
 			Vector2 position = new Vector2(MathUtils.random(UNIVERSE_SIZE), MathUtils.random(UNIVERSE_SIZE));
-			float radius = MathUtils.random(Planet.MIN_RADIUS, Planet.MAX_RADIUS);
+			float radius = MathUtils.random(Const.PLANET_MIN_RADIUS, Const.PLANET_MAX_RADIUS);
 
 			// Check if other planets are near this position
-			float min_dist = 3*Planet.MAX_RADIUS;
+			float min_dist = 3*Const.PLANET_MAX_RADIUS;
 			// North and East directions are POSITIVE !
 			AABB range = new AABB(position.cpy().sub(min_dist, min_dist),
 								  position.cpy().add(min_dist, min_dist));

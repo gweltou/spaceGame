@@ -7,7 +7,7 @@ import com.badlogic.gdx.physics.box2d.World;
 import com.gwel.spacegame.MyRenderer;
 
 public class Projectile {
-	private Spaceship parent;
+	private MovingObject parent;
 	public Vector2 position;
 	private Vector2 pPosition;
 	private Vector2 speed;
@@ -16,7 +16,7 @@ public class Projectile {
 	private float damage;
 	public boolean disposable;
 	
-	public Projectile(Spaceship parent, Vector2 pos, Vector2 speed, float damage) {
+	public Projectile(MovingObject parent, Vector2 pos, Vector2 speed, float damage) {
 		this.parent = parent;
 		disposable = false;
 		position = pos.cpy();

@@ -19,6 +19,7 @@ import com.badlogic.gdx.utils.BufferUtils;
 import com.badlogic.gdx.utils.ScreenUtils;
 import com.gwel.entities.*;
 import com.gwel.spacegame.AABB;
+import com.gwel.spacegame.Const;
 import com.gwel.spacegame.MyContactListener;
 import com.gwel.spacegame.SpaceGame;
 
@@ -50,9 +51,6 @@ public class ScreenInSpace implements Screen {
 		
 		b2world = new World(new Vector2(0.0f, 0.0f), true);
 		b2world.setContactListener(new MyContactListener(game));
-		
-		//starfield = new Starfield(Gdx.graphics.getWidth(), Gdx.graphics.getHeight(), 0.001f, 1.0f, 1.0f);
-		//deepfield = new Starfield(Gdx.graphics.getWidth(), Gdx.graphics.getHeight(), 0.01f, 0.1f, 0.5f);
 		
 		game.ship.initBody(b2world);
 		
@@ -103,7 +101,7 @@ public class ScreenInSpace implements Screen {
 		// Check for planets that newly entered the local zone
 		for (Planet pl : local_planets) {
 			if (!local_planets_prev.contains(pl)) {
-				pl.activate(b2world);
+				pl.initBody(b2world);
 				// Register its satellites
 				local_sats.addAll(pl.activateSatellites(b2world));
 			}
@@ -161,8 +159,8 @@ public class ScreenInSpace implements Screen {
 		
 		
 		// North and East directions are POSITIVE !
-		AABB camera_range = new AABB(game.camera.sw.cpy().sub(Planet.MAX_RADIUS, Planet.MAX_RADIUS), 
-				game.camera.ne.cpy().add(Planet.MAX_RADIUS, Planet.MAX_RADIUS));
+		AABB camera_range = new AABB(game.camera.sw.cpy().sub(Const.PLANET_MAX_RADIUS, Const.PLANET_MAX_RADIUS), 
+				game.camera.ne.cpy().add(Const.PLANET_MAX_RADIUS, Const.PLANET_MAX_RADIUS));
 		
 		Gdx.gl.glClearColor(0.96f, 0.96f, 0.96f, 1f);
 		Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);

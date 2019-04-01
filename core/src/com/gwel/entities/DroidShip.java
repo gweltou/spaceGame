@@ -1,6 +1,6 @@
 package com.gwel.entities;
 
-
+import java.util.Arrays;
 import java.util.LinkedList;
 
 import com.badlogic.gdx.Gdx;
@@ -8,26 +8,37 @@ import com.badlogic.gdx.files.FileHandle;
 import com.badlogic.gdx.math.Affine2;
 import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Vector2;
-import com.badlogic.gdx.physics.box2d.*;
+import com.badlogic.gdx.physics.box2d.Body;
+import com.badlogic.gdx.physics.box2d.BodyDef;
+import com.badlogic.gdx.physics.box2d.Fixture;
+import com.badlogic.gdx.physics.box2d.FixtureDef;
+import com.badlogic.gdx.physics.box2d.PolygonShape;
+import com.badlogic.gdx.physics.box2d.World;
 import com.badlogic.gdx.physics.box2d.BodyDef.BodyType;
 import com.badlogic.gdx.utils.TimeUtils;
+import com.gwel.spacegame.Enum;
 import com.gwel.spacegame.MyRenderer;
 import com.gwel.spacegame.utils;
-import com.gwel.spacegame.Enum;
 
+import ai.NeuralNetwork;
 
-public class Spaceship implements MovingObject {
+public class DroidShip implements MovingObject {
 	public final float MAX_VEL = 20.0f;
 	public final float MAX_ANG_VEL = 4.0f;
 	private final float FIRE_COOLDOWN = 200.0f; // In milliseconds
+	public final static float SIGHT_DISTANCE = 20.0f;
+	private final static int NN_INPUTS = 7;
 	
 	//public float speed_mag;
 	private Vector2 size = new Vector2(1.7f, 1.8f);  // Size of spaceship in game units
+	public float BOUNDING_SPHERE_RADIUS = size.y / 2.0f;
 	private float angle;
 	private Vector2 position;
+	private Vector2 pPosition;
 	
-	private float hitpoints;
+	public float hitpoints;
 	private long last_fire;
+	private float dstCounter = 0; // For NN training
 	
 	private Affine2 transform;
 	private float[][] triangles;
@@ -38,15 +49,20 @@ public class Spaceship implements MovingObject {
 	
 	private Body body;
 	public boolean disposable;
+	private NeuralNetwork nn;
+	private float[] nnInput;
+	private LinkedList<Projectile> projectiles;
 	
 	
-	public Spaceship(Vector2 pos) {
-		angle = (float) (Math.PI/2.0f); // Initially pointing up
-		position = pos;
+	public DroidShip(Vector2 position, float angle, LinkedList<Projectile> projectiles) {
+		this.angle = angle;
+		this.position = position;
+		this.projectiles = projectiles;
 		
 		transform = new Affine2();
 		vertices = new Vector2[4];
 		
+		nnInput = new float[NN_INPUTS];
 		hitpoints = 200.0f;
 		last_fire = TimeUtils.millis();
 		
@@ -54,8 +70,36 @@ public class Spaceship implements MovingObject {
 		disposable = false;
 	}
 
+	public void update() {
+		pPosition = position;
+		position = body.getPosition().cpy();
+		dstCounter += position.dst(pPosition);
+		
+		float[] output;
+		output = nn.feedforward(nnInput);
+		float max = -1.0f;
+		int maxIdx = 0;
+		for (int i=0; i<output.length; i++) {
+			if (output[i] > max) {
+				max = output[i];
+				maxIdx = i;
+			}
+		}
+		
+		switch (maxIdx) {
+			case 0: steer(1.0f);
+					break;
+			case 1:	steer(-1.0f);
+					break;
+			case 2: accelerate(1.0f);
+					break;
+			case 3:	fire(projectiles);
+					break;
+		}
+	}
+	
 	@Override
-	public Vector2 getPosition() {
+ 	public Vector2 getPosition() {
 		if (body != null)
 			return body.getPosition().cpy();
 		return position.cpy();
@@ -157,8 +201,125 @@ public class Spaceship implements MovingObject {
 		fixtureDef.filter.categoryBits = 0x0002;
 		
 		Fixture fixture = body.createFixture(fixtureDef);
-		fixture.setUserData(Enum.SHIP);
+		fixture.setUserData(Enum.DROID);
 		shape.dispose();
+		
+		// Create sensors
+		Vector2 sight = new Vector2(SIGHT_DISTANCE, 0f).rotateRad(MathUtils.PI/2f);
+		PolygonShape coneSensor = new PolygonShape();
+		Vector2[] verts = new Vector2[3];
+		verts[0] = new Vector2(0f ,0f);
+		
+		// Front sensor
+		verts[1] = sight.cpy().rotateRad(-MathUtils.PI/16f);
+		verts[2] = sight.cpy().rotateRad(MathUtils.PI/16f);
+		coneSensor.set(verts);
+		fixtureDef = new FixtureDef();
+		fixtureDef.shape = coneSensor;
+		fixtureDef.isSensor = true;
+		fixtureDef.filter.groupIndex = -1;
+		fixture = body.createFixture(fixtureDef);
+		fixture.setUserData(Enum.SENSOR_F);
+		
+		// Front Symmetrical Sensors
+		sight.scl(0.8f);
+		verts[1] = sight.cpy().rotateRad(MathUtils.PI/16f);
+		verts[2] = sight.cpy().rotateRad(4*MathUtils.PI/16f);
+		coneSensor.set(verts);
+		fixtureDef = new FixtureDef();
+		fixtureDef.shape = coneSensor;
+		fixtureDef.isSensor = true;
+		fixtureDef.filter.groupIndex = -1;
+		fixture = body.createFixture(fixtureDef);
+		fixture.setUserData(Enum.SENSOR_FL);
+		
+		verts[1] = sight.cpy().rotateRad(-MathUtils.PI/16f);
+		verts[2] = sight.cpy().rotateRad(-4*MathUtils.PI/16f);
+		coneSensor.set(verts);
+		fixtureDef = new FixtureDef();
+		fixtureDef.shape = coneSensor;
+		fixtureDef.isSensor = true;
+		fixtureDef.filter.groupIndex = -1;
+		fixture = body.createFixture(fixtureDef);
+		fixture.setUserData(Enum.SENSOR_FR);
+		
+		// Middle Symmetrical Sensors
+		sight.scl(0.8f);
+		verts[1] = sight.cpy().rotateRad(4*MathUtils.PI/16f);
+		verts[2] = sight.cpy().rotateRad(8*MathUtils.PI/16f);
+		coneSensor.set(verts);
+		fixtureDef = new FixtureDef();
+		fixtureDef.shape = coneSensor;
+		fixtureDef.isSensor = true;
+		fixtureDef.filter.groupIndex = -1;
+		fixture = body.createFixture(fixtureDef);
+		fixture.setUserData(Enum.SENSOR_ML);
+
+		verts[1] = sight.cpy().rotateRad(-4*MathUtils.PI/16f);
+		verts[2] = sight.cpy().rotateRad(-8*MathUtils.PI/16f);
+		coneSensor.set(verts);
+		fixtureDef = new FixtureDef();
+		fixtureDef.shape = coneSensor;
+		fixtureDef.isSensor = true;
+		fixtureDef.filter.groupIndex = -1;
+		fixture = body.createFixture(fixtureDef);
+		fixture.setUserData(Enum.SENSOR_MR);
+		
+		// Rear Symmetrical Sensors
+		sight.scl(0.8f);
+		verts[1] = sight.cpy().rotateRad(8*MathUtils.PI/16f);
+		verts[2] = sight.cpy().rotateRad(14*MathUtils.PI/16f);
+		coneSensor.set(verts);
+		fixtureDef = new FixtureDef();
+		fixtureDef.shape = coneSensor;
+		fixtureDef.isSensor = true;
+		fixtureDef.filter.groupIndex = -1;
+		fixture = body.createFixture(fixtureDef);
+		fixture.setUserData(Enum.SENSOR_BL);
+
+		verts[1] = sight.cpy().rotateRad(-8*MathUtils.PI/16f);
+		verts[2] = sight.cpy().rotateRad(-14*MathUtils.PI/16f);
+		coneSensor.set(verts);
+		fixtureDef = new FixtureDef();
+		fixtureDef.shape = coneSensor;
+		fixtureDef.isSensor = true;
+		fixtureDef.filter.groupIndex = -1;
+		fixture = body.createFixture(fixtureDef);
+		fixture.setUserData(Enum.SENSOR_BR);
+		
+		coneSensor.dispose();
+	}
+	
+	public void initNN() {
+		int[] layers = {7, 14, 14, 3};
+		nn = new NeuralNetwork(layers);
+	}
+	
+	public void setSensor(Enum sensor, float distance) {
+		distance /= SIGHT_DISTANCE; // Normalize distance
+		switch(sensor) {
+		case SENSOR_BR:
+			nnInput[0] = Math.max(1-distance, nnInput[0]);
+			break;
+		case SENSOR_MR:
+			nnInput[1] = Math.max(1-distance, nnInput[1]);
+			break;
+		case SENSOR_FR:
+			nnInput[2] = Math.max(1-distance, nnInput[2]);
+			break;
+		case SENSOR_F:
+			nnInput[3] = Math.max(1-distance, nnInput[3]);
+			break;
+		case SENSOR_FL:
+			nnInput[4] = Math.max(1-distance, nnInput[4]);
+			break;
+		case SENSOR_ML:
+			nnInput[5] = Math.max(1-distance, nnInput[5]);
+			break;
+		case SENSOR_BL:
+			nnInput[6] = Math.max(1-distance, nnInput[6]);
+			break;
+		}
 	}
 
 	private void readShapeFromFile() {
@@ -254,7 +415,6 @@ public class Spaceship implements MovingObject {
 		body.getWorld().destroyBody(body);
 		body = null;
 		disposable = true;
-		System.out.println("ship disposed");
-		System.out.println(getPosition());
 	}
+
 }

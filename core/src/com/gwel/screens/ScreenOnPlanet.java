@@ -83,7 +83,6 @@ public class ScreenOnPlanet implements Screen {
 	void handleInput() {
 		float x_axis = 0.0f;
 		float y_axis = 0.0f;
-		float amp = 1.0f;
 		
 		if (game.hasController) {
 			PovDirection pov = game.controller.getPov(0);

@@ -4,15 +4,12 @@ import java.util.ArrayList;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.physics.box2d.*;
 import com.badlogic.gdx.physics.box2d.BodyDef.BodyType;
+import com.gwel.spacegame.Const;
 import com.gwel.spacegame.MyRenderer;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.math.MathUtils;
 
-public class Planet {
-	public static final float MIN_RADIUS = 10.0f;
-	public static final float MAX_RADIUS = 100.0f;
-	static final int MAX_SAT = 5;
-	
+public class Planet {	
 	public long seed;
 	private Body body;
 	public Vector2 position;
@@ -33,7 +30,7 @@ public class Planet {
 		color = new Color(MathUtils.random(), MathUtils.random(), MathUtils.random(), 1.0f);
 		mass = (float) Math.PI * rad * rad;
 		// Create satellites configuration, if any (not the actual Satellite instances)
-		n_sat = (int) Math.floor(MathUtils.random(MAX_SAT+1));
+		n_sat = (int) Math.floor(MathUtils.random(Const.PLANET_MAX_SAT+1));
 		sat_orbit = new float[n_sat];
 		sat_radius = new float[n_sat];
 		sat_color = new Color[n_sat];
@@ -45,7 +42,7 @@ public class Planet {
 		satellites = new ArrayList<Satellite>();
 	}
 	
-	public void activate(World world) {
+	public void initBody(World world) {
 		// Register planet to Box2D for physics
 		BodyDef bodyDef = new BodyDef();
 		bodyDef.type = BodyType.StaticBody;
