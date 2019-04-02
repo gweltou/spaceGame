@@ -5,6 +5,7 @@ import com.gwel.spacegame.MyRenderer;
 
 public interface MovingObject {
 	public Vector2 getPosition();
+	public void setPosition(Vector2 pos);
 	public Vector2 getSpeed();
 	public float getAngularSpeed();
 	public float getAngle();

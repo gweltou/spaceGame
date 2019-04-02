@@ -16,7 +16,7 @@ import com.gwel.spacegame.utils;
 import com.gwel.spacegame.Enum;
 
 
-public class Spaceship implements MovingObject {
+public class Spaceship extends PhysicBody {
 	public final float MAX_VEL = 20.0f;
 	public final float MAX_ANG_VEL = 4.0f;
 	private final float FIRE_COOLDOWN = 200.0f; // In milliseconds
@@ -41,8 +41,8 @@ public class Spaceship implements MovingObject {
 	
 	
 	public Spaceship(Vector2 pos) {
+		super(pos);
 		angle = (float) (Math.PI/2.0f); // Initially pointing up
-		position = pos;
 		
 		transform = new Affine2();
 		vertices = new Vector2[4];
@@ -54,53 +54,6 @@ public class Spaceship implements MovingObject {
 		disposable = false;
 	}
 
-	@Override
-	public Vector2 getPosition() {
-		if (body != null)
-			return body.getPosition().cpy();
-		return position.cpy();
-	}
-
-	@Override
-	public Vector2 getSpeed() {
-		if (body != null)
-			return body.getLinearVelocity().cpy();
-		return null;
-	}
-
-	@Override
-	public float getAngularSpeed() {
-		if (body != null)
-			return body.getAngularVelocity();
-		return 0;
-	}
-
-	@Override
-	public float getAngle() {
-		if (body != null)
-			return body.getAngle();
-		return angle;
-	}
-
-	@Override
-	public float getAngleDiff(float refAngle) {
-		if (body != null)
-			return utils.wrapAngleAroundZero(refAngle-body.getAngle());
-		return utils.wrapAngleAroundZero(refAngle-angle);
-	}
-
-	@Override
-	public float getMass() {
-		if (body != null)
-			return body.getMass();
-		return 0;
-	}
-
-	@Override
-	public void push(Vector2 force) {
-		body.applyForceToCenter(force, false);
-	}
-	
 	public void steer(float amount) {
 		if (amount > 0 && body.getAngularVelocity() < MAX_ANG_VEL) {
 			body.applyTorque(amount, true);
@@ -246,15 +199,8 @@ public class Spaceship implements MovingObject {
 			renderer.triangle(p1_tmp, p2_tmp, p3_tmp);
 		}
 	}
-	
-	@Override
-	public void dispose() {
-		angle = getAngle();
-		position = getPosition();
-		body.getWorld().destroyBody(body);
-		body = null;
-		disposable = true;
-		System.out.println("ship disposed");
-		System.out.println(getPosition());
+
+	public float getBoundingRadius() {
+		return size.y / 2f;
 	}
 }

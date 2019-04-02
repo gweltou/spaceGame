@@ -9,12 +9,12 @@ import com.gwel.spacegame.MyRenderer;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.math.MathUtils;
 
-public class Planet {	
+public class Planet implements Collidable {	
 	public long seed;
 	private Body body;
 	public Vector2 position;
 	private float mass;
-	public float radius;
+	private float radius;
 	private Color color;
 	int n_sat;
 	float[] sat_orbit;
@@ -133,5 +133,10 @@ public class Planet {
 		body.getWorld().destroyBody(body);
 		satellites.clear();
 		//System.out.println("Planet disposed");
+	}
+
+	@Override
+	public float getBoundingRadius() {
+		return radius;
 	}
 }

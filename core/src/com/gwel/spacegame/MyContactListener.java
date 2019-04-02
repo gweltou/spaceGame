@@ -18,7 +18,7 @@ public class MyContactListener implements ContactListener {
 	public void beginContact(Contact contact) {
 		Fixture f1 = contact.getFixtureA();
 		Fixture f2 = contact.getFixtureB();
-		
+		Fixture f;
 		
 		//System.out.println(f1.getUserData() + " has hit "+ f2.getUserData());
 		if (f1.getUserData() == "Satellite") {
@@ -26,78 +26,6 @@ public class MyContactListener implements ContactListener {
 		}
 		if (f2.getUserData() == "Satellite") {
 			((Satellite) f2.getBody().getUserData()).detach();
-		}
-		
-		// Sensors for Neural Network
-		if (f1.getUserData() == Enum.SENSOR_F || f2.getUserData() == Enum.SENSOR_F) {
-			Fixture f = f1;
-			if (f2.getUserData() == Enum.SENSOR_F) {
-				f = f2;
-			}
-			float[] distances = contact.getWorldManifold().getSeparations();
-			for (float distance: distances) {
-				((DroidShip) f.getBody().getUserData()).setSensor(Enum.SENSOR_F, distance);
-			}
-		}
-		if (f1.getUserData() == Enum.SENSOR_FR || f2.getUserData() == Enum.SENSOR_FR) {
-			Fixture f = f1;
-			if (f2.getUserData() == Enum.SENSOR_FR) {
-				f = f2;
-			}
-			float[] distances = contact.getWorldManifold().getSeparations();
-			for (float distance: distances) {
-				((DroidShip) f.getBody().getUserData()).setSensor(Enum.SENSOR_FR, distance);
-			}
-		}
-		if (f1.getUserData() == Enum.SENSOR_FL || f2.getUserData() == Enum.SENSOR_FL) {
-			Fixture f = f1;
-			if (f2.getUserData() == Enum.SENSOR_FL) {
-				f = f2;
-			}
-			float[] distances = contact.getWorldManifold().getSeparations();
-			for (float distance: distances) {
-				((DroidShip) f.getBody().getUserData()).setSensor(Enum.SENSOR_FL, distance);
-			}
-		}
-		if (f1.getUserData() == Enum.SENSOR_MR || f2.getUserData() == Enum.SENSOR_MR) {
-			Fixture f = f1;
-			if (f2.getUserData() == Enum.SENSOR_MR) {
-				f = f2;
-			}
-			float[] distances = contact.getWorldManifold().getSeparations();
-			for (float distance: distances) {
-				((DroidShip) f.getBody().getUserData()).setSensor(Enum.SENSOR_MR, distance);
-			}
-		}
-		if (f1.getUserData() == Enum.SENSOR_ML || f2.getUserData() == Enum.SENSOR_ML) {
-			Fixture f = f1;
-			if (f2.getUserData() == Enum.SENSOR_ML) {
-				f = f2;
-			}
-			float[] distances = contact.getWorldManifold().getSeparations();
-			for (float distance: distances) {
-				((DroidShip) f.getBody().getUserData()).setSensor(Enum.SENSOR_ML, distance);
-			}
-		}
-		if (f1.getUserData() == Enum.SENSOR_BR || f2.getUserData() == Enum.SENSOR_BR) {
-			Fixture f = f1;
-			if (f2.getUserData() == Enum.SENSOR_BR) {
-				f = f2;
-			}
-			float[] distances = contact.getWorldManifold().getSeparations();
-			for (float distance: distances) {
-				((DroidShip) f.getBody().getUserData()).setSensor(Enum.SENSOR_BR, distance);
-			}
-		}
-		if (f1.getUserData() == Enum.SENSOR_BL || f2.getUserData() == Enum.SENSOR_BL) {
-			Fixture f = f1;
-			if (f2.getUserData() == Enum.SENSOR_BL) {
-				f = f2;
-			}
-			float[] distances = contact.getWorldManifold().getSeparations();
-			for (float distance: distances) {
-				((DroidShip) f.getBody().getUserData()).setSensor(Enum.SENSOR_BL, distance);
-			}
 		}
 	}
 
@@ -155,6 +83,5 @@ public class MyContactListener implements ContactListener {
 				game.land((Planet) f2.getBody().getUserData());
 			}
 		}
-		
 	}
 }

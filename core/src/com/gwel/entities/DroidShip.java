@@ -15,6 +15,7 @@ import com.badlogic.gdx.physics.box2d.FixtureDef;
 import com.badlogic.gdx.physics.box2d.PolygonShape;
 import com.badlogic.gdx.physics.box2d.World;
 import com.badlogic.gdx.physics.box2d.BodyDef.BodyType;
+import com.badlogic.gdx.physics.box2d.Contact;
 import com.badlogic.gdx.utils.TimeUtils;
 import com.gwel.spacegame.Enum;
 import com.gwel.spacegame.MyRenderer;
@@ -22,7 +23,7 @@ import com.gwel.spacegame.utils;
 
 import ai.NeuralNetwork;
 
-public class DroidShip implements MovingObject {
+public class DroidShip extends PhysicBody {
 	public final float MAX_VEL = 20.0f;
 	public final float MAX_ANG_VEL = 4.0f;
 	private final float FIRE_COOLDOWN = 200.0f; // In milliseconds
@@ -30,8 +31,7 @@ public class DroidShip implements MovingObject {
 	private final static int NN_INPUTS = 7;
 	
 	//public float speed_mag;
-	private Vector2 size = new Vector2(1.7f, 1.8f);  // Size of spaceship in game units
-	public float BOUNDING_SPHERE_RADIUS = size.y / 2.0f;
+	private final Vector2 size = new Vector2(1.7f, 1.8f);  // Size of spaceship in game units
 	private float angle;
 	private Vector2 position;
 	private Vector2 pPosition;
@@ -55,6 +55,7 @@ public class DroidShip implements MovingObject {
 	
 	
 	public DroidShip(Vector2 position, float angle, LinkedList<Projectile> projectiles) {
+		super(position);
 		this.angle = angle;
 		this.position = position;
 		this.projectiles = projectiles;
@@ -73,10 +74,14 @@ public class DroidShip implements MovingObject {
 	public void update() {
 		pPosition = position;
 		position = body.getPosition().cpy();
-		dstCounter += position.dst(pPosition);
+		dstCounter += position.dst(pPosition);		
 		
 		float[] output;
 		output = nn.feedforward(nnInput);
+		// reset nnInput to 0
+		for (int i=0; i<nnInput.length; i++)
+			nnInput[i] = 0.0f;
+		
 		float max = -1.0f;
 		int maxIdx = 0;
 		for (int i=0; i<output.length; i++) {
@@ -182,6 +187,8 @@ public class DroidShip implements MovingObject {
 	}
 	
 	public void initBody(World world) {
+		disposable = false;
+		
 		BodyDef bodyDef = new BodyDef();
 		bodyDef.type = BodyType.DynamicBody;
 		bodyDef.position.set(position);
@@ -205,7 +212,7 @@ public class DroidShip implements MovingObject {
 		shape.dispose();
 		
 		// Create sensors
-		Vector2 sight = new Vector2(SIGHT_DISTANCE, 0f).rotateRad(MathUtils.PI/2f);
+		Vector2 sight = new Vector2(SIGHT_DISTANCE, 0f); //.rotateRad(MathUtils.PI/2f);
 		PolygonShape coneSensor = new PolygonShape();
 		Vector2[] verts = new Vector2[3];
 		verts[0] = new Vector2(0f ,0f);
@@ -296,7 +303,7 @@ public class DroidShip implements MovingObject {
 	}
 	
 	public void setSensor(Enum sensor, float distance) {
-		distance /= SIGHT_DISTANCE; // Normalize distance
+		distance = Math.min(distance / SIGHT_DISTANCE, 1.0f); // Normalize distance
 		switch(sensor) {
 		case SENSOR_BR:
 			nnInput[0] = Math.max(1-distance, nnInput[0]);
@@ -318,6 +325,8 @@ public class DroidShip implements MovingObject {
 			break;
 		case SENSOR_BL:
 			nnInput[6] = Math.max(1-distance, nnInput[6]);
+			break;
+		default:
 			break;
 		}
 	}
@@ -407,14 +416,9 @@ public class DroidShip implements MovingObject {
 			renderer.triangle(p1_tmp, p2_tmp, p3_tmp);
 		}
 	}
-	
-	@Override
-	public void dispose() {
-		angle = getAngle();
-		position = getPosition();
-		body.getWorld().destroyBody(body);
-		body = null;
-		disposable = true;
-	}
 
+	@Override
+	public float getBoundingRadius() {
+		return size.y / 2.0f;
+	}
 }

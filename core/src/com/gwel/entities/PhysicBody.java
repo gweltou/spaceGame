@@ -7,12 +7,18 @@ import com.gwel.spacegame.MyRenderer;
 import com.gwel.spacegame.utils;
 
 
-public abstract class PhysicBody implements MovingObject {
+public abstract class PhysicBody implements MovingObject, Collidable {
 	protected BodyDef bodyDef;
 	protected Body body;
 	public boolean disposable;
+	protected Vector2 position;
+	protected Vector2 velocity;
+	protected float angle;
+	protected float angleVel;
 
 	PhysicBody(Vector2 pos) {
+		position = pos.cpy(); 
+		
 		bodyDef = new BodyDef();
 		bodyDef.type = BodyType.DynamicBody;
 		bodyDef.position.set(pos);
@@ -20,27 +26,43 @@ public abstract class PhysicBody implements MovingObject {
 	}
 
 	public Vector2 getPosition() {
-		return body.getPosition().cpy();
+		if (body != null)
+			return body.getPosition().cpy();
+		return position.cpy();
+	}
+	
+	public void setPosition(Vector2 pos) {
+		position = pos.cpy();
 	}
 	
 	public Vector2 getSpeed() {
-		return body.getLinearVelocity().cpy();
+		if (body != null)
+			return body.getLinearVelocity().cpy();
+		return null;
 	}
 	
 	public float getAngularSpeed() {
-		return body.getAngularVelocity();
+		if (body != null)
+			return body.getAngularVelocity();
+		return 0;
 	}
 	
 	public float getAngle() {
-		return body.getAngle();
+		if (body != null)
+			return body.getAngle();
+		return angle;
 	}
 	
 	public float getAngleDiff(float refAngle) {
-		return utils.wrapAngleAroundZero(refAngle-body.getAngle());
+		if (body != null)
+			return utils.wrapAngleAroundZero(refAngle-body.getAngle());
+		return utils.wrapAngleAroundZero(refAngle-angle);
 	}
 	
 	public float getMass() {
-		return body.getMass();
+		if (body != null)
+			return body.getMass();
+		return 0;
 	}
 	
 	public void push(Vector2 force) {
@@ -50,8 +72,15 @@ public abstract class PhysicBody implements MovingObject {
 	public abstract void render(MyRenderer renderer);
 	
 	public void dispose() {
-		body.getWorld().destroyBody(body);
+		angle = getAngle();
+		angleVel = getAngularSpeed();
+		position = getPosition();
+		velocity = getSpeed();
+		if (body != null) {
+			body.getWorld().destroyBody(body);
+			body = null;
+		}
 		disposable = true;
-		//System.out.println("Body disposed");
+		System.out.println("Body disposed");
 	}
 }

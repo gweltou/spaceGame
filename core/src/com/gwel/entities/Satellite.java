@@ -46,4 +46,14 @@ public class Satellite extends PhysicBody {
 		renderer.setColor(color);
 		renderer.circle(getPosition(), radius);
 	}
+
+	@Override
+	public void setPosition(Vector2 pos) {
+		position = pos.cpy();
+	}
+
+	@Override
+	public float getBoundingRadius() {
+		return radius;
+	}
 }
