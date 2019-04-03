@@ -116,8 +116,10 @@ public class DroidShip extends PhysicBody {
 
 	public void hit(float hp) {
 		hitpoints -= hp;
-		if (hitpoints <= 0.0)
+		if (hitpoints <= 0.0) {
+			System.out.println("Droid died");
 			disposable = true;
+		}
 	}
 	
 	public void fire(LinkedList<Projectile> projectiles) {
@@ -235,7 +237,7 @@ public class DroidShip extends PhysicBody {
 	}
 	
 	public void initNN() {
-		int[] layers = {7, 14, 14, 3};
+		int[] layers = {7, 14, 14, 4};
 		nn = new NeuralNetwork(layers);
 	}
 	

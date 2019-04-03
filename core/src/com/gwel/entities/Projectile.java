@@ -5,11 +5,12 @@ import com.badlogic.gdx.physics.box2d.Fixture;
 import com.badlogic.gdx.physics.box2d.RayCastCallback;
 import com.badlogic.gdx.physics.box2d.World;
 import com.gwel.spacegame.MyRenderer;
+import com.gwel.spacegame.Enum;
 
 public class Projectile {
 	private MovingObject parent;
 	public Vector2 position;
-	private Vector2 pPosition;
+	public Vector2 pPosition;
 	private Vector2 speed;
 	private Vector2 speedX4;
 	private Vector2 perpendicular;
@@ -39,11 +40,15 @@ public class Projectile {
 		public float reportRayFixture(Fixture fixture, Vector2 point, Vector2 normal, float fraction) {
 			disposable = true;
 			position = point.cpy();
-			if (fixture.getUserData() == "Satellite") {
+			if (fixture.getUserData() == Enum.SATELLITE) {
 				Satellite sat = (Satellite) fixture.getBody().getUserData();
 				sat.detach();
 				sat.push(speed.cpy().scl(damage*damage));
+			} else if (fixture.getUserData() == Enum.DROID) {
+				DroidShip droid = (DroidShip) fixture.getBody().getUserData();
+				droid.hit(damage);
 			}
+			// DEBUG : projectile collide with sensors...
 			return fraction;
 		}
 	};

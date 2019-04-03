@@ -9,6 +9,8 @@ import com.badlogic.gdx.Screen;
 import com.badlogic.gdx.Input.Keys;
 import com.badlogic.gdx.controllers.PovDirection;
 import com.badlogic.gdx.graphics.GL20;
+import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
+import com.badlogic.gdx.graphics.glutils.ShapeRenderer.ShapeType;
 import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Matrix4;
 import com.badlogic.gdx.math.Vector2;
@@ -16,6 +18,7 @@ import com.badlogic.gdx.physics.box2d.Box2DDebugRenderer;
 import com.badlogic.gdx.physics.box2d.Contact;
 import com.badlogic.gdx.physics.box2d.Fixture;
 import com.badlogic.gdx.physics.box2d.World;
+import com.badlogic.gdx.utils.TimeUtils;
 import com.gwel.entities.*;
 import com.gwel.spacegame.Enum;
 import com.gwel.spacegame.MyContactListener;
@@ -37,13 +40,16 @@ public class ScreenTraining implements Screen {
 	private World b2world;
 	private boolean destroy;
 	
-	private ArrayList<Planet> local_planets = new ArrayList<Planet>();
+	private ArrayList<Planet> localPlanets = new ArrayList<Planet>();
 	private LinkedList<DroidShip> droids = new LinkedList<DroidShip>();
 	private ListIterator<DroidShip> droidsIter;
 	private LinkedList<Projectile> projectiles = new LinkedList<Projectile>();
 	private ListIterator<Projectile> proj_iter;
 	
 	Box2DDebugRenderer debugRenderer;
+	ShapeRenderer renderer;
+	
+	long lastFpsDisplay;
 	
 	
 	public ScreenTraining(final SpaceGame game) {
@@ -54,9 +60,12 @@ public class ScreenTraining implements Screen {
 		b2world.setContactListener(new MyContactListener(game));
 		
 		debugRenderer=new Box2DDebugRenderer();
+		debugRenderer.setDrawAABBs(false);
+		renderer = new ShapeRenderer();
 		
 		populatePlanets();
 		populateShips(128);
+		lastFpsDisplay = TimeUtils.millis();
 	}
 	
 	@Override
@@ -199,9 +208,8 @@ public class ScreenTraining implements Screen {
 			}	
 		}
 		
-		// Applying gravity to the free bodies
-		for (Planet pl: local_planets) {
-			pl.update(); // Apply gravity force to attached satellites
+		// Applying gravity to the Droids
+		for (Planet pl: localPlanets) {
 			for (DroidShip bod: droids) {
 				bod.push(pl.getGravityAccel(bod.getPosition()).scl(bod.getMass()));
 			}
@@ -220,13 +228,10 @@ public class ScreenTraining implements Screen {
 		//  Camera update
 		game.camera.update();
 		
-		
-		// North and East directions are POSITIVE !
-		//AABB camera_range = new AABB(game.camera.sw.cpy().sub(Planet.MAX_RADIUS, Planet.MAX_RADIUS), 
-		//		game.camera.ne.cpy().add(Planet.MAX_RADIUS, Planet.MAX_RADIUS));
-		
 		Gdx.gl.glClearColor(0f, 0f, 0f, 1f);
 		Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
+		debugRenderer.render(b2world, new Matrix4().set(game.camera.affine));
+		renderer.setProjectionMatrix(new Matrix4().set(game.camera.affine));		
 		
 		/*
 		game.renderer.setProjectionMatrix(new Matrix4().set(game.camera.affine));
@@ -238,13 +243,18 @@ public class ScreenTraining implements Screen {
 				b.render(game.renderer);
 			}
 		}
-		for (Projectile proj: projectiles) {
-			if (camera_range.containsPoint(proj.position))
-				proj.render(game.renderer);
-		}
-		game.renderer.flush();
 		*/
-		debugRenderer.render(b2world, new Matrix4().set(game.camera.affine));
+		renderer.begin(ShapeType.Line);
+		renderer.setColor(1, 0, 0, 1);
+		for (Projectile proj: projectiles) {
+			renderer.line(proj.position, proj.pPosition);
+		}		
+		renderer.end();
+		
+		if (TimeUtils.millis() - lastFpsDisplay > 1000) {
+			System.out.println("Fps: " + String.valueOf(Gdx.graphics.getFramesPerSecond()));
+			lastFpsDisplay = TimeUtils.millis();
+		}
 	}
 
 	@Override
@@ -268,10 +278,12 @@ public class ScreenTraining implements Screen {
 												(float) (Math.sin(angle)*radius1)),
 									SMALL_PLANET_RADIUS, 0);
 			p.initBody(b2world);
+			localPlanets.add(p);
 			p = new Planet(new Vector2(	(float) (Math.cos(angle+Math.PI/6)*radius2),
 					 						(float) (Math.sin(angle+Math.PI/6)*radius2)),
 					 						BIG_PLANET_RADIUS, 0);
 			p.initBody(b2world);
+			localPlanets.add(p);
 			angle += MathUtils.PI2/6;
 		}
 	}
