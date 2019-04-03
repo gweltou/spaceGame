@@ -14,10 +14,9 @@ public class Satellite extends PhysicBody {
 	public boolean detachable;
 
 	public Satellite(World world, Planet parent, Vector2 pos, float rad, Color col) {
-		super(pos);
+		super(pos, 0);
 		radius = rad;
-		//bodyDef.linearVelocity.set(vel);
-		body = world.createBody(bodyDef);
+		initBody(world);
 		body.setUserData(this);
 		//body.setAwake(true);
 		CircleShape circle = new CircleShape();
@@ -45,11 +44,6 @@ public class Satellite extends PhysicBody {
 		//System.out.println("Rendering satellite");
 		renderer.setColor(color);
 		renderer.circle(getPosition(), radius);
-	}
-
-	@Override
-	public void setPosition(Vector2 pos) {
-		position = pos.cpy();
 	}
 
 	@Override

@@ -33,11 +33,9 @@ public class ScreenTraining implements Screen {
 	private final float BORDER_UP = WORLD_HEIGHT/2.0f;
 	private final float BORDER_DOWN = -WORLD_HEIGHT/2.0f;
 	
-	
 	final SpaceGame game;
 	private World b2world;
 	private boolean destroy;
-	private float game_speed;	// set to <1.0 for slow-mo
 	
 	private ArrayList<Planet> local_planets = new ArrayList<Planet>();
 	private LinkedList<DroidShip> droids = new LinkedList<DroidShip>();
@@ -51,7 +49,6 @@ public class ScreenTraining implements Screen {
 	public ScreenTraining(final SpaceGame game) {
 		this.game = game;
 		destroy = false;
-		game_speed = 1.0f;
 		
 		b2world = new World(new Vector2(0.0f, 0.0f), true);
 		b2world.setContactListener(new MyContactListener(game));
@@ -59,11 +56,7 @@ public class ScreenTraining implements Screen {
 		debugRenderer=new Box2DDebugRenderer();
 		
 		populatePlanets();
-		populateShips(64);
-		
-		//game.ship.initBody(b2world);
-
-		//free_bodies.add(game.ship);
+		populateShips(128);
 	}
 	
 	@Override
@@ -71,7 +64,6 @@ public class ScreenTraining implements Screen {
 		// This test case prevents the world from being destroyed during a step
 		if (destroy) {
 			System.out.println("Destroying space");
-			game.ship.dispose();	// Important, so the ship position and angle is saved
 			b2world.dispose();
 		} else {
 			destroy = true;
@@ -96,7 +88,7 @@ public class ScreenTraining implements Screen {
 		// UPDATING GAME STATE
 		//AABB local_range = new AABB(
 		//local_planets = game.Qt.query(local_range);
-		b2world.step(game_speed/60f, 8, 3);
+		b2world.step(1.0f/60f, 8, 3);
 		
 		for (Contact c: b2world.getContactList()) {
 			Fixture f1 = c.getFixtureA();
@@ -188,25 +180,21 @@ public class ScreenTraining implements Screen {
 			if (droid.disposable) {
 				droid.dispose();
 				droidsIter.remove();
-			} else if (droid.getPosition().x >= BORDER_RIGHT) {
-				System.out.println(droid.getPosition());
+			} else if (droid.getPosition().x > BORDER_RIGHT) {
 				droid.dispose();
-				droid.setPosition(droid.getPosition().sub(WORLD_WIDTH-1, 0));
+				droid.setPosition(droid.getPosition().sub(WORLD_WIDTH, 0));
 				droid.initBody(b2world);
 			} else if (droid.getPosition().x < BORDER_LEFT) {
-				System.out.println(droid.getPosition());
 				droid.dispose();
-				droid.setPosition(droid.getPosition().add(WORLD_WIDTH-1, 0));
+				droid.setPosition(droid.getPosition().add(WORLD_WIDTH, 0));
 				droid.initBody(b2world);
-			} else if (droid.getPosition().y >= BORDER_UP) {
-				System.out.println(droid.getPosition());
+			} else if (droid.getPosition().y > BORDER_UP) {
 				droid.dispose();
-				droid.setPosition(droid.getPosition().sub(0, WORLD_HEIGHT-1));
+				droid.setPosition(droid.getPosition().sub(0, WORLD_HEIGHT));
 				droid.initBody(b2world);
 			} else if (droid.getPosition().y < BORDER_DOWN) {
-				System.out.println(droid.getPosition());
 				droid.dispose();
-				droid.setPosition(droid.getPosition().add(0, WORLD_HEIGHT-1));
+				droid.setPosition(droid.getPosition().add(0, WORLD_HEIGHT));
 				droid.initBody(b2world);
 			}	
 		}
@@ -226,7 +214,7 @@ public class ScreenTraining implements Screen {
 					proj.position.y < BORDER_DOWN || proj.position.y > BORDER_UP)
 				proj_iter.remove();
 			else
-			    proj.update(b2world, game_speed);
+			    proj.update(b2world, 1.0f);
 		}
 		
 		//  Camera update

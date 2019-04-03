@@ -32,8 +32,6 @@ public class DroidShip extends PhysicBody {
 	
 	//public float speed_mag;
 	private final Vector2 size = new Vector2(1.7f, 1.8f);  // Size of spaceship in game units
-	private float angle;
-	private Vector2 position;
 	private Vector2 pPosition;
 	
 	public float hitpoints;
@@ -47,17 +45,13 @@ public class DroidShip extends PhysicBody {
 	private Vector2 p2_tmp = new Vector2();
 	private Vector2 p3_tmp = new Vector2();
 	
-	private Body body;
-	public boolean disposable;
 	private NeuralNetwork nn;
 	private float[] nnInput;
 	private LinkedList<Projectile> projectiles;
 	
 	
 	public DroidShip(Vector2 position, float angle, LinkedList<Projectile> projectiles) {
-		super(position);
-		this.angle = angle;
-		this.position = position;
+		super(position, angle);
 		this.projectiles = projectiles;
 		
 		transform = new Affine2();
@@ -68,7 +62,6 @@ public class DroidShip extends PhysicBody {
 		last_fire = TimeUtils.millis();
 		
 		readShapeFromFile();
-		disposable = false;
 	}
 
 	public void update() {
@@ -103,53 +96,6 @@ public class DroidShip extends PhysicBody {
 		}
 	}
 	
-	@Override
- 	public Vector2 getPosition() {
-		if (body != null)
-			return body.getPosition().cpy();
-		return position.cpy();
-	}
-
-	@Override
-	public Vector2 getSpeed() {
-		if (body != null)
-			return body.getLinearVelocity().cpy();
-		return null;
-	}
-
-	@Override
-	public float getAngularSpeed() {
-		if (body != null)
-			return body.getAngularVelocity();
-		return 0;
-	}
-
-	@Override
-	public float getAngle() {
-		if (body != null)
-			return body.getAngle();
-		return angle;
-	}
-
-	@Override
-	public float getAngleDiff(float refAngle) {
-		if (body != null)
-			return utils.wrapAngleAroundZero(refAngle-body.getAngle());
-		return utils.wrapAngleAroundZero(refAngle-angle);
-	}
-
-	@Override
-	public float getMass() {
-		if (body != null)
-			return body.getMass();
-		return 0;
-	}
-
-	@Override
-	public void push(Vector2 force) {
-		body.applyForceToCenter(force, false);
-	}
-	
 	public void steer(float amount) {
 		if (amount > 0 && body.getAngularVelocity() < MAX_ANG_VEL) {
 			body.applyTorque(amount, true);
@@ -162,9 +108,9 @@ public class DroidShip extends PhysicBody {
 		Vector2 direction = new Vector2(1.0f, 1.0f);
 		direction.setAngleRad(getAngle());
 		push(direction.scl(amount*4.0f));
-		float speed = getSpeed().len2();
+		float speed = getVelocity().len2();
 		if (speed > MAX_VEL) {
-			body.setLinearVelocity(getSpeed().limit(MAX_VEL));
+			body.setLinearVelocity(getVelocity().limit(MAX_VEL));
 		}
 	}
 
@@ -187,26 +133,17 @@ public class DroidShip extends PhysicBody {
 	}
 	
 	public void initBody(World world) {
-		disposable = false;
+		super.initBody(world);
 		
-		BodyDef bodyDef = new BodyDef();
-		bodyDef.type = BodyType.DynamicBody;
-		bodyDef.position.set(position);
-		bodyDef.angle = angle;
-		//bodyDef.allowSleep = true;
-		body = world.createBody(bodyDef);
-		body.setUserData(this);
-		
+		// Main colliding shape
 		PolygonShape shape = new PolygonShape();
 		shape.set(vertices);
-		
 		FixtureDef fixtureDef = new FixtureDef();
 		fixtureDef.shape = shape;
 		fixtureDef.density = 0.1f; 
 		fixtureDef.friction = 0.4f;
 		fixtureDef.restitution = 0.6f;
 		fixtureDef.filter.categoryBits = 0x0002;
-		
 		Fixture fixture = body.createFixture(fixtureDef);
 		fixture.setUserData(Enum.DROID);
 		shape.dispose();

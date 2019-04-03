@@ -10,18 +10,18 @@ import com.gwel.spacegame.utils;
 public abstract class PhysicBody implements MovingObject, Collidable {
 	protected BodyDef bodyDef;
 	protected Body body;
-	public boolean disposable;
 	protected Vector2 position;
 	protected Vector2 velocity;
 	protected float angle;
 	protected float angleVel;
+	public boolean disposable;
 
-	PhysicBody(Vector2 pos) {
-		position = pos.cpy(); 
-		
-		bodyDef = new BodyDef();
-		bodyDef.type = BodyType.DynamicBody;
-		bodyDef.position.set(pos);
+	PhysicBody(Vector2 pos, float angle) {
+		position = pos.cpy();
+		this.angle = angle;
+		velocity = new Vector2();
+		angleVel = 0f;
+		body = null;
 		disposable = false;
 	}
 
@@ -35,16 +35,16 @@ public abstract class PhysicBody implements MovingObject, Collidable {
 		position = pos.cpy();
 	}
 	
-	public Vector2 getSpeed() {
+	public Vector2 getVelocity() {
 		if (body != null)
 			return body.getLinearVelocity().cpy();
-		return null;
+		return velocity;
 	}
 	
-	public float getAngularSpeed() {
+	public float getAngularVelocity() {
 		if (body != null)
 			return body.getAngularVelocity();
-		return 0;
+		return angleVel;
 	}
 	
 	public float getAngle() {
@@ -71,16 +71,29 @@ public abstract class PhysicBody implements MovingObject, Collidable {
 
 	public abstract void render(MyRenderer renderer);
 	
+	public void initBody(World world) {
+		disposable = false;
+		
+		bodyDef = new BodyDef();
+		bodyDef.type = BodyType.DynamicBody;
+		bodyDef.position.set(getPosition());
+		bodyDef.angle = getAngle();
+		bodyDef.linearVelocity.set(getVelocity());
+		bodyDef.angularVelocity = getAngularVelocity();
+		
+		body = world.createBody(bodyDef);
+		body.setUserData(this);
+	}
+	
 	public void dispose() {
 		angle = getAngle();
-		angleVel = getAngularSpeed();
+		angleVel = getAngularVelocity();
 		position = getPosition();
-		velocity = getSpeed();
+		velocity = getVelocity();
 		if (body != null) {
 			body.getWorld().destroyBody(body);
 			body = null;
 		}
 		disposable = true;
-		System.out.println("Body disposed");
 	}
 }

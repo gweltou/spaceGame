@@ -24,7 +24,6 @@ public class Spaceship extends PhysicBody {
 	//public float speed_mag;
 	private Vector2 size = new Vector2(1.7f, 1.8f);  // Size of spaceship in game units
 	private float angle;
-	private Vector2 position;
 	
 	private float hitpoints;
 	private long last_fire;
@@ -36,13 +35,9 @@ public class Spaceship extends PhysicBody {
 	private Vector2 p2_tmp = new Vector2();
 	private Vector2 p3_tmp = new Vector2();
 	
-	private Body body;
-	public boolean disposable;
-	
 	
 	public Spaceship(Vector2 pos) {
-		super(pos);
-		angle = (float) (Math.PI/2.0f); // Initially pointing up
+		super(pos, (float) (Math.PI/2.0f)); // Initially pointing up
 		
 		transform = new Affine2();
 		vertices = new Vector2[4];
@@ -66,9 +61,9 @@ public class Spaceship extends PhysicBody {
 		Vector2 direction = new Vector2(1.0f, 1.0f);
 		direction.setAngleRad(getAngle());
 		push(direction.scl(amount*4.0f));
-		float speed = getSpeed().len2();
+		float speed = getVelocity().len2();
 		if (speed > MAX_VEL) {
-			body.setLinearVelocity(getSpeed().limit(MAX_VEL));
+			body.setLinearVelocity(getVelocity().limit(MAX_VEL));
 		}
 	}
 
@@ -91,24 +86,16 @@ public class Spaceship extends PhysicBody {
 	}
 	
 	public void initBody(World world) {
-		BodyDef bodyDef = new BodyDef();
-		bodyDef.type = BodyType.DynamicBody;
-		bodyDef.position.set(position);
-		bodyDef.angle = angle;
-		//bodyDef.allowSleep = true;
-		body = world.createBody(bodyDef);
-		body.setUserData(this);
+		super.initBody(world);
 		
 		PolygonShape shape = new PolygonShape();
 		shape.set(vertices);
-		
 		FixtureDef fixtureDef = new FixtureDef();
 		fixtureDef.shape = shape;
 		fixtureDef.density = 0.1f; 
 		fixtureDef.friction = 0.4f;
 		fixtureDef.restitution = 0.6f;
 		fixtureDef.filter.categoryBits = 0x0002;
-		
 		Fixture fixture = body.createFixture(fixtureDef);
 		fixture.setUserData(Enum.SHIP);
 		shape.dispose();

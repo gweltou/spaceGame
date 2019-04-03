@@ -154,7 +154,7 @@ public class ScreenInSpace implements Screen {
 		//  Camera update
 		game.camera.glideTo(game.ship.getPosition());
 		if (game.camera.autozoom)
-			game.camera.zoomTo(200.0f/game.ship.getSpeed().len());
+			game.camera.zoomTo(200.0f/game.ship.getVelocity().len());
 		game.camera.update();
 		
 		
@@ -266,7 +266,7 @@ public class ScreenInSpace implements Screen {
 		//	amp = 0.0f;
 		// Calculate angle between ship angle and directional stick angle
 		float dAngle = game.ship.getAngleDiff(MathUtils.atan2(y_axis, x_axis));
-		float steering = 4.0f*dAngle-game.ship.getAngularSpeed();
+		float steering = 4.0f*dAngle-game.ship.getAngularVelocity();
 		game.ship.steer(steering*amp*amp);
 		game.ship.accelerate((1.0f-Math.abs(dAngle)/MathUtils.PI)*amp*amp);
 		

@@ -37,7 +37,7 @@ public class ShipTail {
 		tmp.set(local_pos);
 		rotate.applyTo(tmp);
 		tmp.add(ship.getPosition());
-		Vector2 tmp2 = ship.getSpeed();
+		Vector2 tmp2 = ship.getVelocity();
 		tmp2.set(-tmp2.y, tmp2.x).nor().scl(radius);
 		points[0] = new Vector2(tmp).add(tmp2);
 		points[1] = new Vector2(tmp).sub(tmp2);
