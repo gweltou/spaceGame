@@ -1,11 +1,19 @@
-package ai;
+package com.gwel.ai;
 
 import java.util.Arrays;
 
-public class NeuralNetwork {
-	private float[][][] weights;
+import com.badlogic.gdx.utils.Json;
 
-	public NeuralNetwork(int[] layers) {
+public class NeuralNetwork {
+	protected float[][][] weights;
+
+	public NeuralNetwork() {
+	}
+	public NeuralNetwork(NeuralNetwork other) {
+		weights = other.weights.clone();
+	}
+	
+	public void random(int[] layers) {
 		weights = new float[layers.length-1][][];
 		
 		// Fill weights matrix with random floats between -1 and 1
@@ -32,5 +40,26 @@ public class NeuralNetwork {
 			output[i] = 1.0f;	// Add the bias
 		}
 		return Np.tanh(Np.mul(weights[l], output));
+	}
+	
+	public void mutate() {
+		int totSynapses = weights.length * weights[0].length * weights[0][0].length;
+		double mutateProb = 2/totSynapses;
+		for (int i=0; i<weights.length; i++) {
+			for (int j=0; j<weights[0].length; j++) {
+				for (int k=0; k<weights[0][0].length; k++) {
+					if (Math.random() < mutateProb)
+						weights[i][j][k] = (float) (Math.random()*2 - 1);
+				}
+			}
+		}
+	}
+	
+	public void loadNN() {
+		Json json = new Json();
+	}
+	
+	public void saveNN() {
+		Json json = new Json();
 	}
 }

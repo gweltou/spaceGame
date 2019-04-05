@@ -1,4 +1,4 @@
-package ai;
+package com.gwel.ai;
 
 import java.util.Arrays;
 import java.util.Random;

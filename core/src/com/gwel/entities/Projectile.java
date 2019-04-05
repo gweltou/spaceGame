@@ -38,6 +38,17 @@ public class Projectile {
 	private RayCastCallback rcCallback = new RayCastCallback() {
 		@Override
 		public float reportRayFixture(Fixture fixture, Vector2 point, Vector2 normal, float fraction) {
+			// Filter out sensors
+			if (fixture.getUserData() == Enum.SENSOR_F ||
+					fixture.getUserData() == Enum.SENSOR_FL ||
+					fixture.getUserData() == Enum.SENSOR_FR ||
+					fixture.getUserData() == Enum.SENSOR_ML ||
+					fixture.getUserData() == Enum.SENSOR_MR ||
+					fixture.getUserData() == Enum.SENSOR_BL ||
+					fixture.getUserData() == Enum.SENSOR_BR) {
+				return -1;
+			}
+			
 			disposable = true;
 			position = point.cpy();
 			if (fixture.getUserData() == Enum.SATELLITE) {

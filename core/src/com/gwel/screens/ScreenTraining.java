@@ -3,6 +3,7 @@ package com.gwel.screens;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.ListIterator;
+import java.util.PriorityQueue;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Screen;
@@ -19,6 +20,7 @@ import com.badlogic.gdx.physics.box2d.Contact;
 import com.badlogic.gdx.physics.box2d.Fixture;
 import com.badlogic.gdx.physics.box2d.World;
 import com.badlogic.gdx.utils.TimeUtils;
+import com.gwel.ai.DroidComparator;
 import com.gwel.entities.*;
 import com.gwel.spacegame.Enum;
 import com.gwel.spacegame.MyContactListener;
@@ -35,6 +37,8 @@ public class ScreenTraining implements Screen {
 	private final float BORDER_RIGHT = WORLD_WIDTH/2.0f;
 	private final float BORDER_UP = WORLD_HEIGHT/2.0f;
 	private final float BORDER_DOWN = -WORLD_HEIGHT/2.0f;
+	private final int WINNERS_PER_GENERATION = 12;
+	
 	
 	final SpaceGame game;
 	private World b2world;
@@ -45,11 +49,13 @@ public class ScreenTraining implements Screen {
 	private ListIterator<DroidShip> droidsIter;
 	private LinkedList<Projectile> projectiles = new LinkedList<Projectile>();
 	private ListIterator<Projectile> proj_iter;
+	private PriorityQueue<DroidShip> podium = new PriorityQueue<DroidShip>(5, new DroidComparator());
 	
 	Box2DDebugRenderer debugRenderer;
 	ShapeRenderer renderer;
 	
 	long lastFpsDisplay;
+	int steps;
 	
 	
 	public ScreenTraining(final SpaceGame game) {
@@ -66,6 +72,7 @@ public class ScreenTraining implements Screen {
 		populatePlanets();
 		populateShips(128);
 		lastFpsDisplay = TimeUtils.millis();
+		steps = 0;
 	}
 	
 	@Override
@@ -91,12 +98,38 @@ public class ScreenTraining implements Screen {
 	public void render(float delta_time) {
 		if (destroy)
 			dispose(); // doesn't work
+		if (steps > 2000) {
+			System.out.println("New generation");
+			steps = 0;
+			
+			// Add remaining living droids to the podium
+			for (DroidShip droid: droids) {
+				droid.dispose();
+				droid.setScore(steps);
+				podium.add(droid);
+			}
+			
+			// Select the best droids of this generation
+			ArrayList<DroidShip> winners = new ArrayList<DroidShip>();
+			for (int i = Math.min(WINNERS_PER_GENERATION, podium.size()); i >= 1; i--) {
+				winners.add(podium.poll());
+			}
+			
+			// Calculate generation score
+			float scoreGen = 0;
+			for (DroidShip droid: winners) {
+				scoreGen += droid.getScore();
+			}
+			System.out.println("Generation score: " + String.valueOf(scoreGen));
+			
+			// Respawn
+			droids.clear();
+			populateShips(newGeneration(winners));
+		}
 		
 		handleInput();
 
 		// UPDATING GAME STATE
-		//AABB local_range = new AABB(
-		//local_planets = game.Qt.query(local_range);
 		b2world.step(1.0f/60f, 8, 3);
 		
 		for (Contact c: b2world.getContactList()) {
@@ -182,12 +215,15 @@ public class ScreenTraining implements Screen {
 			}
 		}		
 		
+		// Clean up dead Droids and wrap-around screen borders
 		droidsIter = droids.listIterator();
 		while (droidsIter.hasNext()) {
 			DroidShip droid = droidsIter.next();
 			droid.update();
 			if (droid.disposable) {
 				droid.dispose();
+				droid.setScore(steps);
+				podium.add(droid);
 				droidsIter.remove();
 			} else if (droid.getPosition().x > BORDER_RIGHT) {
 				droid.dispose();
@@ -255,6 +291,8 @@ public class ScreenTraining implements Screen {
 			System.out.println("Fps: " + String.valueOf(Gdx.graphics.getFramesPerSecond()));
 			lastFpsDisplay = TimeUtils.millis();
 		}
+		
+		steps++;
 	}
 
 	@Override
@@ -289,26 +327,58 @@ public class ScreenTraining implements Screen {
 	}
 	
 	private void populateShips(int number) {
-		boolean isEmpty;
-		for (int i=0; i<number;) {
-			float radius = (float) (Math.random()*SPAWN_RADIUS);
-			Vector2 pos = new Vector2().setToRandomDirection().scl(radius);
-			isEmpty = true;
-			for (DroidShip otherShip: droids) {
-				if (pos.dst(otherShip.getPosition()) < 3.0f*otherShip.getBoundingRadius())
-					isEmpty = false;
-			}
-			if (isEmpty) {
-				float angle = (float) Math.random()*MathUtils.PI2;
-				DroidShip droid = new DroidShip(pos, angle, projectiles);
-				droid.initBody(b2world);
-				droid.initNN();
-				droids.add(droid);
-				i++;
+		ArrayList<DroidShip> ships = new ArrayList<DroidShip>();
+		for (int i=0; i<number; i++) {
+			DroidShip newDroid = new DroidShip(new Vector2(), 0, projectiles);
+			newDroid.initNN();
+			ships.add(newDroid);
+		}
+		populateShips(ships);
+	}
+	private void populateShips(ArrayList<DroidShip> ships) {
+		boolean isEmpty, spawned;
+		for (DroidShip droid: ships) {
+			spawned = false;
+			while (!spawned) {
+				float radius = (float) (Math.random()*SPAWN_RADIUS);
+				Vector2 pos = new Vector2().setToRandomDirection().scl(radius);
+				isEmpty = true;
+				for (DroidShip otherShip: droids) {
+					if (pos.dst(otherShip.getPosition()) < 4.0f*otherShip.getBoundingRadius())
+						isEmpty = false;
+				}
+				if (isEmpty) {
+					float angle = (float) Math.random()*MathUtils.PI2;
+					if (!droid.disposable)
+						droid.dispose();
+					droid.resetVars();
+					droid.setPosition(pos);
+					droid.setAngle(angle);
+					droid.initBody(b2world);
+					droids.add(droid);
+					spawned = true;
+				}
 			}
 		}
 	}
 
+	private ArrayList<DroidShip> newGeneration(ArrayList<DroidShip> winners) {
+		ArrayList<DroidShip> newPool = new ArrayList<DroidShip>();
+		for (DroidShip droid: winners) {
+			for (int i=0; i<10; i++) {
+				DroidShip offspring = droid.copy();
+				offspring.nn.mutate();
+				newPool.add(offspring);
+			}
+		}
+		for (DroidShip droid: winners) {
+			newPool.add(droid);
+		}
+		
+		System.out.println(String.valueOf(newPool.size() + " new Droids created from " + String.valueOf(winners.size())));
+		return newPool;
+	}
+	
 	private void handleInput() {
 		float x_axis = 0.0f;
 		float y_axis = 0.0f;
@@ -358,5 +428,13 @@ public class ScreenTraining implements Screen {
 			game.camera.zoom(0.95f);
 			game.camera.autozoom = false;
 		}
+	}
+	
+	void importDroids(String f) {
+		
+	}
+	
+	void exportDroids(ArrayList<DroidShip> ships) {
+		
 	}
 }

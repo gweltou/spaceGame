@@ -8,26 +8,21 @@ import com.badlogic.gdx.files.FileHandle;
 import com.badlogic.gdx.math.Affine2;
 import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Vector2;
-import com.badlogic.gdx.physics.box2d.Body;
-import com.badlogic.gdx.physics.box2d.BodyDef;
 import com.badlogic.gdx.physics.box2d.Fixture;
 import com.badlogic.gdx.physics.box2d.FixtureDef;
 import com.badlogic.gdx.physics.box2d.PolygonShape;
 import com.badlogic.gdx.physics.box2d.World;
-import com.badlogic.gdx.physics.box2d.BodyDef.BodyType;
-import com.badlogic.gdx.physics.box2d.Contact;
 import com.badlogic.gdx.utils.TimeUtils;
+import com.gwel.ai.NeuralNetwork;
 import com.gwel.spacegame.Enum;
 import com.gwel.spacegame.MyRenderer;
-import com.gwel.spacegame.utils;
 
-import ai.NeuralNetwork;
 
 public class DroidShip extends PhysicBody {
 	public final float MAX_VEL = 20.0f;
 	public final float MAX_ANG_VEL = 4.0f;
 	private final float FIRE_COOLDOWN = 200.0f; // In milliseconds
-	public final static float SIGHT_DISTANCE = 20.0f;
+	public final static float SIGHT_DISTANCE = 30.0f;
 	private final static int NN_INPUTS = 7;
 	
 	//public float speed_mag;
@@ -35,7 +30,8 @@ public class DroidShip extends PhysicBody {
 	private Vector2 pPosition;
 	
 	public float hitpoints;
-	private long last_fire;
+	private long lastFire;
+	private int amunition;
 	private float dstCounter = 0; // For NN training
 	
 	private Affine2 transform;
@@ -45,8 +41,9 @@ public class DroidShip extends PhysicBody {
 	private Vector2 p2_tmp = new Vector2();
 	private Vector2 p3_tmp = new Vector2();
 	
-	private NeuralNetwork nn;
+	public NeuralNetwork nn = null;
 	private float[] nnInput;
+	private float score = 0;
 	private LinkedList<Projectile> projectiles;
 	
 	
@@ -58,8 +55,7 @@ public class DroidShip extends PhysicBody {
 		vertices = new Vector2[4];
 		
 		nnInput = new float[NN_INPUTS];
-		hitpoints = 200.0f;
-		last_fire = TimeUtils.millis();
+		resetVars();
 		
 		readShapeFromFile();
 	}
@@ -117,20 +113,24 @@ public class DroidShip extends PhysicBody {
 	public void hit(float hp) {
 		hitpoints -= hp;
 		if (hitpoints <= 0.0) {
-			System.out.println("Droid died");
+			//System.out.println("Droid died");
 			disposable = true;
 		}
 	}
 	
 	public void fire(LinkedList<Projectile> projectiles) {
+		if (amunition == 0) 
+			return;
+		
 		long now = TimeUtils.millis();
-		if (now-last_fire >= FIRE_COOLDOWN) {
+		if (now-lastFire >= FIRE_COOLDOWN) {
 			Vector2 dir = new Vector2(2.0f, 0.0f); // Here we set the bullet's velocity
 			dir.setAngleRad(getAngle());
 			Vector2 pos = this.getPosition();
 			Projectile proj = new Projectile(this, pos, dir, 10.0f);
 			projectiles.add(proj);
-			last_fire = now;
+			lastFire = now;
+			amunition--;
 		}
 	}
 	
@@ -238,7 +238,12 @@ public class DroidShip extends PhysicBody {
 	
 	public void initNN() {
 		int[] layers = {7, 14, 14, 4};
-		nn = new NeuralNetwork(layers);
+		nn = new NeuralNetwork();
+		nn.random(layers);
+	}
+	public void initNN(NeuralNetwork n) {
+		// Copy another neural network into this
+		nn = new NeuralNetwork(n);
 	}
 	
 	public void setSensor(Enum sensor, float distance) {
@@ -359,5 +364,27 @@ public class DroidShip extends PhysicBody {
 	@Override
 	public float getBoundingRadius() {
 		return size.y / 2.0f;
+	}
+	
+	public void setScore(int steps) {
+		score = steps + amunition + hitpoints + dstCounter;
+	}
+	
+	public float getScore() {
+		return score;
+	}
+	
+	public void resetVars() {
+		score = 0;
+		hitpoints = 200;
+		amunition = 100;
+		dstCounter = 0.0f;
+		lastFire = 0;
+	}
+
+	public DroidShip copy() {
+		DroidShip newDroid = new DroidShip(getPosition(), getAngle(), projectiles);
+		newDroid.initNN(this.nn);
+		return newDroid;
 	}
 }

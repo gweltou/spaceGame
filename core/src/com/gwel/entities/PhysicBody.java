@@ -53,6 +53,10 @@ public abstract class PhysicBody implements MovingObject, Collidable {
 		return angle;
 	}
 	
+	public void setAngle(float angle) {
+		this.angle = angle;
+	}
+	
 	public float getAngleDiff(float refAngle) {
 		if (body != null)
 			return utils.wrapAngleAroundZero(refAngle-body.getAngle());
