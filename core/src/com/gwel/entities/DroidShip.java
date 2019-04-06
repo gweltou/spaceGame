@@ -237,7 +237,7 @@ public class DroidShip extends PhysicBody {
 	}
 	
 	public void initNN() {
-		int[] layers = {7, 14, 14, 4};
+		int[] layers = {7, 24, 24, 24, 4};
 		nn = new NeuralNetwork();
 		nn.random(layers);
 	}

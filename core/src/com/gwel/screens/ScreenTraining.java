@@ -37,7 +37,7 @@ public class ScreenTraining implements Screen {
 	private final float BORDER_RIGHT = WORLD_WIDTH/2.0f;
 	private final float BORDER_UP = WORLD_HEIGHT/2.0f;
 	private final float BORDER_DOWN = -WORLD_HEIGHT/2.0f;
-	private final int WINNERS_PER_GENERATION = 12;
+	private final int WINNERS_PER_GENERATION = 10;
 	
 	
 	final SpaceGame game;
@@ -50,6 +50,8 @@ public class ScreenTraining implements Screen {
 	private LinkedList<Projectile> projectiles = new LinkedList<Projectile>();
 	private ListIterator<Projectile> proj_iter;
 	private PriorityQueue<DroidShip> podium = new PriorityQueue<DroidShip>(5, new DroidComparator());
+	private int generation;
+	private ArrayList<Float> scores = new ArrayList<Float>();
 	
 	Box2DDebugRenderer debugRenderer;
 	ShapeRenderer renderer;
@@ -70,9 +72,10 @@ public class ScreenTraining implements Screen {
 		renderer = new ShapeRenderer();
 		
 		populatePlanets();
-		populateShips(128);
+		populateShips(64);
 		lastFpsDisplay = TimeUtils.millis();
 		steps = 0;
+		generation = 0;
 	}
 	
 	@Override
@@ -98,8 +101,10 @@ public class ScreenTraining implements Screen {
 	public void render(float delta_time) {
 		if (destroy)
 			dispose(); // doesn't work
-		if (steps > 2000) {
-			System.out.println("New generation");
+		
+		// END OF SIMULATION FOR CURRENT GENERATION
+		if (steps > 2500) {
+			System.out.println("End of generation " + String.valueOf(generation));
 			steps = 0;
 			
 			// Add remaining living droids to the podium
@@ -109,22 +114,35 @@ public class ScreenTraining implements Screen {
 				podium.add(droid);
 			}
 			
-			// Select the best droids of this generation
-			ArrayList<DroidShip> winners = new ArrayList<DroidShip>();
-			for (int i = Math.min(WINNERS_PER_GENERATION, podium.size()); i >= 1; i--) {
-				winners.add(podium.poll());
-			}
-			
 			// Calculate generation score
+			System.out.print("Generations scores: ");
 			float scoreGen = 0;
-			for (DroidShip droid: winners) {
+			for (DroidShip droid: podium) {
 				scoreGen += droid.getScore();
 			}
-			System.out.println("Generation score: " + String.valueOf(scoreGen));
+			scoreGen /= podium.size();
+			scores.add(scoreGen);
+			for (float score: scores) {
+				System.out.print(score);
+				System.out.print("__");
+			}
+			System.out.print("\n");
+			
+			// Select the best droids of this generation
+			System.out.print("Individual scores: ");
+			ArrayList<DroidShip> winners = new ArrayList<DroidShip>();
+			for (int i = Math.min(WINNERS_PER_GENERATION, podium.size()); i >= 1; i--) {
+				DroidShip droid = podium.remove();
+				System.out.print(String.valueOf(droid.getScore() + "__"));
+				winners.add(droid);
+			}
+			System.out.print("\n");
 			
 			// Respawn
+			podium.clear();
 			droids.clear();
 			populateShips(newGeneration(winners));
+			generation += 1;
 		}
 		
 		handleInput();
@@ -287,10 +305,13 @@ public class ScreenTraining implements Screen {
 		}		
 		renderer.end();
 		
+		/*
+		// Display Framerate
 		if (TimeUtils.millis() - lastFpsDisplay > 1000) {
 			System.out.println("Fps: " + String.valueOf(Gdx.graphics.getFramesPerSecond()));
 			lastFpsDisplay = TimeUtils.millis();
 		}
+		*/
 		
 		steps++;
 	}
@@ -365,7 +386,7 @@ public class ScreenTraining implements Screen {
 	private ArrayList<DroidShip> newGeneration(ArrayList<DroidShip> winners) {
 		ArrayList<DroidShip> newPool = new ArrayList<DroidShip>();
 		for (DroidShip droid: winners) {
-			for (int i=0; i<10; i++) {
+			for (int i=0; i<5; i++) {
 				DroidShip offspring = droid.copy();
 				offspring.nn.mutate();
 				newPool.add(offspring);
