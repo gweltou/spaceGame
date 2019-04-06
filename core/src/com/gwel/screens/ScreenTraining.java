@@ -9,6 +9,7 @@ import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Screen;
 import com.badlogic.gdx.Input.Keys;
 import com.badlogic.gdx.controllers.PovDirection;
+import com.badlogic.gdx.files.FileHandle;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer.ShapeType;
@@ -19,8 +20,11 @@ import com.badlogic.gdx.physics.box2d.Box2DDebugRenderer;
 import com.badlogic.gdx.physics.box2d.Contact;
 import com.badlogic.gdx.physics.box2d.Fixture;
 import com.badlogic.gdx.physics.box2d.World;
+import com.badlogic.gdx.utils.Json;
 import com.badlogic.gdx.utils.TimeUtils;
 import com.gwel.ai.DroidComparator;
+import com.gwel.ai.NeuralNetwork;
+import com.gwel.ai.DroidPool;
 import com.gwel.entities.*;
 import com.gwel.spacegame.Enum;
 import com.gwel.spacegame.MyContactListener;
@@ -28,6 +32,7 @@ import com.gwel.spacegame.SpaceGame;
 
 
 public class ScreenTraining implements Screen {
+	private final int SIM_SPEED = 8;
 	private final float SPAWN_RADIUS = 30.0f;
 	private final float SMALL_PLANET_RADIUS = 15.0f;
 	private final float BIG_PLANET_RADIUS = 35.0f;
@@ -37,8 +42,9 @@ public class ScreenTraining implements Screen {
 	private final float BORDER_RIGHT = WORLD_WIDTH/2.0f;
 	private final float BORDER_UP = WORLD_HEIGHT/2.0f;
 	private final float BORDER_DOWN = -WORLD_HEIGHT/2.0f;
-	private final int WINNERS_PER_GENERATION = 10;
-	
+	private final int WINNERS_PER_GENERATION = 8;
+	private final int N_OFFSPRINGS = 4;
+	private final int SIM_STEPS = 10000;
 	
 	final SpaceGame game;
 	private World b2world;
@@ -51,7 +57,7 @@ public class ScreenTraining implements Screen {
 	private ListIterator<Projectile> proj_iter;
 	private PriorityQueue<DroidShip> podium = new PriorityQueue<DroidShip>(5, new DroidComparator());
 	private int generation;
-	private ArrayList<Float> scores = new ArrayList<Float>();
+	private ArrayList<Integer> scores = new ArrayList<Integer>();
 	
 	Box2DDebugRenderer debugRenderer;
 	ShapeRenderer renderer;
@@ -66,6 +72,7 @@ public class ScreenTraining implements Screen {
 		
 		b2world = new World(new Vector2(0.0f, 0.0f), true);
 		b2world.setContactListener(new MyContactListener(game));
+		
 		
 		debugRenderer=new Box2DDebugRenderer();
 		debugRenderer.setDrawAABBs(false);
@@ -99,11 +106,52 @@ public class ScreenTraining implements Screen {
 
 	@Override
 	public void render(float delta_time) {
-		if (destroy)
-			dispose(); // doesn't work
+		for (int i=0; i<SIM_SPEED; i++) {
+			simStep();
+		}
 		
+		handleInput();
+		
+		//  Camera update
+		game.camera.update();
+
+		Gdx.gl.glClearColor(0f, 0f, 0f, 1f);
+		Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
+		debugRenderer.render(b2world, new Matrix4().set(game.camera.affine));
+		renderer.setProjectionMatrix(new Matrix4().set(game.camera.affine));		
+
+		/*
+			game.renderer.setProjectionMatrix(new Matrix4().set(game.camera.affine));
+			for (Planet p : b2World) {
+				p.render(game.renderer);
+			}
+			for (MovingObject b : droids) {
+				if (camera_range.containsPoint(b.getPosition())) {
+					b.render(game.renderer);
+				}
+			}
+		 */
+
+		renderer.begin(ShapeType.Line);
+		renderer.setColor(1, 0, 0, 1);
+		for (Projectile proj: projectiles) {
+			renderer.line(proj.position, proj.pPosition);
+		}		
+		renderer.end();
+
+		/*
+		// Display Framerate
+		if (TimeUtils.millis() - lastFpsDisplay > 4000) {
+			System.out.println("Fps: " + String.valueOf(Gdx.graphics.getFramesPerSecond()));
+			lastFpsDisplay = TimeUtils.millis();
+		}
+		*/
+	}
+	
+
+	public void simStep() {		
 		// END OF SIMULATION FOR CURRENT GENERATION
-		if (steps > 2500) {
+		if (steps > SIM_STEPS || droids.isEmpty()) {
 			System.out.println("End of generation " + String.valueOf(generation));
 			steps = 0;
 			
@@ -121,8 +169,8 @@ public class ScreenTraining implements Screen {
 				scoreGen += droid.getScore();
 			}
 			scoreGen /= podium.size();
-			scores.add(scoreGen);
-			for (float score: scores) {
+			scores.add((int) Math.round(scoreGen));
+			for (int score: scores) {
 				System.out.print("__");
 				System.out.print(score);
 			}
@@ -138,14 +186,17 @@ public class ScreenTraining implements Screen {
 			}
 			System.out.print("\n");
 			
+			// Save every 10 generations to hard-drive
+			if (generation>0 && generation%10 == 0) {
+				exportDroids(winners);
+			}
+			
 			// Respawn
 			podium.clear();
 			droids.clear();
 			populateShips(newGeneration(winners));
 			generation += 1;
 		}
-		
-		handleInput();
 
 		// UPDATING GAME STATE
 		b2world.step(1.0f/60f, 8, 3);
@@ -352,40 +403,6 @@ public class ScreenTraining implements Screen {
 			    proj.update(b2world, 1.0f);
 		}
 		
-		//  Camera update
-		game.camera.update();
-		
-		Gdx.gl.glClearColor(0f, 0f, 0f, 1f);
-		Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
-		debugRenderer.render(b2world, new Matrix4().set(game.camera.affine));
-		renderer.setProjectionMatrix(new Matrix4().set(game.camera.affine));		
-		
-		/*
-		game.renderer.setProjectionMatrix(new Matrix4().set(game.camera.affine));
-		for (Planet p : b2World) {
-			p.render(game.renderer);
-		}
-		for (MovingObject b : droids) {
-			if (camera_range.containsPoint(b.getPosition())) {
-				b.render(game.renderer);
-			}
-		}
-		*/
-		renderer.begin(ShapeType.Line);
-		renderer.setColor(1, 0, 0, 1);
-		for (Projectile proj: projectiles) {
-			renderer.line(proj.position, proj.pPosition);
-		}		
-		renderer.end();
-		
-		/*
-		// Display Framerate
-		if (TimeUtils.millis() - lastFpsDisplay > 1000) {
-			System.out.println("Fps: " + String.valueOf(Gdx.graphics.getFramesPerSecond()));
-			lastFpsDisplay = TimeUtils.millis();
-		}
-		*/
-		
 		steps++;
 	}
 
@@ -459,7 +476,7 @@ public class ScreenTraining implements Screen {
 	private ArrayList<DroidShip> newGeneration(ArrayList<DroidShip> winners) {
 		ArrayList<DroidShip> newPool = new ArrayList<DroidShip>();
 		for (DroidShip droid: winners) {
-			for (int i=0; i<5; i++) {
+			for (int i=0; i<N_OFFSPRINGS; i++) {
 				DroidShip offspring = droid.copy();
 				offspring.nn.mutate();
 				newPool.add(offspring);
@@ -525,10 +542,26 @@ public class ScreenTraining implements Screen {
 	}
 	
 	void importDroids(String f) {
-		
+		Json json = new Json();
+		//NeuralNetwork nn = json.fromJson(NeuralNetwork.class, text);
 	}
 	
 	void exportDroids(ArrayList<DroidShip> ships) {
-		
+		System.out.println("Saving generation to hard-drive");
+		DroidPool pool = new DroidPool();
+		pool.activationFunc = "tanh";
+		pool.scores = scores;
+		pool.nnLayers = ships.get(0).nnLayers;
+		ArrayList<NeuralNetwork> nn = new ArrayList<NeuralNetwork>();
+		for (DroidShip ship: ships) {
+			nn.add(ship.nn);
+		}
+		pool.nn = nn;
+		Json json = new Json();
+		json.setElementType(DroidPool.class, "nn", NeuralNetwork.class);
+		json.setElementType(DroidPool.class, "scores", Float.class);
+		String text = json.toJson(pool);
+		FileHandle file = Gdx.files.local("nn/" + pool.id + ".txt");
+		file.writeString(json.prettyPrint(text), false);
 	}
 }

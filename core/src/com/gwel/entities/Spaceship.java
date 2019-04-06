@@ -9,10 +9,8 @@ import com.badlogic.gdx.math.Affine2;
 import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.physics.box2d.*;
-import com.badlogic.gdx.physics.box2d.BodyDef.BodyType;
 import com.badlogic.gdx.utils.TimeUtils;
 import com.gwel.spacegame.MyRenderer;
-import com.gwel.spacegame.utils;
 import com.gwel.spacegame.Enum;
 
 
@@ -23,7 +21,6 @@ public class Spaceship extends PhysicBody {
 	
 	//public float speed_mag;
 	private Vector2 size = new Vector2(1.7f, 1.8f);  // Size of spaceship in game units
-	private float angle;
 	
 	private float hitpoints;
 	private long last_fire;

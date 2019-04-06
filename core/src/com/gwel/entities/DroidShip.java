@@ -1,6 +1,5 @@
 package com.gwel.entities;
 
-import java.util.Arrays;
 import java.util.LinkedList;
 
 import com.badlogic.gdx.Gdx;
@@ -22,7 +21,7 @@ public class DroidShip extends PhysicBody {
 	public final float MAX_VEL = 20.0f;
 	public final float MAX_ANG_VEL = 4.0f;
 	private final float FIRE_COOLDOWN = 200.0f; // In milliseconds
-	public final static float SIGHT_DISTANCE = 30.0f;
+	public final static float SIGHT_DISTANCE = 40.0f;
 	private final static int NN_INPUTS = 17;
 	
 	//public float speed_mag;
@@ -33,7 +32,7 @@ public class DroidShip extends PhysicBody {
 	private long lastFire;
 	private int amunition;
 	private float dstCounter = 0; // For NN training
-	private float[] scores = new float[5];
+	private int[] scores = new int[5];
 	private int iScore = 0;
 	
 	private Affine2 transform;
@@ -44,8 +43,8 @@ public class DroidShip extends PhysicBody {
 	private Vector2 p3_tmp = new Vector2();
 	
 	public NeuralNetwork nn = null;
+	public int[] nnLayers = {14, 28, 28, 28, 4};
 	private float[] nnInput;
-	private float score = 0;
 	private LinkedList<Projectile> projectiles;
 	
 	
@@ -239,9 +238,8 @@ public class DroidShip extends PhysicBody {
 	}
 	
 	public void initNN() {
-		int[] layers = {14, 28, 28, 28, 4};
 		nn = new NeuralNetwork();
-		nn.random(layers);
+		nn.random(nnLayers);
 	}
 	public void initNN(NeuralNetwork n) {
 		// Copy another neural network into this
@@ -398,21 +396,20 @@ public class DroidShip extends PhysicBody {
 				// Shift scores to the left
 				scores[i] = scores[i+1];
 			}
-			scores[iScore-1] = steps + amunition + hitpoints + dstCounter;
+			scores[iScore-1] = (int) (steps + amunition + hitpoints + dstCounter);
 		} else {
-			scores[iScore++] = steps + amunition + hitpoints + dstCounter;
+			scores[iScore++] = (int) (steps + amunition + hitpoints + dstCounter);
 		}
 	}
 	
-	public float getScore() {
-		float totScore = 0;
+	public int getScore() {
+		int totScore = 0;
 		for (int i=0; i<iScore; i++)
 			totScore += scores[i];
 		return totScore/iScore;
 	}
 	
 	public void resetVars() {
-		score = 0;
 		hitpoints = 200;
 		amunition = 100;
 		dstCounter = 0.0f;

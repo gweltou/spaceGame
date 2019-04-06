@@ -48,6 +48,9 @@ public class SpaceGame extends Game {
 	
 	@Override
 	public void create () {
+		Gdx.graphics.setContinuousRendering(false);
+		//Gdx.graphics.requestRendering();
+		
 		if(Controllers.getControllers().size == 0)
             hasController = false;
         else {

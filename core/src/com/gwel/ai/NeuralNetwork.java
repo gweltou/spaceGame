@@ -1,8 +1,5 @@
 package com.gwel.ai;
 
-import java.util.Arrays;
-
-import com.badlogic.gdx.utils.Json;
 
 public class NeuralNetwork {
 	protected float[][][] weights;
@@ -33,7 +30,7 @@ public class NeuralNetwork {
 		output[i] = 1.0f;	// Add the bias
 		int l;
 		for (l=0; l<weights.length-1; l++) {
-			tmp = Np.tanh(Np.mul(weights[l], output));
+			tmp = Np.relu(Np.mul(weights[l], output));
 			output = new float[tmp.length+1];
 			for (i=0; i<tmp.length; i++)
 				output[i] = tmp[i];
@@ -53,13 +50,5 @@ public class NeuralNetwork {
 				}
 			}
 		}
-	}
-	
-	public void loadNN() {
-		Json json = new Json();
-	}
-	
-	public void saveNN() {
-		Json json = new Json();
 	}
 }

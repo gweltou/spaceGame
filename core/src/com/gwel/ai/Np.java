@@ -1,6 +1,5 @@
 package com.gwel.ai;
 
-import java.util.Arrays;
 import java.util.Random;
 
 /**
@@ -274,6 +273,19 @@ public class Np {
 
         for (int i = 0; i < a.length; i++) {
             z[i] = (float) ((Math.exp(a[i]) - Math.exp(-a[i])) / (Math.exp(a[i]) + Math.exp(-a[i])));
+        }
+        return z;
+    }
+    
+    /**
+     * @param a matrix
+     * @return relu of vector a
+     */
+    public static float[] relu(float[] a) {
+        float[] z = new float[a.length];
+
+        for (int i = 0; i < a.length; i++) {
+            z[i] = (float) (Math.max(a[i], 0.0f));
         }
         return z;
     }
