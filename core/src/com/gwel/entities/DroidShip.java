@@ -23,7 +23,7 @@ public class DroidShip extends PhysicBody {
 	public final float MAX_ANG_VEL = 4.0f;
 	private final float FIRE_COOLDOWN = 200.0f; // In milliseconds
 	public final static float SIGHT_DISTANCE = 30.0f;
-	private final static int NN_INPUTS = 7;
+	private final static int NN_INPUTS = 17;
 	
 	//public float speed_mag;
 	private final Vector2 size = new Vector2(1.7f, 1.8f);  // Size of spaceship in game units
@@ -33,6 +33,8 @@ public class DroidShip extends PhysicBody {
 	private long lastFire;
 	private int amunition;
 	private float dstCounter = 0; // For NN training
+	private float[] scores = new float[5];
+	private int iScore = 0;
 	
 	private Affine2 transform;
 	private float[][] triangles;
@@ -237,7 +239,7 @@ public class DroidShip extends PhysicBody {
 	}
 	
 	public void initNN() {
-		int[] layers = {7, 24, 24, 24, 4};
+		int[] layers = {14, 28, 28, 28, 4};
 		nn = new NeuralNetwork();
 		nn.random(layers);
 	}
@@ -249,6 +251,7 @@ public class DroidShip extends PhysicBody {
 	public void setSensor(Enum sensor, float distance) {
 		distance = Math.min(distance / SIGHT_DISTANCE, 1.0f); // Normalize distance
 		switch(sensor) {
+		// OBSTACLE SENSORS
 		case SENSOR_BR:
 			nnInput[0] = Math.max(1-distance, nnInput[0]);
 			break;
@@ -269,6 +272,28 @@ public class DroidShip extends PhysicBody {
 			break;
 		case SENSOR_BL:
 			nnInput[6] = Math.max(1-distance, nnInput[6]);
+			break;
+		// SHIP SENSOR
+		case SENSOR_SBR:
+			nnInput[7] = Math.max(1-distance, nnInput[0]);
+			break;
+		case SENSOR_SMR:
+			nnInput[8] = Math.max(1-distance, nnInput[1]);
+			break;
+		case SENSOR_SFR:
+			nnInput[9] = Math.max(1-distance, nnInput[2]);
+			break;
+		case SENSOR_SF:
+			nnInput[10] = Math.max(1-distance, nnInput[3]);
+			break;
+		case SENSOR_SFL:
+			nnInput[11] = Math.max(1-distance, nnInput[4]);
+			break;
+		case SENSOR_SML:
+			nnInput[12] = Math.max(1-distance, nnInput[5]);
+			break;
+		case SENSOR_SBL:
+			nnInput[13] = Math.max(1-distance, nnInput[6]);
 			break;
 		default:
 			break;
@@ -367,11 +392,23 @@ public class DroidShip extends PhysicBody {
 	}
 	
 	public void setScore(int steps) {
-		score = steps + amunition + hitpoints + dstCounter;
+		if (iScore == scores.length) {
+			// Scores table is full
+			for (int i=0; i<scores.length-1; i++) {
+				// Shift scores to the left
+				scores[i] = scores[i+1];
+			}
+			scores[iScore-1] = steps + amunition + hitpoints + dstCounter;
+		} else {
+			scores[iScore++] = steps + amunition + hitpoints + dstCounter;
+		}
 	}
 	
 	public float getScore() {
-		return score;
+		float totScore = 0;
+		for (int i=0; i<iScore; i++)
+			totScore += scores[i];
+		return totScore/iScore;
 	}
 	
 	public void resetVars() {

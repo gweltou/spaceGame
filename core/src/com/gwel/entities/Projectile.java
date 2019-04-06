@@ -45,7 +45,13 @@ public class Projectile {
 					fixture.getUserData() == Enum.SENSOR_ML ||
 					fixture.getUserData() == Enum.SENSOR_MR ||
 					fixture.getUserData() == Enum.SENSOR_BL ||
-					fixture.getUserData() == Enum.SENSOR_BR) {
+					fixture.getUserData() == Enum.SENSOR_BR ||
+					fixture.getUserData() == Enum.SENSOR_SFL ||
+					fixture.getUserData() == Enum.SENSOR_SFR ||
+					fixture.getUserData() == Enum.SENSOR_SML ||
+					fixture.getUserData() == Enum.SENSOR_SMR ||
+					fixture.getUserData() == Enum.SENSOR_SBL ||
+					fixture.getUserData() == Enum.SENSOR_SBR) {
 				return -1;
 			}
 			

@@ -123,8 +123,8 @@ public class ScreenTraining implements Screen {
 			scoreGen /= podium.size();
 			scores.add(scoreGen);
 			for (float score: scores) {
-				System.out.print(score);
 				System.out.print("__");
+				System.out.print(score);
 			}
 			System.out.print("\n");
 			
@@ -133,7 +133,7 @@ public class ScreenTraining implements Screen {
 			ArrayList<DroidShip> winners = new ArrayList<DroidShip>();
 			for (int i = Math.min(WINNERS_PER_GENERATION, podium.size()); i >= 1; i--) {
 				DroidShip droid = podium.remove();
-				System.out.print(String.valueOf(droid.getScore() + "__"));
+				System.out.print("__" + String.valueOf(droid.getScore()));
 				winners.add(droid);
 			}
 			System.out.print("\n");
@@ -156,6 +156,7 @@ public class ScreenTraining implements Screen {
 			Fixture f;
 			
 			// Sensors for Neural Network
+			// OBSTACLE SENSORS
 			if (f1.getUserData() == Enum.SENSOR_F || f2.getUserData() == Enum.SENSOR_F) {
 				f = f1;
 				if (f2.getUserData() == Enum.SENSOR_F) {
@@ -230,6 +231,78 @@ public class ScreenTraining implements Screen {
 				float thickness = ((Collidable) f1.getBody().getUserData()).getBoundingRadius()
 						+ ((Collidable) (f2.getBody().getUserData())).getBoundingRadius();
 				((DroidShip) f.getBody().getUserData()).setSensor(Enum.SENSOR_BL, dPos.len()-thickness);
+			}
+			
+			// SHIP SENSORS
+			if (f1.getUserData() == Enum.SENSOR_SF || f2.getUserData() == Enum.SENSOR_SF) {
+				f = f1;
+				if (f2.getUserData() == Enum.SENSOR_SF) {
+					f = f2;
+				}
+				Vector2 dPos = f1.getBody().getPosition().sub(f2.getBody().getPosition());
+				float thickness = ((Collidable) f1.getBody().getUserData()).getBoundingRadius()
+						+ ((Collidable) (f2.getBody().getUserData())).getBoundingRadius();
+				((DroidShip) f.getBody().getUserData()).setSensor(Enum.SENSOR_SF, dPos.len()-thickness);
+			}
+			if (f1.getUserData() == Enum.SENSOR_SFR || f2.getUserData() == Enum.SENSOR_SFR) {
+				f = f1;
+				if (f2.getUserData() == Enum.SENSOR_SFR) {
+					f = f2;
+				}
+				Vector2 dPos = f1.getBody().getPosition().sub(f2.getBody().getPosition());
+				float thickness = ((Collidable) f1.getBody().getUserData()).getBoundingRadius()
+						+ ((Collidable) (f2.getBody().getUserData())).getBoundingRadius();
+				((DroidShip) f.getBody().getUserData()).setSensor(Enum.SENSOR_SFR, dPos.len()-thickness);
+			}
+			if (f1.getUserData() == Enum.SENSOR_SFL || f2.getUserData() == Enum.SENSOR_SFL) {
+				f = f1;
+				if (f2.getUserData() == Enum.SENSOR_SFL) {
+					f = f2;
+				}
+				Vector2 dPos = f1.getBody().getPosition().sub(f2.getBody().getPosition());
+				float thickness = ((Collidable) f1.getBody().getUserData()).getBoundingRadius()
+						+ ((Collidable) (f2.getBody().getUserData())).getBoundingRadius();
+				((DroidShip) f.getBody().getUserData()).setSensor(Enum.SENSOR_SFL, dPos.len()-thickness);
+			}
+			if (f1.getUserData() == Enum.SENSOR_SMR || f2.getUserData() == Enum.SENSOR_SMR) {
+				f = f1;
+				if (f2.getUserData() == Enum.SENSOR_SMR) {
+					f = f2;
+				}
+				Vector2 dPos = f1.getBody().getPosition().sub(f2.getBody().getPosition());
+				float thickness = ((Collidable) f1.getBody().getUserData()).getBoundingRadius()
+						+ ((Collidable) (f2.getBody().getUserData())).getBoundingRadius();
+				((DroidShip) f.getBody().getUserData()).setSensor(Enum.SENSOR_SMR, dPos.len()-thickness);
+			}
+			if (f1.getUserData() == Enum.SENSOR_SML || f2.getUserData() == Enum.SENSOR_SML) {
+				f = f1;
+				if (f2.getUserData() == Enum.SENSOR_SML) {
+					f = f2;
+				}
+				Vector2 dPos = f1.getBody().getPosition().sub(f2.getBody().getPosition());
+				float thickness = ((Collidable) f1.getBody().getUserData()).getBoundingRadius()
+						+ ((Collidable) (f2.getBody().getUserData())).getBoundingRadius();
+				((DroidShip) f.getBody().getUserData()).setSensor(Enum.SENSOR_SML, dPos.len()-thickness);
+			}
+			if (f1.getUserData() == Enum.SENSOR_SBR || f2.getUserData() == Enum.SENSOR_SBR) {
+				f = f1;
+				if (f2.getUserData() == Enum.SENSOR_SBR) {
+					f = f2;
+				}
+				Vector2 dPos = f1.getBody().getPosition().sub(f2.getBody().getPosition());
+				float thickness = ((Collidable) f1.getBody().getUserData()).getBoundingRadius()
+						+ ((Collidable) (f2.getBody().getUserData())).getBoundingRadius();
+				((DroidShip) f.getBody().getUserData()).setSensor(Enum.SENSOR_BR, dPos.len()-thickness);
+			}
+			if (f1.getUserData() == Enum.SENSOR_SBL || f2.getUserData() == Enum.SENSOR_SBL) {
+				f = f1;
+				if (f2.getUserData() == Enum.SENSOR_SBL) {
+					f = f2;
+				}
+				Vector2 dPos = f1.getBody().getPosition().sub(f2.getBody().getPosition());
+				float thickness = ((Collidable) f1.getBody().getUserData()).getBoundingRadius()
+						+ ((Collidable) (f2.getBody().getUserData())).getBoundingRadius();
+				((DroidShip) f.getBody().getUserData()).setSensor(Enum.SENSOR_SBL, dPos.len()-thickness);
 			}
 		}		
 		
