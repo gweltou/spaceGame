@@ -13,7 +13,7 @@ import com.badlogic.gdx.physics.box2d.PolygonShape;
 import com.badlogic.gdx.physics.box2d.World;
 import com.badlogic.gdx.utils.TimeUtils;
 import com.gwel.ai.NeuralNetwork;
-import com.gwel.spacegame.Enum;
+import com.gwel.spacegame.Enums;
 import com.gwel.spacegame.MyRenderer;
 
 
@@ -21,8 +21,10 @@ public class DroidShip extends PhysicBody {
 	public final float MAX_VEL = 20.0f;
 	public final float MAX_ANG_VEL = 4.0f;
 	private final float FIRE_COOLDOWN = 200.0f; // In milliseconds
-	public final static float SIGHT_DISTANCE = 40.0f;
+	public final static float SIGHT_DISTANCE = 50.0f;
 	private final static int NN_INPUTS = 17;
+	public static int[] nnLayers = {14, 28, 28, 28, 4};
+	public static Enums activation = Enums.ACTIVATION_TANH;
 	
 	//public float speed_mag;
 	private final Vector2 size = new Vector2(1.7f, 1.8f);  // Size of spaceship in game units
@@ -43,7 +45,6 @@ public class DroidShip extends PhysicBody {
 	private Vector2 p3_tmp = new Vector2();
 	
 	public NeuralNetwork nn = null;
-	public int[] nnLayers = {14, 28, 28, 28, 4};
 	private float[] nnInput;
 	private LinkedList<Projectile> projectiles;
 	
@@ -67,7 +68,7 @@ public class DroidShip extends PhysicBody {
 		dstCounter += position.dst(pPosition);		
 		
 		float[] output;
-		output = nn.feedforward(nnInput);
+		output = nn.feedforward(nnInput, activation);
 		// reset nnInput to 0
 		for (int i=0; i<nnInput.length; i++)
 			nnInput[i] = 0.0f;
@@ -148,7 +149,7 @@ public class DroidShip extends PhysicBody {
 		fixtureDef.restitution = 0.6f;
 		fixtureDef.filter.categoryBits = 0x0002;
 		Fixture fixture = body.createFixture(fixtureDef);
-		fixture.setUserData(Enum.DROID);
+		fixture.setUserData(Enums.DROID);
 		shape.dispose();
 		
 		// Create sensors
@@ -166,7 +167,7 @@ public class DroidShip extends PhysicBody {
 		fixtureDef.isSensor = true;
 		fixtureDef.filter.groupIndex = -1;
 		fixture = body.createFixture(fixtureDef);
-		fixture.setUserData(Enum.SENSOR_F);
+		fixture.setUserData(Enums.SENSOR_F);
 		
 		// Front Symmetrical Sensors
 		sight.scl(0.8f);
@@ -178,7 +179,7 @@ public class DroidShip extends PhysicBody {
 		fixtureDef.isSensor = true;
 		fixtureDef.filter.groupIndex = -1;
 		fixture = body.createFixture(fixtureDef);
-		fixture.setUserData(Enum.SENSOR_FL);
+		fixture.setUserData(Enums.SENSOR_FL);
 		
 		verts[1] = sight.cpy().rotateRad(-MathUtils.PI/16f);
 		verts[2] = sight.cpy().rotateRad(-4*MathUtils.PI/16f);
@@ -188,7 +189,7 @@ public class DroidShip extends PhysicBody {
 		fixtureDef.isSensor = true;
 		fixtureDef.filter.groupIndex = -1;
 		fixture = body.createFixture(fixtureDef);
-		fixture.setUserData(Enum.SENSOR_FR);
+		fixture.setUserData(Enums.SENSOR_FR);
 		
 		// Middle Symmetrical Sensors
 		sight.scl(0.8f);
@@ -200,7 +201,7 @@ public class DroidShip extends PhysicBody {
 		fixtureDef.isSensor = true;
 		fixtureDef.filter.groupIndex = -1;
 		fixture = body.createFixture(fixtureDef);
-		fixture.setUserData(Enum.SENSOR_ML);
+		fixture.setUserData(Enums.SENSOR_ML);
 
 		verts[1] = sight.cpy().rotateRad(-4*MathUtils.PI/16f);
 		verts[2] = sight.cpy().rotateRad(-8*MathUtils.PI/16f);
@@ -210,7 +211,7 @@ public class DroidShip extends PhysicBody {
 		fixtureDef.isSensor = true;
 		fixtureDef.filter.groupIndex = -1;
 		fixture = body.createFixture(fixtureDef);
-		fixture.setUserData(Enum.SENSOR_MR);
+		fixture.setUserData(Enums.SENSOR_MR);
 		
 		// Rear Symmetrical Sensors
 		sight.scl(0.8f);
@@ -222,7 +223,7 @@ public class DroidShip extends PhysicBody {
 		fixtureDef.isSensor = true;
 		fixtureDef.filter.groupIndex = -1;
 		fixture = body.createFixture(fixtureDef);
-		fixture.setUserData(Enum.SENSOR_BL);
+		fixture.setUserData(Enums.SENSOR_BL);
 
 		verts[1] = sight.cpy().rotateRad(-8*MathUtils.PI/16f);
 		verts[2] = sight.cpy().rotateRad(-14*MathUtils.PI/16f);
@@ -232,7 +233,7 @@ public class DroidShip extends PhysicBody {
 		fixtureDef.isSensor = true;
 		fixtureDef.filter.groupIndex = -1;
 		fixture = body.createFixture(fixtureDef);
-		fixture.setUserData(Enum.SENSOR_BR);
+		fixture.setUserData(Enums.SENSOR_BR);
 		
 		coneSensor.dispose();
 	}
@@ -246,7 +247,7 @@ public class DroidShip extends PhysicBody {
 		nn = new NeuralNetwork(n);
 	}
 	
-	public void setSensor(Enum sensor, float distance) {
+	public void setSensor(Enums sensor, float distance) {
 		distance = Math.min(distance / SIGHT_DISTANCE, 1.0f); // Normalize distance
 		switch(sensor) {
 		// OBSTACLE SENSORS
@@ -271,27 +272,27 @@ public class DroidShip extends PhysicBody {
 		case SENSOR_BL:
 			nnInput[6] = Math.max(1-distance, nnInput[6]);
 			break;
-		// SHIP SENSOR
+		// SHIP SENSORS
 		case SENSOR_SBR:
-			nnInput[7] = Math.max(1-distance, nnInput[0]);
+			nnInput[7] = Math.max(1-distance, nnInput[7]);
 			break;
 		case SENSOR_SMR:
-			nnInput[8] = Math.max(1-distance, nnInput[1]);
+			nnInput[8] = Math.max(1-distance, nnInput[8]);
 			break;
 		case SENSOR_SFR:
-			nnInput[9] = Math.max(1-distance, nnInput[2]);
+			nnInput[9] = Math.max(1-distance, nnInput[9]);
 			break;
 		case SENSOR_SF:
-			nnInput[10] = Math.max(1-distance, nnInput[3]);
+			nnInput[10] = Math.max(1-distance, nnInput[10]);
 			break;
 		case SENSOR_SFL:
-			nnInput[11] = Math.max(1-distance, nnInput[4]);
+			nnInput[11] = Math.max(1-distance, nnInput[11]);
 			break;
 		case SENSOR_SML:
-			nnInput[12] = Math.max(1-distance, nnInput[5]);
+			nnInput[12] = Math.max(1-distance, nnInput[12]);
 			break;
 		case SENSOR_SBL:
-			nnInput[13] = Math.max(1-distance, nnInput[6]);
+			nnInput[13] = Math.max(1-distance, nnInput[13]);
 			break;
 		default:
 			break;

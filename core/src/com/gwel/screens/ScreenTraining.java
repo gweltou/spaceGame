@@ -26,7 +26,7 @@ import com.gwel.ai.DroidComparator;
 import com.gwel.ai.NeuralNetwork;
 import com.gwel.ai.DroidPool;
 import com.gwel.entities.*;
-import com.gwel.spacegame.Enum;
+import com.gwel.spacegame.Enums;
 import com.gwel.spacegame.MyContactListener;
 import com.gwel.spacegame.SpaceGame;
 
@@ -42,9 +42,11 @@ public class ScreenTraining implements Screen {
 	private final float BORDER_RIGHT = WORLD_WIDTH/2.0f;
 	private final float BORDER_UP = WORLD_HEIGHT/2.0f;
 	private final float BORDER_DOWN = -WORLD_HEIGHT/2.0f;
-	private final int WINNERS_PER_GENERATION = 8;
-	private final int N_OFFSPRINGS = 4;
-	private final int SIM_STEPS = 10000;
+	private final boolean DEBUG_RENDERING = true;
+	private final int STARTING_POP = 32;
+	private final int WINNERS_PER_GENERATION = 6;
+	private final int N_OFFSPRINGS = 8;
+	private final int SIM_STEPS = 20000;
 	
 	final SpaceGame game;
 	private World b2world;
@@ -56,8 +58,10 @@ public class ScreenTraining implements Screen {
 	private LinkedList<Projectile> projectiles = new LinkedList<Projectile>();
 	private ListIterator<Projectile> proj_iter;
 	private PriorityQueue<DroidShip> podium = new PriorityQueue<DroidShip>(5, new DroidComparator());
-	private int generation;
+	private int currentGen;
+	private DroidPool currentPool;
 	private ArrayList<Integer> scores = new ArrayList<Integer>();
+	private int scoreWinBest;	// Mean score of best winners so far
 	
 	Box2DDebugRenderer debugRenderer;
 	ShapeRenderer renderer;
@@ -73,16 +77,15 @@ public class ScreenTraining implements Screen {
 		b2world = new World(new Vector2(0.0f, 0.0f), true);
 		b2world.setContactListener(new MyContactListener(game));
 		
-		
 		debugRenderer=new Box2DDebugRenderer();
 		debugRenderer.setDrawAABBs(false);
 		renderer = new ShapeRenderer();
 		
+		newPool();
 		populatePlanets();
-		populateShips(64);
+		populateShips(STARTING_POP);
 		lastFpsDisplay = TimeUtils.millis();
 		steps = 0;
-		generation = 0;
 	}
 	
 	@Override
@@ -113,34 +116,42 @@ public class ScreenTraining implements Screen {
 		handleInput();
 		
 		//  Camera update
+//		if (!droids.isEmpty()) {
+//			game.camera.glideTo(droids.getFirst().getPosition());
+//		}
 		game.camera.update();
 
 		Gdx.gl.glClearColor(0f, 0f, 0f, 1f);
 		Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
-		debugRenderer.render(b2world, new Matrix4().set(game.camera.affine));
-		renderer.setProjectionMatrix(new Matrix4().set(game.camera.affine));		
-
-		/*
+		
+		if (DEBUG_RENDERING) {
+			// DEBUG RENDERING
+			debugRenderer.render(b2world, new Matrix4().set(game.camera.affine));
+			// Render projectiles
+			renderer.setProjectionMatrix(new Matrix4().set(game.camera.affine));		
+			renderer.begin(ShapeType.Line);
+			renderer.setColor(1, 0, 0, 1);
+			for (Projectile proj: projectiles) {
+				renderer.line(proj.position, proj.pPosition);
+			}		
+			renderer.end();
+		} else {
+			// CLASSIC RENDERING
 			game.renderer.setProjectionMatrix(new Matrix4().set(game.camera.affine));
-			for (Planet p : b2World) {
+			for (Planet p : localPlanets) {
 				p.render(game.renderer);
 			}
 			for (MovingObject b : droids) {
-				if (camera_range.containsPoint(b.getPosition())) {
-					b.render(game.renderer);
-				}
+				b.render(game.renderer);
 			}
-		 */
+			for (Projectile proj: projectiles) {
+				proj.render(game.renderer);
+			}
+			game.renderer.flush();
+		}
 
-		renderer.begin(ShapeType.Line);
-		renderer.setColor(1, 0, 0, 1);
-		for (Projectile proj: projectiles) {
-			renderer.line(proj.position, proj.pPosition);
-		}		
-		renderer.end();
-
-		/*
 		// Display Framerate
+		/*
 		if (TimeUtils.millis() - lastFpsDisplay > 4000) {
 			System.out.println("Fps: " + String.valueOf(Gdx.graphics.getFramesPerSecond()));
 			lastFpsDisplay = TimeUtils.millis();
@@ -152,7 +163,7 @@ public class ScreenTraining implements Screen {
 	public void simStep() {		
 		// END OF SIMULATION FOR CURRENT GENERATION
 		if (steps > SIM_STEPS || droids.isEmpty()) {
-			System.out.println("End of generation " + String.valueOf(generation));
+			System.out.println("End of generation " + String.valueOf(currentGen));
 			steps = 0;
 			
 			// Add remaining living droids to the podium
@@ -186,16 +197,48 @@ public class ScreenTraining implements Screen {
 			}
 			System.out.print("\n");
 			
+			// Calculate winners mean score
+			float scoreWin = 0;
+			for (DroidShip droid: winners) {
+				scoreWin += droid.getScore();
+			}
+			scoreWin /= winners.size();
+			if (scoreWin > scoreWinBest) {
+				scoreWinBest = (int) scoreWin;
+				System.out.println("### New generation record ! : " + scoreWinBest);
+				// Save best winners to pool
+				ArrayList<float[][][]> nn = new ArrayList<float[][][]>();
+				for (DroidShip ship: winners) {
+					nn.add(ship.nn.weights.clone());
+				}
+				currentPool.nnBest = nn;
+				currentPool.bestGen = currentGen;
+			}
+						
 			// Save every 10 generations to hard-drive
-			if (generation>0 && generation%10 == 0) {
-				exportDroids(winners);
+			if (currentGen>0 && scores.size()%10 == 0) {
+				exportPool(winners);
 			}
 			
-			// Respawn
-			podium.clear();
-			droids.clear();
-			populateShips(newGeneration(winners));
-			generation += 1;
+			if (currentGen - currentPool.bestGen >= 10) {
+				// Evolution stalled for too long, branch out from last best winners
+				System.out.println("### New branch from generation " + currentPool.bestGen);
+				droids.clear();
+				podium.clear();
+				currentGen = currentPool.bestGen+1;
+				//newPool();
+				// Set the winners with nn from the last best batch
+				for (int i=0; i<winners.size(); i++) {
+					winners.get(i).nn.weights = currentPool.nnBest.get(i);
+				}
+				populateShips(newGeneration(winners));	
+			} else {
+				// Respawn current pool
+				podium.clear();
+				droids.clear();
+				populateShips(newGeneration(winners));
+				currentGen += 1;
+			}
 		}
 
 		// UPDATING GAME STATE
@@ -208,9 +251,9 @@ public class ScreenTraining implements Screen {
 			
 			// Sensors for Neural Network
 			// OBSTACLE SENSORS
-			if (f1.getUserData() == Enum.SENSOR_F || f2.getUserData() == Enum.SENSOR_F) {
+			if (f1.getUserData() == Enums.SENSOR_F || f2.getUserData() == Enums.SENSOR_F) {
 				f = f1;
-				if (f2.getUserData() == Enum.SENSOR_F) {
+				if (f2.getUserData() == Enums.SENSOR_F) {
 					f = f2;
 				}
 				Vector2 dPos = f1.getBody().getPosition().sub(f2.getBody().getPosition());
@@ -221,139 +264,139 @@ public class ScreenTraining implements Screen {
 				//float sina = MathUtils.sin(alpha);
 				//cosa *= ((Collidable) f1.getBody().getUserData()).getBoundingRadius() + ((Collidable) (f2.getBody().getUserData())).getBoundingRadius();
 				//sina *= ((Collidable) f1.getBody().getUserData()).getBoundingRadius() + ((Collidable) (f2.getBody().getUserData())).getBoundingRadius();
-				((DroidShip) f.getBody().getUserData()).setSensor(Enum.SENSOR_F, dPos.len()-thickness);
+				((DroidShip) f.getBody().getUserData()).setSensor(Enums.SENSOR_F, dPos.len()-thickness);
 			}
-			if (f1.getUserData() == Enum.SENSOR_FR || f2.getUserData() == Enum.SENSOR_FR) {
+			if (f1.getUserData() == Enums.SENSOR_FR || f2.getUserData() == Enums.SENSOR_FR) {
 				f = f1;
-				if (f2.getUserData() == Enum.SENSOR_FR) {
+				if (f2.getUserData() == Enums.SENSOR_FR) {
 					f = f2;
 				}
 				Vector2 dPos = f1.getBody().getPosition().sub(f2.getBody().getPosition());
 				float thickness = ((Collidable) f1.getBody().getUserData()).getBoundingRadius()
 						+ ((Collidable) (f2.getBody().getUserData())).getBoundingRadius();
-				((DroidShip) f.getBody().getUserData()).setSensor(Enum.SENSOR_FR, dPos.len()-thickness);
+				((DroidShip) f.getBody().getUserData()).setSensor(Enums.SENSOR_FR, dPos.len()-thickness);
 			}
-			if (f1.getUserData() == Enum.SENSOR_FL || f2.getUserData() == Enum.SENSOR_FL) {
+			if (f1.getUserData() == Enums.SENSOR_FL || f2.getUserData() == Enums.SENSOR_FL) {
 				f = f1;
-				if (f2.getUserData() == Enum.SENSOR_FL) {
+				if (f2.getUserData() == Enums.SENSOR_FL) {
 					f = f2;
 				}
 				Vector2 dPos = f1.getBody().getPosition().sub(f2.getBody().getPosition());
 				float thickness = ((Collidable) f1.getBody().getUserData()).getBoundingRadius()
 						+ ((Collidable) (f2.getBody().getUserData())).getBoundingRadius();
-				((DroidShip) f.getBody().getUserData()).setSensor(Enum.SENSOR_FL, dPos.len()-thickness);
+				((DroidShip) f.getBody().getUserData()).setSensor(Enums.SENSOR_FL, dPos.len()-thickness);
 			}
-			if (f1.getUserData() == Enum.SENSOR_MR || f2.getUserData() == Enum.SENSOR_MR) {
+			if (f1.getUserData() == Enums.SENSOR_MR || f2.getUserData() == Enums.SENSOR_MR) {
 				f = f1;
-				if (f2.getUserData() == Enum.SENSOR_MR) {
+				if (f2.getUserData() == Enums.SENSOR_MR) {
 					f = f2;
 				}
 				Vector2 dPos = f1.getBody().getPosition().sub(f2.getBody().getPosition());
 				float thickness = ((Collidable) f1.getBody().getUserData()).getBoundingRadius()
 						+ ((Collidable) (f2.getBody().getUserData())).getBoundingRadius();
-				((DroidShip) f.getBody().getUserData()).setSensor(Enum.SENSOR_MR, dPos.len()-thickness);
+				((DroidShip) f.getBody().getUserData()).setSensor(Enums.SENSOR_MR, dPos.len()-thickness);
 			}
-			if (f1.getUserData() == Enum.SENSOR_ML || f2.getUserData() == Enum.SENSOR_ML) {
+			if (f1.getUserData() == Enums.SENSOR_ML || f2.getUserData() == Enums.SENSOR_ML) {
 				f = f1;
-				if (f2.getUserData() == Enum.SENSOR_ML) {
+				if (f2.getUserData() == Enums.SENSOR_ML) {
 					f = f2;
 				}
 				Vector2 dPos = f1.getBody().getPosition().sub(f2.getBody().getPosition());
 				float thickness = ((Collidable) f1.getBody().getUserData()).getBoundingRadius()
 						+ ((Collidable) (f2.getBody().getUserData())).getBoundingRadius();
-				((DroidShip) f.getBody().getUserData()).setSensor(Enum.SENSOR_ML, dPos.len()-thickness);
+				((DroidShip) f.getBody().getUserData()).setSensor(Enums.SENSOR_ML, dPos.len()-thickness);
 			}
-			if (f1.getUserData() == Enum.SENSOR_BR || f2.getUserData() == Enum.SENSOR_BR) {
+			if (f1.getUserData() == Enums.SENSOR_BR || f2.getUserData() == Enums.SENSOR_BR) {
 				f = f1;
-				if (f2.getUserData() == Enum.SENSOR_BR) {
+				if (f2.getUserData() == Enums.SENSOR_BR) {
 					f = f2;
 				}
 				Vector2 dPos = f1.getBody().getPosition().sub(f2.getBody().getPosition());
 				float thickness = ((Collidable) f1.getBody().getUserData()).getBoundingRadius()
 						+ ((Collidable) (f2.getBody().getUserData())).getBoundingRadius();
-				((DroidShip) f.getBody().getUserData()).setSensor(Enum.SENSOR_BR, dPos.len()-thickness);
+				((DroidShip) f.getBody().getUserData()).setSensor(Enums.SENSOR_BR, dPos.len()-thickness);
 			}
-			if (f1.getUserData() == Enum.SENSOR_BL || f2.getUserData() == Enum.SENSOR_BL) {
+			if (f1.getUserData() == Enums.SENSOR_BL || f2.getUserData() == Enums.SENSOR_BL) {
 				f = f1;
-				if (f2.getUserData() == Enum.SENSOR_BL) {
+				if (f2.getUserData() == Enums.SENSOR_BL) {
 					f = f2;
 				}
 				Vector2 dPos = f1.getBody().getPosition().sub(f2.getBody().getPosition());
 				float thickness = ((Collidable) f1.getBody().getUserData()).getBoundingRadius()
 						+ ((Collidable) (f2.getBody().getUserData())).getBoundingRadius();
-				((DroidShip) f.getBody().getUserData()).setSensor(Enum.SENSOR_BL, dPos.len()-thickness);
+				((DroidShip) f.getBody().getUserData()).setSensor(Enums.SENSOR_BL, dPos.len()-thickness);
 			}
 			
 			// SHIP SENSORS
-			if (f1.getUserData() == Enum.SENSOR_SF || f2.getUserData() == Enum.SENSOR_SF) {
+			if (f1.getUserData() == Enums.SENSOR_SF || f2.getUserData() == Enums.SENSOR_SF) {
 				f = f1;
-				if (f2.getUserData() == Enum.SENSOR_SF) {
+				if (f2.getUserData() == Enums.SENSOR_SF) {
 					f = f2;
 				}
 				Vector2 dPos = f1.getBody().getPosition().sub(f2.getBody().getPosition());
 				float thickness = ((Collidable) f1.getBody().getUserData()).getBoundingRadius()
 						+ ((Collidable) (f2.getBody().getUserData())).getBoundingRadius();
-				((DroidShip) f.getBody().getUserData()).setSensor(Enum.SENSOR_SF, dPos.len()-thickness);
+				((DroidShip) f.getBody().getUserData()).setSensor(Enums.SENSOR_SF, dPos.len()-thickness);
 			}
-			if (f1.getUserData() == Enum.SENSOR_SFR || f2.getUserData() == Enum.SENSOR_SFR) {
+			if (f1.getUserData() == Enums.SENSOR_SFR || f2.getUserData() == Enums.SENSOR_SFR) {
 				f = f1;
-				if (f2.getUserData() == Enum.SENSOR_SFR) {
+				if (f2.getUserData() == Enums.SENSOR_SFR) {
 					f = f2;
 				}
 				Vector2 dPos = f1.getBody().getPosition().sub(f2.getBody().getPosition());
 				float thickness = ((Collidable) f1.getBody().getUserData()).getBoundingRadius()
 						+ ((Collidable) (f2.getBody().getUserData())).getBoundingRadius();
-				((DroidShip) f.getBody().getUserData()).setSensor(Enum.SENSOR_SFR, dPos.len()-thickness);
+				((DroidShip) f.getBody().getUserData()).setSensor(Enums.SENSOR_SFR, dPos.len()-thickness);
 			}
-			if (f1.getUserData() == Enum.SENSOR_SFL || f2.getUserData() == Enum.SENSOR_SFL) {
+			if (f1.getUserData() == Enums.SENSOR_SFL || f2.getUserData() == Enums.SENSOR_SFL) {
 				f = f1;
-				if (f2.getUserData() == Enum.SENSOR_SFL) {
+				if (f2.getUserData() == Enums.SENSOR_SFL) {
 					f = f2;
 				}
 				Vector2 dPos = f1.getBody().getPosition().sub(f2.getBody().getPosition());
 				float thickness = ((Collidable) f1.getBody().getUserData()).getBoundingRadius()
 						+ ((Collidable) (f2.getBody().getUserData())).getBoundingRadius();
-				((DroidShip) f.getBody().getUserData()).setSensor(Enum.SENSOR_SFL, dPos.len()-thickness);
+				((DroidShip) f.getBody().getUserData()).setSensor(Enums.SENSOR_SFL, dPos.len()-thickness);
 			}
-			if (f1.getUserData() == Enum.SENSOR_SMR || f2.getUserData() == Enum.SENSOR_SMR) {
+			if (f1.getUserData() == Enums.SENSOR_SMR || f2.getUserData() == Enums.SENSOR_SMR) {
 				f = f1;
-				if (f2.getUserData() == Enum.SENSOR_SMR) {
+				if (f2.getUserData() == Enums.SENSOR_SMR) {
 					f = f2;
 				}
 				Vector2 dPos = f1.getBody().getPosition().sub(f2.getBody().getPosition());
 				float thickness = ((Collidable) f1.getBody().getUserData()).getBoundingRadius()
 						+ ((Collidable) (f2.getBody().getUserData())).getBoundingRadius();
-				((DroidShip) f.getBody().getUserData()).setSensor(Enum.SENSOR_SMR, dPos.len()-thickness);
+				((DroidShip) f.getBody().getUserData()).setSensor(Enums.SENSOR_SMR, dPos.len()-thickness);
 			}
-			if (f1.getUserData() == Enum.SENSOR_SML || f2.getUserData() == Enum.SENSOR_SML) {
+			if (f1.getUserData() == Enums.SENSOR_SML || f2.getUserData() == Enums.SENSOR_SML) {
 				f = f1;
-				if (f2.getUserData() == Enum.SENSOR_SML) {
+				if (f2.getUserData() == Enums.SENSOR_SML) {
 					f = f2;
 				}
 				Vector2 dPos = f1.getBody().getPosition().sub(f2.getBody().getPosition());
 				float thickness = ((Collidable) f1.getBody().getUserData()).getBoundingRadius()
 						+ ((Collidable) (f2.getBody().getUserData())).getBoundingRadius();
-				((DroidShip) f.getBody().getUserData()).setSensor(Enum.SENSOR_SML, dPos.len()-thickness);
+				((DroidShip) f.getBody().getUserData()).setSensor(Enums.SENSOR_SML, dPos.len()-thickness);
 			}
-			if (f1.getUserData() == Enum.SENSOR_SBR || f2.getUserData() == Enum.SENSOR_SBR) {
+			if (f1.getUserData() == Enums.SENSOR_SBR || f2.getUserData() == Enums.SENSOR_SBR) {
 				f = f1;
-				if (f2.getUserData() == Enum.SENSOR_SBR) {
+				if (f2.getUserData() == Enums.SENSOR_SBR) {
 					f = f2;
 				}
 				Vector2 dPos = f1.getBody().getPosition().sub(f2.getBody().getPosition());
 				float thickness = ((Collidable) f1.getBody().getUserData()).getBoundingRadius()
 						+ ((Collidable) (f2.getBody().getUserData())).getBoundingRadius();
-				((DroidShip) f.getBody().getUserData()).setSensor(Enum.SENSOR_BR, dPos.len()-thickness);
+				((DroidShip) f.getBody().getUserData()).setSensor(Enums.SENSOR_BR, dPos.len()-thickness);
 			}
-			if (f1.getUserData() == Enum.SENSOR_SBL || f2.getUserData() == Enum.SENSOR_SBL) {
+			if (f1.getUserData() == Enums.SENSOR_SBL || f2.getUserData() == Enums.SENSOR_SBL) {
 				f = f1;
-				if (f2.getUserData() == Enum.SENSOR_SBL) {
+				if (f2.getUserData() == Enums.SENSOR_SBL) {
 					f = f2;
 				}
 				Vector2 dPos = f1.getBody().getPosition().sub(f2.getBody().getPosition());
 				float thickness = ((Collidable) f1.getBody().getUserData()).getBoundingRadius()
 						+ ((Collidable) (f2.getBody().getUserData())).getBoundingRadius();
-				((DroidShip) f.getBody().getUserData()).setSensor(Enum.SENSOR_SBL, dPos.len()-thickness);
+				((DroidShip) f.getBody().getUserData()).setSensor(Enums.SENSOR_SBL, dPos.len()-thickness);
 			}
 		}		
 		
@@ -422,6 +465,7 @@ public class ScreenTraining implements Screen {
 		float angle = 0f;
 		float radius1 = SPAWN_RADIUS+4*SMALL_PLANET_RADIUS;
 		float radius2 = radius1+SMALL_PLANET_RADIUS+BIG_PLANET_RADIUS;
+		float radius3 = radius2+2*SMALL_PLANET_RADIUS;
 		for (int i=0; i<6; i++) {
 			Planet p = new Planet(new Vector2(	(float) (Math.cos(angle)*radius1),
 												(float) (Math.sin(angle)*radius1)),
@@ -434,6 +478,14 @@ public class ScreenTraining implements Screen {
 			p.initBody(b2world);
 			localPlanets.add(p);
 			angle += MathUtils.PI2/6;
+		}
+		float[] angles = {(float) (2*Math.PI/6), (float) (4*Math.PI/6), (float) (-2*Math.PI/6), (float) (-4*Math.PI/6)};
+		for (float a: angles) {
+			Planet p = new Planet(new Vector2(	(float) (Math.cos(a)*radius3),
+					(float) (Math.sin(a)*radius3)),
+					SMALL_PLANET_RADIUS, 0);
+			p.initBody(b2world);
+			localPlanets.add(p);
 		}
 	}
 	
@@ -490,6 +542,18 @@ public class ScreenTraining implements Screen {
 		return newPool;
 	}
 	
+	private void newPool() {
+		currentPool = new DroidPool();
+		currentPool.nnLayers = DroidShip.nnLayers;
+		currentPool.activationFunc = DroidShip.activation;
+		currentPool.offsprings = N_OFFSPRINGS;
+		currentPool.startPop = STARTING_POP;
+		currentPool.winnersPerGen = WINNERS_PER_GENERATION;
+		currentGen = 0;
+		scores.clear();
+		scoreWinBest = 0;
+	}
+	
 	private void handleInput() {
 		float x_axis = 0.0f;
 		float y_axis = 0.0f;
@@ -541,27 +605,36 @@ public class ScreenTraining implements Screen {
 		}
 	}
 	
-	void importDroids(String f) {
+	void importPool(String f) {
 		Json json = new Json();
-		//NeuralNetwork nn = json.fromJson(NeuralNetwork.class, text);
+		FileHandle dirHandle = Gdx.files.internal("nn");
+		for (FileHandle entry: dirHandle.list()) {
+			String text = entry.readString();
+			DroidPool pool = json.fromJson(DroidPool.class, text);
+		}
 	}
 	
-	void exportDroids(ArrayList<DroidShip> ships) {
-		System.out.println("Saving generation to hard-drive");
-		DroidPool pool = new DroidPool();
-		pool.activationFunc = "tanh";
-		pool.scores = scores;
-		pool.nnLayers = ships.get(0).nnLayers;
-		ArrayList<NeuralNetwork> nn = new ArrayList<NeuralNetwork>();
+	void exportPool(ArrayList<DroidShip> ships) {
+		System.out.println("### Saving current pool of droids to hard-drive");		
+		
+//		ArrayList<NeuralNetwork> nn = new ArrayList<NeuralNetwork>();
+//		for (DroidShip ship: ships) {
+//			nn.add(ship.nn);
+//		}
+		ArrayList<float[][][]> nn = new ArrayList<float[][][]>();
 		for (DroidShip ship: ships) {
-			nn.add(ship.nn);
+			nn.add(ship.nn.weights);
 		}
-		pool.nn = nn;
+		
+		currentPool.nn = nn;
+		currentPool.scores = scores;
+		currentPool.generation = currentGen;
+		
 		Json json = new Json();
 		json.setElementType(DroidPool.class, "nn", NeuralNetwork.class);
+		json.setElementType(DroidPool.class, "nnBest", NeuralNetwork.class);
 		json.setElementType(DroidPool.class, "scores", Float.class);
-		String text = json.toJson(pool);
-		FileHandle file = Gdx.files.local("nn/" + pool.id + ".txt");
-		file.writeString(json.prettyPrint(text), false);
+		FileHandle file = Gdx.files.local("nn/" + currentPool.id + ".txt");
+		file.writeString(json.prettyPrint(json.toJson(currentPool)), false);
 	}
 }

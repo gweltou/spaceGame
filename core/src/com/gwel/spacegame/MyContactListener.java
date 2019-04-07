@@ -52,16 +52,16 @@ public class MyContactListener implements ContactListener {
 			hitforce += force;
 		
 		// Ship collision damage
-		if (f1.getUserData() == Enum.SHIP && hitforce >= 1.0f) {
+		if (f1.getUserData() == Enums.SHIP && hitforce >= 1.0f) {
 			((Spaceship) f1.getBody().getUserData()).hit(hitforce*hitforce);
 		}
-		if (f2.getUserData() == Enum.SHIP && hitforce >= 1.0f) {
+		if (f2.getUserData() == Enums.SHIP && hitforce >= 1.0f) {
 			((Spaceship) f2.getBody().getUserData()).hit(hitforce*hitforce);
 		}
-		if (f1.getUserData() == Enum.DROID && hitforce >= 0f) {
+		if (f1.getUserData() == Enums.DROID && hitforce >= 0f) {
 			((DroidShip) f1.getBody().getUserData()).hit(hitforce*hitforce);
 		}
-		if (f2.getUserData() == Enum.DROID && hitforce >= 0f) {
+		if (f2.getUserData() == Enums.DROID && hitforce >= 0f) {
 			((DroidShip) f2.getBody().getUserData()).hit(hitforce*hitforce);
 		}
 		

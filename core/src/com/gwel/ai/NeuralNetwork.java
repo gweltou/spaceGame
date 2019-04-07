@@ -1,8 +1,9 @@
 package com.gwel.ai;
 
+import com.gwel.spacegame.Enums;
 
 public class NeuralNetwork {
-	protected float[][][] weights;
+	public float[][][] weights;
 
 	public NeuralNetwork() {
 	}
@@ -21,7 +22,7 @@ public class NeuralNetwork {
 		}
 	}
 	
-	public float[] feedforward(float[] input) {
+	public float[] feedforward(float[] input, Enums activation) {
 		float[] tmp;
 		float[] output = new float[input.length+1];
 		int i;
@@ -36,7 +37,18 @@ public class NeuralNetwork {
 				output[i] = tmp[i];
 			output[i] = 1.0f;	// Add the bias
 		}
-		return Np.tanh(Np.mul(weights[l], output));
+
+		// Apply activation function
+		switch (activation) {
+		case ACTIVATION_SIGMOID:
+			return Np.sigmoid(Np.mul(weights[l], output));
+		case ACTIVATION_TANH:
+			return Np.tanh(Np.mul(weights[l], output));
+		case ACTIVATION_RELU:
+			return Np.relu(Np.mul(weights[l], output));
+		default:
+			return Np.tanh(Np.mul(weights[l], output));
+		}
 	}
 	
 	public void mutate() {

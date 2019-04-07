@@ -236,7 +236,7 @@ public class Np {
         return y;
     }
 
-    /**
+    /** 
      * @param a matrix
      * @return shape of matrix a
      */
@@ -248,23 +248,23 @@ public class Np {
     }
 
     /**
+     * SIGMOID ACTIVATION FUNCTION
+     * 
      * @param a matrix
      * @return sigmoid of matrix a
      */
-    public static double[][] sigmoid(double[][] a) {
-        int m = a.length;
-        int n = a[0].length;
-        double[][] z = new double[m][n];
+    public static float[] sigmoid(float[] a) {
+    	float[] z = new float[a.length];
 
-        for (int i = 0; i < m; i++) {
-            for (int j = 0; j < n; j++) {
-                z[i][j] = (1.0 / (1 + Math.exp(-a[i][j])));
-            }
-        }
-        return z;
+    	for (int i = 0; i < a.length; i++) {
+    		z[i] = (float) (1.0 / (1 + Math.exp(-a[i])));
+    	}
+    	return z;
     }
 
     /**
+     * TANH ACTIVATION FUNCTION
+     * 
      * @param a matrix
      * @return tanh of vector a
      */
@@ -278,6 +278,8 @@ public class Np {
     }
     
     /**
+     * RELU ACTIVATION FUNCTION
+     * 
      * @param a matrix
      * @return relu of vector a
      */

@@ -5,7 +5,7 @@ import com.badlogic.gdx.physics.box2d.Fixture;
 import com.badlogic.gdx.physics.box2d.RayCastCallback;
 import com.badlogic.gdx.physics.box2d.World;
 import com.gwel.spacegame.MyRenderer;
-import com.gwel.spacegame.Enum;
+import com.gwel.spacegame.Enums;
 
 public class Projectile {
 	private MovingObject parent;
@@ -39,29 +39,29 @@ public class Projectile {
 		@Override
 		public float reportRayFixture(Fixture fixture, Vector2 point, Vector2 normal, float fraction) {
 			// Filter out sensors
-			if (fixture.getUserData() == Enum.SENSOR_F ||
-					fixture.getUserData() == Enum.SENSOR_FL ||
-					fixture.getUserData() == Enum.SENSOR_FR ||
-					fixture.getUserData() == Enum.SENSOR_ML ||
-					fixture.getUserData() == Enum.SENSOR_MR ||
-					fixture.getUserData() == Enum.SENSOR_BL ||
-					fixture.getUserData() == Enum.SENSOR_BR ||
-					fixture.getUserData() == Enum.SENSOR_SFL ||
-					fixture.getUserData() == Enum.SENSOR_SFR ||
-					fixture.getUserData() == Enum.SENSOR_SML ||
-					fixture.getUserData() == Enum.SENSOR_SMR ||
-					fixture.getUserData() == Enum.SENSOR_SBL ||
-					fixture.getUserData() == Enum.SENSOR_SBR) {
+			if (fixture.getUserData() == Enums.SENSOR_F ||
+					fixture.getUserData() == Enums.SENSOR_FL ||
+					fixture.getUserData() == Enums.SENSOR_FR ||
+					fixture.getUserData() == Enums.SENSOR_ML ||
+					fixture.getUserData() == Enums.SENSOR_MR ||
+					fixture.getUserData() == Enums.SENSOR_BL ||
+					fixture.getUserData() == Enums.SENSOR_BR ||
+					fixture.getUserData() == Enums.SENSOR_SFL ||
+					fixture.getUserData() == Enums.SENSOR_SFR ||
+					fixture.getUserData() == Enums.SENSOR_SML ||
+					fixture.getUserData() == Enums.SENSOR_SMR ||
+					fixture.getUserData() == Enums.SENSOR_SBL ||
+					fixture.getUserData() == Enums.SENSOR_SBR) {
 				return -1;
 			}
 			
 			disposable = true;
 			position = point.cpy();
-			if (fixture.getUserData() == Enum.SATELLITE) {
+			if (fixture.getUserData() == Enums.SATELLITE) {
 				Satellite sat = (Satellite) fixture.getBody().getUserData();
 				sat.detach();
 				sat.push(speed.cpy().scl(damage*damage));
-			} else if (fixture.getUserData() == Enum.DROID) {
+			} else if (fixture.getUserData() == Enums.DROID) {
 				DroidShip droid = (DroidShip) fixture.getBody().getUserData();
 				droid.hit(damage);
 			}

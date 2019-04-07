@@ -11,7 +11,7 @@ import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.physics.box2d.*;
 import com.badlogic.gdx.utils.TimeUtils;
 import com.gwel.spacegame.MyRenderer;
-import com.gwel.spacegame.Enum;
+import com.gwel.spacegame.Enums;
 
 
 public class Spaceship extends PhysicBody {
@@ -94,7 +94,7 @@ public class Spaceship extends PhysicBody {
 		fixtureDef.restitution = 0.6f;
 		fixtureDef.filter.categoryBits = 0x0002;
 		Fixture fixture = body.createFixture(fixtureDef);
-		fixture.setUserData(Enum.SHIP);
+		fixture.setUserData(Enums.SHIP);
 		shape.dispose();
 	}
 

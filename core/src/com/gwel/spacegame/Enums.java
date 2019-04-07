@@ -1,6 +1,6 @@
 package com.gwel.spacegame;
 
-public enum Enum {
+public enum Enums {
 	SHIP,
 	DROID,
 	SATELLITE,
@@ -17,5 +17,8 @@ public enum Enum {
 	SENSOR_SML,
 	SENSOR_SMR,
 	SENSOR_SBL,
-	SENSOR_SBR
+	SENSOR_SBR,
+	ACTIVATION_SIGMOID,
+	ACTIVATION_TANH,
+	ACTIVATION_RELU
 }
