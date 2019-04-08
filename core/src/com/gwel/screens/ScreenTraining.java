@@ -44,8 +44,8 @@ public class ScreenTraining implements Screen {
 	private final float BORDER_DOWN = -WORLD_HEIGHT/2.0f;
 	private final boolean DEBUG_RENDERING = true;
 	private final int STARTING_POP = 32;
-	private final int WINNERS_PER_GENERATION = 6;
-	private final int N_OFFSPRINGS = 8;
+	private final int WINNERS_PER_GENERATION = 5;
+	private final int N_OFFSPRINGS = 10;
 	private final int SIM_STEPS = 20000;
 	
 	final SpaceGame game;
@@ -58,10 +58,7 @@ public class ScreenTraining implements Screen {
 	private LinkedList<Projectile> projectiles = new LinkedList<Projectile>();
 	private ListIterator<Projectile> proj_iter;
 	private PriorityQueue<DroidShip> podium = new PriorityQueue<DroidShip>(5, new DroidComparator());
-	private int currentGen;
 	private DroidPool currentPool;
-	private ArrayList<Integer> scores = new ArrayList<Integer>();
-	private int scoreWinBest;	// Mean score of best winners so far
 	
 	Box2DDebugRenderer debugRenderer;
 	ShapeRenderer renderer;
@@ -80,33 +77,18 @@ public class ScreenTraining implements Screen {
 		debugRenderer=new Box2DDebugRenderer();
 		debugRenderer.setDrawAABBs(false);
 		renderer = new ShapeRenderer();
+		game.camera.zoomTo(10.0f);
+		game.camera.update();
 		
-		newPool();
 		populatePlanets();
-		populateShips(STARTING_POP);
 		lastFpsDisplay = TimeUtils.millis();
 		steps = 0;
+		
+		newPool();
+		populateShips(STARTING_POP);
+		//importPool();
 	}
 	
-	@Override
-	public void dispose() {
-		// This test case prevents the world from being destroyed during a step
-		if (destroy) {
-			System.out.println("Destroying space");
-			b2world.dispose();
-		} else {
-			destroy = true;
-		}
-	}
-
-	@Override
-	public void hide() {		
-	}
-
-	@Override
-	public void pause() {		
-	}
-
 	@Override
 	public void render(float delta_time) {
 		for (int i=0; i<SIM_SPEED; i++) {
@@ -163,7 +145,7 @@ public class ScreenTraining implements Screen {
 	public void simStep() {		
 		// END OF SIMULATION FOR CURRENT GENERATION
 		if (steps > SIM_STEPS || droids.isEmpty()) {
-			System.out.println("End of generation " + String.valueOf(currentGen));
+			System.out.println("End of generation " + String.valueOf(currentPool.generation));
 			steps = 0;
 			
 			// Add remaining living droids to the podium
@@ -180,8 +162,8 @@ public class ScreenTraining implements Screen {
 				scoreGen += droid.getScore();
 			}
 			scoreGen /= podium.size();
-			scores.add((int) Math.round(scoreGen));
-			for (int score: scores) {
+			currentPool.scores.add((int) Math.round(scoreGen));
+			for (int score: currentPool.scores) {
 				System.out.print("__");
 				System.out.print(score);
 			}
@@ -203,29 +185,29 @@ public class ScreenTraining implements Screen {
 				scoreWin += droid.getScore();
 			}
 			scoreWin /= winners.size();
-			if (scoreWin > scoreWinBest) {
-				scoreWinBest = (int) scoreWin;
-				System.out.println("### New generation record ! : " + scoreWinBest);
+			if (scoreWin > currentPool.bestGenScore) {
+				currentPool.bestGenScore = (int) scoreWin;
+				System.out.println("### New generation record ! : " + currentPool.bestGenScore);
 				// Save best winners to pool
 				ArrayList<float[][][]> nn = new ArrayList<float[][][]>();
 				for (DroidShip ship: winners) {
 					nn.add(ship.nn.weights.clone());
 				}
 				currentPool.nnBest = nn;
-				currentPool.bestGen = currentGen;
+				currentPool.bestGen = currentPool.generation;
 			}
 						
 			// Save every 10 generations to hard-drive
-			if (currentGen>0 && scores.size()%10 == 0) {
+			if (currentPool.generation>0 && currentPool.scores.size()%10 == 0) {
 				exportPool(winners);
 			}
 			
-			if (currentGen - currentPool.bestGen >= 10) {
+			if (currentPool.generation - currentPool.bestGen >= 10) {
 				// Evolution stalled for too long, branch out from last best winners
 				System.out.println("### New branch from generation " + currentPool.bestGen);
 				droids.clear();
 				podium.clear();
-				currentGen = currentPool.bestGen+1;
+				currentPool.generation = currentPool.bestGen+1;
 				//newPool();
 				// Set the winners with nn from the last best batch
 				for (int i=0; i<winners.size(); i++) {
@@ -237,7 +219,7 @@ public class ScreenTraining implements Screen {
 				podium.clear();
 				droids.clear();
 				populateShips(newGeneration(winners));
-				currentGen += 1;
+				currentPool.generation += 1;
 			}
 		}
 
@@ -549,9 +531,6 @@ public class ScreenTraining implements Screen {
 		currentPool.offsprings = N_OFFSPRINGS;
 		currentPool.startPop = STARTING_POP;
 		currentPool.winnersPerGen = WINNERS_PER_GENERATION;
-		currentGen = 0;
-		scores.clear();
-		scoreWinBest = 0;
 	}
 	
 	private void handleInput() {
@@ -605,13 +584,27 @@ public class ScreenTraining implements Screen {
 		}
 	}
 	
-	void importPool(String f) {
+	void importPool() {
+		System.out.println("### Importing pool from hard-drive");
 		Json json = new Json();
-		FileHandle dirHandle = Gdx.files.internal("nn");
-		for (FileHandle entry: dirHandle.list()) {
+		FileHandle entry = Gdx.files.internal("nn/e721b958-6ee0-4f5b-8e8b-e83000a7807d.txt");
+		DroidPool pool;
+//		for (FileHandle entry: dirHandle.list()) {
 			String text = entry.readString();
-			DroidPool pool = json.fromJson(DroidPool.class, text);
+			pool = json.fromJson(DroidPool.class, text);
+//		}
+		currentPool = pool;
+		droids.clear();
+		podium.clear();
+		
+		ArrayList<DroidShip> newDroids = new ArrayList<DroidShip>();
+		for (int i=0; i<pool.nn.size(); i++) {
+			DroidShip droid = new DroidShip(new Vector2(), 0, projectiles);
+			droid.initNN();
+			droid.nn.weights = pool.nn.get(i).clone();
+			newDroids.add(droid);
 		}
+		populateShips(newGeneration(newDroids));	
 	}
 	
 	void exportPool(ArrayList<DroidShip> ships) {
@@ -625,10 +618,7 @@ public class ScreenTraining implements Screen {
 		for (DroidShip ship: ships) {
 			nn.add(ship.nn.weights);
 		}
-		
 		currentPool.nn = nn;
-		currentPool.scores = scores;
-		currentPool.generation = currentGen;
 		
 		Json json = new Json();
 		json.setElementType(DroidPool.class, "nn", NeuralNetwork.class);
@@ -637,4 +627,21 @@ public class ScreenTraining implements Screen {
 		FileHandle file = Gdx.files.local("nn/" + currentPool.id + ".txt");
 		file.writeString(json.prettyPrint(json.toJson(currentPool)), false);
 	}
+	
+	@Override
+	public void dispose() {
+		// This test case prevents the world from being destroyed during a step
+		if (destroy) {
+			System.out.println("Destroying space");
+			b2world.dispose();
+		} else {
+			destroy = true;
+		}
+	}
+	
+	@Override
+	public void hide() {}
+
+	@Override
+	public void pause() {}
 }

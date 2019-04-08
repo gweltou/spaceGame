@@ -3,6 +3,7 @@ package com.gwel.spacegame;
 public enum Enums {
 	SHIP,
 	DROID,
+	PLANET,
 	SATELLITE,
 	SENSOR_F,
 	SENSOR_FL,

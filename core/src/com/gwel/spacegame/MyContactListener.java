@@ -18,7 +18,7 @@ public class MyContactListener implements ContactListener {
 	public void beginContact(Contact contact) {
 		Fixture f1 = contact.getFixtureA();
 		Fixture f2 = contact.getFixtureB();
-		Fixture f;
+		//Fixture f;
 		
 		//System.out.println(f1.getUserData() + " has hit "+ f2.getUserData());
 		if (f1.getUserData() == "Satellite") {
@@ -30,14 +30,10 @@ public class MyContactListener implements ContactListener {
 	}
 
 	@Override
-	public void endContact(Contact contact) {
-		// TODO Auto-generated method stub
-		
-	}
+	public void endContact(Contact contact) {}
 
 	@Override
-	public void preSolve(Contact contact, Manifold oldManifold) {
-	}
+	public void preSolve(Contact contact, Manifold oldManifold) {}
 
 	@Override
 	public void postSolve(Contact contact, ContactImpulse impulse) {
@@ -66,7 +62,7 @@ public class MyContactListener implements ContactListener {
 		}
 		
 		// Detect landing
-		if (f1.getUserData() == "Planet" && f2.getUserData() == "Ship") {
+		if (f1.getUserData() == Enums.PLANET && f2.getUserData() == Enums.SHIP) {
 			Vector2 normal = f1.getBody().getPosition().sub(f2.getBody().getPosition()).nor();
 			Vector2 tangent = new Vector2(-normal.y, normal.x).nor();
 			float normal_speed = normal.dot(f2.getBody().getLinearVelocity());
@@ -74,7 +70,7 @@ public class MyContactListener implements ContactListener {
 			if (normal_speed < 0.001f && tangent_speed < 0.001f && f2.getBody().getAngularVelocity() < 0.001f) {
 				game.land((Planet) f1.getBody().getUserData());
 			}
-		} else if (f2.getUserData() == "Planet" && f1.getUserData() == "Ship") {
+		} else if (f2.getUserData() == Enums.PLANET && f1.getUserData() == Enums.SHIP) {
 			Vector2 normal = f2.getBody().getPosition().sub(f1.getBody().getPosition()).nor();
 			Vector2 tangent = new Vector2(-normal.y, normal.x).nor();
 			float normal_speed = normal.dot(f1.getBody().getLinearVelocity());

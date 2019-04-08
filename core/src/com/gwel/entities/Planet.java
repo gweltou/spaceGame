@@ -5,6 +5,7 @@ import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.physics.box2d.*;
 import com.badlogic.gdx.physics.box2d.BodyDef.BodyType;
 import com.gwel.spacegame.Const;
+import com.gwel.spacegame.Enums;
 import com.gwel.spacegame.MyRenderer;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.math.MathUtils;
@@ -56,7 +57,7 @@ public class Planet implements Collidable {
 		fixtureDef.friction = 0.6f;
 		fixtureDef.restitution = 0.4f;
 		Fixture fixture = body.createFixture(fixtureDef);
-		fixture.setUserData("Planet");
+		fixture.setUserData(Enums.PLANET);
 		circle.dispose();
 		/*
 		CircleShape landingZone = new CircleShape();
@@ -72,7 +73,7 @@ public class Planet implements Collidable {
 	}
 
 	public Vector2 getGravityAccel(Vector2 pos) {
-		// rel_pos: relative position of the physic body from the gravity center
+		// rel_pos: relative position of the physic body from the center of gravity
 		Vector2 rel_pos = getPosition().sub(pos);
 		float f =  1.0f * mass / rel_pos.len2();
 		float mag = rel_pos.len();
