@@ -4,11 +4,14 @@ import com.gwel.spacegame.Enums;
 
 public class NeuralNetwork {
 	public float[][][] weights;
+	protected Enums activation;
 
-	public NeuralNetwork() {
+	public NeuralNetwork(Enums activation) {
+		this.activation = (Enums) activation;
 	}
 	public NeuralNetwork(NeuralNetwork other) {
 		weights = other.weights.clone();
+		activation = other.activation;
 	}
 	
 	public void random(int[] layers) {
@@ -22,7 +25,7 @@ public class NeuralNetwork {
 		}
 	}
 	
-	public float[] feedforward(float[] input, Enums activation) {
+	public float[] feedforward(float[] input) {
 		float[] tmp;
 		float[] output = new float[input.length+1];
 		int i;

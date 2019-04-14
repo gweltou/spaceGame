@@ -4,6 +4,7 @@ package com.gwel.entities;
 import java.util.LinkedList;
 
 import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.files.FileHandle;
 import com.badlogic.gdx.math.Affine2;
 import com.badlogic.gdx.math.MathUtils;
@@ -21,16 +22,15 @@ public class Spaceship extends PhysicBody {
 	
 	//public float speed_mag;
 	private Vector2 size = new Vector2(1.7f, 1.8f);  // Size of spaceship in game units
-	
 	private float hitpoints;
 	private long last_fire;
-	
 	private Affine2 transform;
 	private float[][] triangles;
 	private Vector2[] vertices;	// Used to set Box2D bounding shape
 	private Vector2 p1_tmp = new Vector2();
 	private Vector2 p2_tmp = new Vector2();
 	private Vector2 p3_tmp = new Vector2();
+	private ShipTail tail1, tail2;
 	
 	
 	public Spaceship(Vector2 pos) {
@@ -41,6 +41,8 @@ public class Spaceship extends PhysicBody {
 		
 		hitpoints = 200.0f;
 		last_fire = TimeUtils.millis();
+		tail1 = new ShipTail(this, new Vector2(0.7f, 0.08f), 0.2f, 512, new Color(0xBF3FBFFF), new Color(0x3FBF3FFF));
+		tail2 = new ShipTail(this, new Vector2(-0.7f, 0.08f), 0.2f, 512, new Color(0xBF3FBFFF), new Color(0x3FBF3FFF));
 		
 		readShapeFromFile();
 		disposable = false;
@@ -76,7 +78,7 @@ public class Spaceship extends PhysicBody {
 			Vector2 dir = new Vector2(2.0f, 0.0f); // Here we set the bullet's velocity
 			dir.setAngleRad(getAngle());
 			Vector2 pos = this.getPosition();
-			Projectile proj = new Projectile(this, pos, dir, 10.0f);
+			Projectile proj = new Projectile(this, pos, dir, 50.0f);
 			projectiles.add(proj);
 			last_fire = now;
 		}
@@ -169,6 +171,11 @@ public class Spaceship extends PhysicBody {
 	}
 
 	public void render(MyRenderer renderer) {
+		tail1.update();
+		tail2.update();
+		tail1.render(renderer);
+		tail2.render(renderer);
+		
 		transform.idt();
 		transform.translate(getPosition());
 		transform.rotateRad(getAngle() + MathUtils.PI/2);

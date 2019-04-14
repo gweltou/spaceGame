@@ -65,7 +65,6 @@ public class Projectile {
 				DroidShip droid = (DroidShip) fixture.getBody().getUserData();
 				droid.hit(damage);
 			}
-			// DEBUG : projectile collide with sensors...
 			return fraction;
 		}
 	};

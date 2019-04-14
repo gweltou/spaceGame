@@ -1,26 +1,35 @@
 package com.gwel.entities;
 
+import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.math.Affine2;
 import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Vector2;
 import com.gwel.spacegame.MyRenderer;
 
 public class ShipTail {
-	int SIZE = 512;
+	int bufferSize;
 	Vector2[][] table;
 	int t_index;
 	boolean t_full;
 	Vector2 last_pos;
-	Spaceship ship;
+	PhysicBody ship;
 	private float alpha;
-	private float alpha_step = 1.0f / SIZE;
+	private float alpha_step;
 	Vector2 local_pos;
 	float radius;
+	private Color baseColor, color;
+	private float dr, dg, db, da;
 	Vector2 tmp;
 	Affine2 rotate;
 
-	public ShipTail(Spaceship ship, Vector2 pos, float width) {
-		this.table = new Vector2[SIZE][2];
+	public ShipTail(PhysicBody ship, Vector2 pos, float width, int buffer, Color col1, Color col2) {
+		bufferSize = buffer;
+		baseColor = col2;
+		dr = (col1.r-col2.r) / bufferSize;
+		dg = (col1.g-col2.g) / bufferSize;
+		db = (col1.b-col2.b) / bufferSize;
+		da = 1.0f / bufferSize;
+		this.table = new Vector2[bufferSize][2];
 		this.t_index = 0;
 		this.t_full = false;
 		this.ship = ship;
@@ -43,7 +52,7 @@ public class ShipTail {
 		points[1] = new Vector2(tmp).sub(tmp2);
 		table[t_index] = points;
 		t_index++;
-		if (t_index == SIZE) {
+		if (t_index == bufferSize) {
 			this.t_index = 0;
 			this.t_full = true;
 		}
@@ -54,27 +63,28 @@ public class ShipTail {
 		Vector2 p2 = new Vector2();
 		Vector2 p3 = new Vector2();
 		Vector2 p4 = new Vector2();
-		alpha = 0.0f;
+		color = baseColor.cpy();
+		color.a = 0.0f;
 		if (t_full) {
-			for (int i=0; i<SIZE-1; i++) {
-				alpha += alpha_step;
-				p1.set(table[(i+t_index)%SIZE][0]);
-				p2.set(table[(i+t_index)%SIZE][1]);
-				p3.set(table[(i+1+t_index)%SIZE][0]);
-				p4.set(table[(i+1+t_index)%SIZE][1]);
-				renderer.setColor(0.5f, 1.0f-alpha, 0, alpha);
+			for (int i=0; i<bufferSize-1; i++) {
+				color.add(dr, dg, db, da);
+				p1.set(table[(i+t_index)%bufferSize][0]);
+				p2.set(table[(i+t_index)%bufferSize][1]);
+				p3.set(table[(i+1+t_index)%bufferSize][0]);
+				p4.set(table[(i+1+t_index)%bufferSize][1]);
+				renderer.setColor(color);
 				renderer.triangle(p1, p2, p3);
 				renderer.triangle(p3, p2, p4);
 			}
 		} else {
-			alpha += (SIZE-t_index)*alpha_step;
+			color.a = (bufferSize-t_index)*da;
 			for (int i=0; i<t_index-1; i++) {
-				alpha += alpha_step;
+				color.add(dr, dg, db, da);
 				p1.set(table[i][0]);
 				p2.set(table[i][1]);
 				p3.set(table[i+1][0]);
 				p4.set(table[i+1][1]);
-				renderer.setColor(0.5f, 1.0f-alpha, 0, alpha);
+				renderer.setColor(color);
 				renderer.triangle(p1, p2, p3);
 				renderer.triangle(p3, p2, p4);			
 			}

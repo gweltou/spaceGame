@@ -8,18 +8,26 @@ import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Screen;
 import com.badlogic.gdx.Input.Keys;
 import com.badlogic.gdx.controllers.PovDirection;
+import com.badlogic.gdx.files.FileHandle;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.Pixmap;
 import com.badlogic.gdx.graphics.PixmapIO;
 import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Matrix4;
 import com.badlogic.gdx.math.Vector2;
+import com.badlogic.gdx.physics.box2d.Contact;
+import com.badlogic.gdx.physics.box2d.Fixture;
+import com.badlogic.gdx.physics.box2d.QueryCallback;
+import com.badlogic.gdx.physics.box2d.RayCastCallback;
 import com.badlogic.gdx.physics.box2d.World;
 import com.badlogic.gdx.utils.BufferUtils;
+import com.badlogic.gdx.utils.Json;
 import com.badlogic.gdx.utils.ScreenUtils;
+import com.gwel.ai.DroidPool;
 import com.gwel.entities.*;
 import com.gwel.spacegame.AABB;
 import com.gwel.spacegame.Const;
+import com.gwel.spacegame.Enums;
 import com.gwel.spacegame.MyContactListener;
 import com.gwel.spacegame.SpaceGame;
 
@@ -38,24 +46,24 @@ public class ScreenInSpace implements Screen {
 	private ListIterator<MovingObject> bod_iter;
 	private LinkedList<Projectile> projectiles = new LinkedList<Projectile>();
 	private ListIterator<Projectile> proj_iter;
+	private DroidPool droidPool;
 	
-	private ShipTail tail1, tail2;
 	private Starfield starfield;
 	private Starfield deepfield;
+	private boolean empty;
 
 	
 	public ScreenInSpace(final SpaceGame game) {
 		this.game = game;
 		destroy = false;
 		game_speed = 1.0f;
+		droidPool = importPool("d4a60c25-ee4f-4a7d-ac5b-505ee002fd6e");
 		
 		b2world = new World(new Vector2(0.0f, 0.0f), true);
 		b2world.setContactListener(new MyContactListener(game));
 		
 		game.ship.initBody(b2world);
 		
-		tail1 = new ShipTail(game.ship, new Vector2(0.7f, 0.08f), 0.2f);
-		tail2 = new ShipTail(game.ship, new Vector2(-0.7f, 0.08f), 0.2f);
 		free_bodies.add(game.ship);
 	}
 	
@@ -72,18 +80,6 @@ public class ScreenInSpace implements Screen {
 	}
 
 	@Override
-	public void hide() {
-		// TODO Auto-generated method stub
-		
-	}
-
-	@Override
-	public void pause() {
-		// TODO Auto-generated method stub
-		
-	}
-
-	@Override
 	public void render(float delta_time) {
 		if (destroy)
 			dispose(); // doesn't work
@@ -93,8 +89,6 @@ public class ScreenInSpace implements Screen {
 		// UPDATING GAME STATE
 		AABB local_range = new AABB(game.ship.getPosition().sub(SpaceGame.LOCAL_RADIUS, SpaceGame.LOCAL_RADIUS),
 				game.ship.getPosition().add(SpaceGame.LOCAL_RADIUS, SpaceGame.LOCAL_RADIUS));
-		//AABB exit_range = new AABB(ship.getPosition().sub(exit_radius, exit_radius),
-		//		ship.getPosition().add(exit_radius, exit_radius));
 		local_planets_prev = local_planets;
 		local_planets = game.Qt.query(local_range);
 
@@ -125,8 +119,19 @@ public class ScreenInSpace implements Screen {
 		// Removing free bodies outside of local zone
 		bod_iter = free_bodies.listIterator();
 		while (bod_iter.hasNext()) {
-			if (!local_range.containsPoint(bod_iter.next().getPosition()))
+			MovingObject bod = bod_iter.next();
+			if (bod.getClass() == DroidShip.class) {
+				if (((DroidShip) bod).disposable) {
+					System.out.println("removing droid");
+					((DroidShip) bod).dispose();
+					bod_iter.remove();
+				} else {
+					((DroidShip) bod).update();
+				}
+			}
+			if (!local_range.containsPoint(bod.getPosition()))
 				bod_iter.remove();
+			
 		}
 		// Applying gravity to the free bodies
 		for (Planet pl: local_planets) {
@@ -145,9 +150,158 @@ public class ScreenInSpace implements Screen {
 			    proj.update(b2world, game_speed);
 		}
 		b2world.step(game_speed/60f, 8, 3);
+		for (Contact c: b2world.getContactList()) {
+			Fixture f1 = c.getFixtureA();
+			Fixture f2 = c.getFixtureB();
+			Fixture f;
+			
+			// Sensors for Neural Network
+			// OBSTACLE SENSORS
+			if (f1.getUserData() == Enums.SENSOR_F || f2.getUserData() == Enums.SENSOR_F) {
+				f = f1;
+				if (f2.getUserData() == Enums.SENSOR_F) {
+					f = f2;
+				}
+				Vector2 dPos = f1.getBody().getPosition().sub(f2.getBody().getPosition());
+				float thickness = ((Collidable) f1.getBody().getUserData()).getBoundingRadius()
+						+ ((Collidable) (f2.getBody().getUserData())).getBoundingRadius();
+				((DroidShip) f.getBody().getUserData()).setSensor(Enums.SENSOR_F, dPos.len()-thickness);
+			}
+			if (f1.getUserData() == Enums.SENSOR_FR || f2.getUserData() == Enums.SENSOR_FR) {
+				f = f1;
+				if (f2.getUserData() == Enums.SENSOR_FR) {
+					f = f2;
+				}
+				Vector2 dPos = f1.getBody().getPosition().sub(f2.getBody().getPosition());
+				float thickness = ((Collidable) f1.getBody().getUserData()).getBoundingRadius()
+						+ ((Collidable) (f2.getBody().getUserData())).getBoundingRadius();
+				((DroidShip) f.getBody().getUserData()).setSensor(Enums.SENSOR_FR, dPos.len()-thickness);
+			}
+			if (f1.getUserData() == Enums.SENSOR_FL || f2.getUserData() == Enums.SENSOR_FL) {
+				f = f1;
+				if (f2.getUserData() == Enums.SENSOR_FL) {
+					f = f2;
+				}
+				Vector2 dPos = f1.getBody().getPosition().sub(f2.getBody().getPosition());
+				float thickness = ((Collidable) f1.getBody().getUserData()).getBoundingRadius()
+						+ ((Collidable) (f2.getBody().getUserData())).getBoundingRadius();
+				((DroidShip) f.getBody().getUserData()).setSensor(Enums.SENSOR_FL, dPos.len()-thickness);
+			}
+			if (f1.getUserData() == Enums.SENSOR_MR || f2.getUserData() == Enums.SENSOR_MR) {
+				f = f1;
+				if (f2.getUserData() == Enums.SENSOR_MR) {
+					f = f2;
+				}
+				Vector2 dPos = f1.getBody().getPosition().sub(f2.getBody().getPosition());
+				float thickness = ((Collidable) f1.getBody().getUserData()).getBoundingRadius()
+						+ ((Collidable) (f2.getBody().getUserData())).getBoundingRadius();
+				((DroidShip) f.getBody().getUserData()).setSensor(Enums.SENSOR_MR, dPos.len()-thickness);
+			}
+			if (f1.getUserData() == Enums.SENSOR_ML || f2.getUserData() == Enums.SENSOR_ML) {
+				f = f1;
+				if (f2.getUserData() == Enums.SENSOR_ML) {
+					f = f2;
+				}
+				Vector2 dPos = f1.getBody().getPosition().sub(f2.getBody().getPosition());
+				float thickness = ((Collidable) f1.getBody().getUserData()).getBoundingRadius()
+						+ ((Collidable) (f2.getBody().getUserData())).getBoundingRadius();
+				((DroidShip) f.getBody().getUserData()).setSensor(Enums.SENSOR_ML, dPos.len()-thickness);
+			}
+			if (f1.getUserData() == Enums.SENSOR_BR || f2.getUserData() == Enums.SENSOR_BR) {
+				f = f1;
+				if (f2.getUserData() == Enums.SENSOR_BR) {
+					f = f2;
+				}
+				Vector2 dPos = f1.getBody().getPosition().sub(f2.getBody().getPosition());
+				float thickness = ((Collidable) f1.getBody().getUserData()).getBoundingRadius()
+						+ ((Collidable) (f2.getBody().getUserData())).getBoundingRadius();
+				((DroidShip) f.getBody().getUserData()).setSensor(Enums.SENSOR_BR, dPos.len()-thickness);
+			}
+			if (f1.getUserData() == Enums.SENSOR_BL || f2.getUserData() == Enums.SENSOR_BL) {
+				f = f1;
+				if (f2.getUserData() == Enums.SENSOR_BL) {
+					f = f2;
+				}
+				Vector2 dPos = f1.getBody().getPosition().sub(f2.getBody().getPosition());
+				float thickness = ((Collidable) f1.getBody().getUserData()).getBoundingRadius()
+						+ ((Collidable) (f2.getBody().getUserData())).getBoundingRadius();
+				((DroidShip) f.getBody().getUserData()).setSensor(Enums.SENSOR_BL, dPos.len()-thickness);
+			}
+			
+			// SHIP SENSORS
+			if (f1.getUserData() == Enums.SENSOR_SF || f2.getUserData() == Enums.SENSOR_SF) {
+				f = f1;
+				if (f2.getUserData() == Enums.SENSOR_SF) {
+					f = f2;
+				}
+				Vector2 dPos = f1.getBody().getPosition().sub(f2.getBody().getPosition());
+				float thickness = ((Collidable) f1.getBody().getUserData()).getBoundingRadius()
+						+ ((Collidable) (f2.getBody().getUserData())).getBoundingRadius();
+				((DroidShip) f.getBody().getUserData()).setSensor(Enums.SENSOR_SF, dPos.len()-thickness);
+			}
+			if (f1.getUserData() == Enums.SENSOR_SFR || f2.getUserData() == Enums.SENSOR_SFR) {
+				f = f1;
+				if (f2.getUserData() == Enums.SENSOR_SFR) {
+					f = f2;
+				}
+				Vector2 dPos = f1.getBody().getPosition().sub(f2.getBody().getPosition());
+				float thickness = ((Collidable) f1.getBody().getUserData()).getBoundingRadius()
+						+ ((Collidable) (f2.getBody().getUserData())).getBoundingRadius();
+				((DroidShip) f.getBody().getUserData()).setSensor(Enums.SENSOR_SFR, dPos.len()-thickness);
+			}
+			if (f1.getUserData() == Enums.SENSOR_SFL || f2.getUserData() == Enums.SENSOR_SFL) {
+				f = f1;
+				if (f2.getUserData() == Enums.SENSOR_SFL) {
+					f = f2;
+				}
+				Vector2 dPos = f1.getBody().getPosition().sub(f2.getBody().getPosition());
+				float thickness = ((Collidable) f1.getBody().getUserData()).getBoundingRadius()
+						+ ((Collidable) (f2.getBody().getUserData())).getBoundingRadius();
+				((DroidShip) f.getBody().getUserData()).setSensor(Enums.SENSOR_SFL, dPos.len()-thickness);
+			}
+			if (f1.getUserData() == Enums.SENSOR_SMR || f2.getUserData() == Enums.SENSOR_SMR) {
+				f = f1;
+				if (f2.getUserData() == Enums.SENSOR_SMR) {
+					f = f2;
+				}
+				Vector2 dPos = f1.getBody().getPosition().sub(f2.getBody().getPosition());
+				float thickness = ((Collidable) f1.getBody().getUserData()).getBoundingRadius()
+						+ ((Collidable) (f2.getBody().getUserData())).getBoundingRadius();
+				((DroidShip) f.getBody().getUserData()).setSensor(Enums.SENSOR_SMR, dPos.len()-thickness);
+			}
+			if (f1.getUserData() == Enums.SENSOR_SML || f2.getUserData() == Enums.SENSOR_SML) {
+				f = f1;
+				if (f2.getUserData() == Enums.SENSOR_SML) {
+					f = f2;
+				}
+				Vector2 dPos = f1.getBody().getPosition().sub(f2.getBody().getPosition());
+				float thickness = ((Collidable) f1.getBody().getUserData()).getBoundingRadius()
+						+ ((Collidable) (f2.getBody().getUserData())).getBoundingRadius();
+				((DroidShip) f.getBody().getUserData()).setSensor(Enums.SENSOR_SML, dPos.len()-thickness);
+			}
+			if (f1.getUserData() == Enums.SENSOR_SBR || f2.getUserData() == Enums.SENSOR_SBR) {
+				f = f1;
+				if (f2.getUserData() == Enums.SENSOR_SBR) {
+					f = f2;
+				}
+				Vector2 dPos = f1.getBody().getPosition().sub(f2.getBody().getPosition());
+				float thickness = ((Collidable) f1.getBody().getUserData()).getBoundingRadius()
+						+ ((Collidable) (f2.getBody().getUserData())).getBoundingRadius();
+				((DroidShip) f.getBody().getUserData()).setSensor(Enums.SENSOR_BR, dPos.len()-thickness);
+			}
+			if (f1.getUserData() == Enums.SENSOR_SBL || f2.getUserData() == Enums.SENSOR_SBL) {
+				f = f1;
+				if (f2.getUserData() == Enums.SENSOR_SBL) {
+					f = f2;
+				}
+				Vector2 dPos = f1.getBody().getPosition().sub(f2.getBody().getPosition());
+				float thickness = ((Collidable) f1.getBody().getUserData()).getBoundingRadius()
+						+ ((Collidable) (f2.getBody().getUserData())).getBoundingRadius();
+				((DroidShip) f.getBody().getUserData()).setSensor(Enums.SENSOR_SBL, dPos.len()-thickness);
+			}
+		}
+		
 
-		tail1.update();
-		tail2.update();
 		starfield.update(game.camera.getTravelling());
 		deepfield.update(game.camera.getTravelling());
 		
@@ -172,8 +326,6 @@ public class ScreenInSpace implements Screen {
 		for (Planet p : game.Qt.query(camera_range)) {
 			p.render(game.renderer);
 		}
-		tail1.render(game.renderer);
-		tail2.render(game.renderer);
 		for (MovingObject b : free_bodies) {
 			if (camera_range.containsPoint(b.getPosition())) {
 				b.render(game.renderer);
@@ -196,15 +348,54 @@ public class ScreenInSpace implements Screen {
 		starfield = new Starfield(Gdx.graphics.getWidth(), Gdx.graphics.getHeight(), 0.0001f, 0.9f, 1.6f);
 		deepfield = new Starfield(Gdx.graphics.getWidth(), Gdx.graphics.getHeight(), 0.004f, 0.08f, 0.8f);
 	}
-
-	@Override
-	public void resume() {
+	
+	DroidPool importPool(String filename) {
+		System.out.println("### Importing pool '" + filename + "' from hard-drive");
+		Json json = new Json();
+		FileHandle entry = Gdx.files.internal("nn/" + filename + ".txt");
+		DroidPool pool;
+		String text = entry.readString();
+		pool = json.fromJson(DroidPool.class, text);
+		
+		return pool;
+		/*
+		ArrayList<DroidShip> newDroids = new ArrayList<DroidShip>();
+		for (int i=0; i<pool.nn.size(); i++) {
+			DroidShip droid = new DroidShip(new Vector2(), 0, projectiles);
+			droid.initNN(pool.activationFunc);
+			droid.nn.weights = pool.nn.get(i).clone();
+			newDroids.add(droid);
+		}
+		*/
 	}
-
-	@Override
-	public void show() {
+	
+	private void spawnDroids(int number) {
+		System.out.println("Spawning droids");
+		while (number>0) {
+			empty = true;
+			float posX = MathUtils.random(game.ship.getPosition().x-SpaceGame.LOCAL_RADIUS, game.ship.getPosition().x+SpaceGame.LOCAL_RADIUS);
+			float posY = MathUtils.random(game.ship.getPosition().y-SpaceGame.LOCAL_RADIUS, game.ship.getPosition().y+SpaceGame.LOCAL_RADIUS);
+			b2world.QueryAABB(new QueryCallback() {
+			@Override
+			public boolean reportFixture(Fixture fixture) {
+				empty = false;
+				return true;
+			}}, posX-4, posY-4, posX+4, posY+4);
+			
+			if (empty) {
+				Vector2 pos = new Vector2(posX, posY);
+				float angle = (game.ship.getPosition().sub(pos)).angleRad();
+				int i = MathUtils.random(droidPool.nnBest.size()-1);
+				DroidShip droid = new DroidShip(pos, angle, projectiles);
+				droid.initNN(droidPool.activationFunc);
+				droid.nn.weights = droidPool.nnBest.get(i).clone();
+				droid.initBody(b2world);
+				free_bodies.add(droid);
+				number--;
+			}
+		}
 	}
-
+	
 	private void handleInput() {
 		float x_axis = 0.0f;
 		float y_axis = 0.0f;
@@ -254,9 +445,11 @@ public class ScreenInSpace implements Screen {
 			game.camera.zoom(0.95f);
 			game.camera.autozoom = false;
 		}
-		
 		if (Gdx.input.isKeyPressed(Keys.SPACE)) {
 			game.ship.fire(projectiles);
+		}
+		if (Gdx.input.isKeyPressed(Keys.S)) {
+			spawnDroids(2);
 		}
 		
 		amp = (float) Math.sqrt(x_axis*x_axis + y_axis*y_axis);
@@ -286,4 +479,16 @@ public class ScreenInSpace implements Screen {
 			pixmap.dispose();
 		}
 	}
+	
+	@Override
+	public void hide() {}
+
+	@Override
+	public void pause() {}
+	
+	@Override
+	public void resume() {}
+
+	@Override
+	public void show() {}
 }

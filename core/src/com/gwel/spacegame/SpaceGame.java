@@ -19,7 +19,7 @@ import com.gwel.screens.ScreenTraining;
 
 
 public class SpaceGame extends Game {
-	final boolean TRAINING = true; 
+	final boolean TRAINING = false; 
 	
 	public MyCamera camera;
 	public MyRenderer renderer;

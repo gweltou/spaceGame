@@ -97,12 +97,12 @@ public class MyRenderer {
 		this.col.set(i, j, k, l);
 	}
 	
-	public void setProjectionMatrix(Matrix4 proj) {
-		projMatrix = proj;
-	}
-	
 	public void setColor(Color color) {
 		this.col.set(color);
+	}
+	
+	public void setProjectionMatrix(Matrix4 proj) {
+		projMatrix = proj;
 	}
 	
 	public void triangle(Vector2 p1, Vector2 p2, Vector2 p3) {

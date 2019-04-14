@@ -32,9 +32,10 @@ import com.gwel.spacegame.SpaceGame;
 
 
 public class ScreenTraining implements Screen {
-	private final int SIM_SPEED = 8;
+	private final int SIM_SPEED = 32;
 	private final float SPAWN_RADIUS = 30.0f;
 	private final float SMALL_PLANET_RADIUS = 15.0f;
+	private final float MEDIUM_PLANET_RADIUS = 22.0f;
 	private final float BIG_PLANET_RADIUS = 35.0f;
 	private final float WORLD_WIDTH =  2*(SPAWN_RADIUS + 5*SMALL_PLANET_RADIUS + 2*BIG_PLANET_RADIUS + DroidShip.SIGHT_DISTANCE);
 	private final float WORLD_HEIGHT = WORLD_WIDTH;
@@ -44,9 +45,10 @@ public class ScreenTraining implements Screen {
 	private final float BORDER_DOWN = -WORLD_HEIGHT/2.0f;
 	private final boolean DEBUG_RENDERING = true;
 	private final int STARTING_POP = 32;
-	private final int WINNERS_PER_GENERATION = 5;
-	private final int N_OFFSPRINGS = 10;
-	private final int SIM_STEPS = 20000;
+	private final int WINNERS_PER_GENERATION = 6;
+	private final int N_OFFSPRINGS = 8;
+	private final int BRANCH_OUT_TRIES = 4;
+	private final int SIM_STEPS = 40000;
 	
 	final SpaceGame game;
 	private World b2world;
@@ -59,6 +61,7 @@ public class ScreenTraining implements Screen {
 	private ListIterator<Projectile> proj_iter;
 	private PriorityQueue<DroidShip> podium = new PriorityQueue<DroidShip>(5, new DroidComparator());
 	private DroidPool currentPool;
+	private int branchTries;
 	
 	Box2DDebugRenderer debugRenderer;
 	ShapeRenderer renderer;
@@ -83,10 +86,11 @@ public class ScreenTraining implements Screen {
 		populatePlanets();
 		lastFpsDisplay = TimeUtils.millis();
 		steps = 0;
+		branchTries = 0;
 		
 		newPool();
 		populateShips(STARTING_POP);
-		//importPool();
+		//importPool("230b768d-ce0e-4a41-9d41-c32ef5f11644");
 	}
 	
 	@Override
@@ -154,6 +158,7 @@ public class ScreenTraining implements Screen {
 				droid.setScore(steps);
 				podium.add(droid);
 			}
+			droids.clear();
 			
 			// Calculate generation score
 			System.out.print("Generations scores: ");
@@ -172,7 +177,7 @@ public class ScreenTraining implements Screen {
 			// Select the best droids of this generation
 			System.out.print("Individual scores: ");
 			ArrayList<DroidShip> winners = new ArrayList<DroidShip>();
-			for (int i = Math.min(WINNERS_PER_GENERATION, podium.size()); i >= 1; i--) {
+			for (int i = Math.min(currentPool.winnersPerGen, podium.size()); i >= 1; i--) {
 				DroidShip droid = podium.remove();
 				System.out.print("__" + String.valueOf(droid.getScore()));
 				winners.add(droid);
@@ -188,13 +193,14 @@ public class ScreenTraining implements Screen {
 			if (scoreWin > currentPool.bestGenScore) {
 				currentPool.bestGenScore = (int) scoreWin;
 				System.out.println("### New generation record ! : " + currentPool.bestGenScore);
-				// Save best winners to pool
+				// Save best winners to pool (we will branch out from this generation if needed)
 				ArrayList<float[][][]> nn = new ArrayList<float[][][]>();
 				for (DroidShip ship: winners) {
 					nn.add(ship.nn.weights.clone());
 				}
 				currentPool.nnBest = nn;
 				currentPool.bestGen = currentPool.generation;
+				branchTries = 0;
 			}
 						
 			// Save every 10 generations to hard-drive
@@ -202,18 +208,25 @@ public class ScreenTraining implements Screen {
 				exportPool(winners);
 			}
 			
-			if (currentPool.generation - currentPool.bestGen >= 10) {
+			if (currentPool.generation - currentPool.bestGen >= 8) {
 				// Evolution stalled for too long, branch out from last best winners
-				System.out.println("### New branch from generation " + currentPool.bestGen);
-				droids.clear();
-				podium.clear();
-				currentPool.generation = currentPool.bestGen+1;
-				//newPool();
-				// Set the winners with nn from the last best batch
-				for (int i=0; i<winners.size(); i++) {
-					winners.get(i).nn.weights = currentPool.nnBest.get(i);
+				branchTries++;
+				if (branchTries >= BRANCH_OUT_TRIES) {
+					// Tried to branch out too many times, creating a new pool
+					branchTries = 0;
+					podium.clear();
+					newPool();
+					populateShips(STARTING_POP);
+				} else {
+					System.out.println("### New branch from generation " + currentPool.bestGen + " [" + branchTries + "]");
+					podium.clear();
+					currentPool.generation = currentPool.bestGen+1;
+					// Set the winners with nn from the last best batch
+					for (int i=0; i<winners.size(); i++) {
+						winners.get(i).nn.weights = currentPool.nnBest.get(i);
+					}
+					populateShips(newGeneration(winners));
 				}
-				populateShips(newGeneration(winners));	
 			} else {
 				// Respawn current pool
 				podium.clear();
@@ -431,17 +444,6 @@ public class ScreenTraining implements Screen {
 		steps++;
 	}
 
-	@Override
-	public void resize(int width, int height) {
-	}
-
-	@Override
-	public void resume() {
-	}
-
-	@Override
-	public void show() {
-	}
 	
 	private void populatePlanets() {
 		float angle = 0f;
@@ -465,7 +467,7 @@ public class ScreenTraining implements Screen {
 		for (float a: angles) {
 			Planet p = new Planet(new Vector2(	(float) (Math.cos(a)*radius3),
 					(float) (Math.sin(a)*radius3)),
-					SMALL_PLANET_RADIUS, 0);
+					MEDIUM_PLANET_RADIUS, 0);
 			p.initBody(b2world);
 			localPlanets.add(p);
 		}
@@ -475,7 +477,7 @@ public class ScreenTraining implements Screen {
 		ArrayList<DroidShip> ships = new ArrayList<DroidShip>();
 		for (int i=0; i<number; i++) {
 			DroidShip newDroid = new DroidShip(new Vector2(), 0, projectiles);
-			newDroid.initNN();
+			newDroid.initNN(currentPool.activationFunc);
 			ships.add(newDroid);
 		}
 		populateShips(ships);
@@ -510,7 +512,7 @@ public class ScreenTraining implements Screen {
 	private ArrayList<DroidShip> newGeneration(ArrayList<DroidShip> winners) {
 		ArrayList<DroidShip> newPool = new ArrayList<DroidShip>();
 		for (DroidShip droid: winners) {
-			for (int i=0; i<N_OFFSPRINGS; i++) {
+			for (int i=0; i<currentPool.offsprings; i++) {
 				DroidShip offspring = droid.copy();
 				offspring.nn.mutate();
 				newPool.add(offspring);
@@ -531,6 +533,7 @@ public class ScreenTraining implements Screen {
 		currentPool.offsprings = N_OFFSPRINGS;
 		currentPool.startPop = STARTING_POP;
 		currentPool.winnersPerGen = WINNERS_PER_GENERATION;
+		System.out.println("### New pool created: " + currentPool.id);
 	}
 	
 	private void handleInput() {
@@ -584,10 +587,10 @@ public class ScreenTraining implements Screen {
 		}
 	}
 	
-	void importPool() {
-		System.out.println("### Importing pool from hard-drive");
+	void importPool(String filename) {
+		System.out.println("### Importing pool '" + filename + "' from hard-drive");
 		Json json = new Json();
-		FileHandle entry = Gdx.files.internal("nn/e721b958-6ee0-4f5b-8e8b-e83000a7807d.txt");
+		FileHandle entry = Gdx.files.internal("nn/" + filename + ".txt");
 		DroidPool pool;
 //		for (FileHandle entry: dirHandle.list()) {
 			String text = entry.readString();
@@ -600,7 +603,7 @@ public class ScreenTraining implements Screen {
 		ArrayList<DroidShip> newDroids = new ArrayList<DroidShip>();
 		for (int i=0; i<pool.nn.size(); i++) {
 			DroidShip droid = new DroidShip(new Vector2(), 0, projectiles);
-			droid.initNN();
+			droid.initNN(pool.activationFunc);
 			droid.nn.weights = pool.nn.get(i).clone();
 			newDroids.add(droid);
 		}
@@ -644,4 +647,13 @@ public class ScreenTraining implements Screen {
 
 	@Override
 	public void pause() {}
+	
+	@Override
+	public void resize(int width, int height) {}
+
+	@Override
+	public void resume() {}
+
+	@Override
+	public void show() {}
 }

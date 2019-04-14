@@ -4,6 +4,7 @@ import java.util.LinkedList;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.files.FileHandle;
+import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.math.Affine2;
 import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Vector2;
@@ -22,18 +23,19 @@ public class DroidShip extends PhysicBody {
 	public final float MAX_ANG_VEL = 4.0f;
 	private final float FIRE_COOLDOWN = 200.0f; // In milliseconds
 	public final static float SIGHT_DISTANCE = 50.0f;
-	private final static int NN_INPUTS = 17;
-	public static int[] nnLayers = {14, 28, 28, 28, 4};
+	private final static int NN_INPUTS = 14;
+	public static int[] nnLayers = {NN_INPUTS, 42, 28, 8, 4};
 	public static Enums activation = Enums.ACTIVATION_TANH;
 	
 	//public float speed_mag;
 	private final Vector2 size = new Vector2(1.7f, 1.8f);  // Size of spaceship in game units
 	private Vector2 pPosition;
 	
-	public float hitpoints;
+	public int hitpoints;
 	private long lastFire;
 	private int amunition;
 	private float dstCounter = 0; // For NN training
+	private int damageCounter = 0; 
 	private int[] scores = new int[5];
 	private int iScore = 0;
 	
@@ -43,6 +45,7 @@ public class DroidShip extends PhysicBody {
 	private Vector2 p1_tmp = new Vector2();
 	private Vector2 p2_tmp = new Vector2();
 	private Vector2 p3_tmp = new Vector2();
+	private ShipTail tail1, tail2;
 	
 	public NeuralNetwork nn = null;
 	private float[] nnInput;
@@ -55,6 +58,8 @@ public class DroidShip extends PhysicBody {
 		
 		transform = new Affine2();
 		vertices = new Vector2[4];
+		tail1 = new ShipTail(this, new Vector2(0.7f, 0.08f), 0.2f, 256, new Color(0xFF0000FF), new Color(0xFFFF0000));
+		tail2 = new ShipTail(this, new Vector2(-0.7f, 0.08f), 0.2f, 256, new Color(0xFF0000FF), new Color(0xFFFF0000));
 		
 		nnInput = new float[NN_INPUTS];
 		resetVars();
@@ -68,7 +73,7 @@ public class DroidShip extends PhysicBody {
 		dstCounter += position.dst(pPosition);		
 		
 		float[] output;
-		output = nn.feedforward(nnInput, activation);
+		output = nn.feedforward(nnInput);
 		// reset nnInput to 0
 		for (int i=0; i<nnInput.length; i++)
 			nnInput[i] = 0.0f;
@@ -113,8 +118,8 @@ public class DroidShip extends PhysicBody {
 	}
 
 	public void hit(float hp) {
-		hitpoints -= hp;
-		if (hitpoints <= 0.0) {
+		hitpoints -= Math.round(hp);
+		if (hitpoints <= 0) {
 			//System.out.println("Droid died");
 			disposable = true;
 		}
@@ -238,8 +243,8 @@ public class DroidShip extends PhysicBody {
 		coneSensor.dispose();
 	}
 	
-	public void initNN() {
-		nn = new NeuralNetwork();
+	public void initNN(Enums activation) {
+		nn = new NeuralNetwork(activation);
 		nn.random(nnLayers);
 	}
 	public void initNN(NeuralNetwork n) {
@@ -370,6 +375,11 @@ public class DroidShip extends PhysicBody {
 	}
 
 	public void render(MyRenderer renderer) {
+		tail1.update();
+		tail2.update();
+		tail1.render(renderer);
+		tail2.render(renderer);
+		
 		transform.idt();
 		transform.translate(getPosition());
 		transform.rotateRad(getAngle() + MathUtils.PI/2);
@@ -397,9 +407,9 @@ public class DroidShip extends PhysicBody {
 				// Shift scores to the left
 				scores[i] = scores[i+1];
 			}
-			scores[iScore-1] = (int) (steps + amunition + hitpoints + dstCounter);
+			scores[iScore-1] = (int) (steps + amunition + hitpoints + dstCounter + damageCounter);
 		} else {
-			scores[iScore++] = (int) (steps + amunition + hitpoints + dstCounter);
+			scores[iScore++] = (int) (steps + amunition + hitpoints + dstCounter + damageCounter);
 		}
 	}
 	
@@ -414,6 +424,7 @@ public class DroidShip extends PhysicBody {
 		hitpoints = 200;
 		amunition = 100;
 		dstCounter = 0.0f;
+		damageCounter = 0;
 		lastFire = 0;
 	}
 
