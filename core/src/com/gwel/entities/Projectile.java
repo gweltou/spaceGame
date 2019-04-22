@@ -8,7 +8,7 @@ import com.gwel.spacegame.MyRenderer;
 import com.gwel.spacegame.Enums;
 
 public class Projectile {
-	private MovingObject parent;
+	private Ship parent;
 	public Vector2 position;
 	public Vector2 pPosition;
 	private Vector2 speed;
@@ -17,7 +17,7 @@ public class Projectile {
 	private float damage;
 	public boolean disposable;
 	
-	public Projectile(MovingObject parent, Vector2 pos, Vector2 speed, float damage) {
+	public Projectile(Ship parent, Vector2 pos, Vector2 speed, float damage) {
 		this.parent = parent;
 		disposable = false;
 		position = pos.cpy();
@@ -61,9 +61,10 @@ public class Projectile {
 				Satellite sat = (Satellite) fixture.getBody().getUserData();
 				sat.detach();
 				sat.push(speed.cpy().scl(damage*damage));
-			} else if (fixture.getUserData() == Enums.DROID) {
-				DroidShip droid = (DroidShip) fixture.getBody().getUserData();
-				droid.hit(damage);
+			} else if (fixture.getUserData() == Enums.DROID || fixture.getUserData() == Enums.SHIP) {
+				Ship enemy = (Ship) fixture.getBody().getUserData();
+				enemy.hit(damage);
+				parent.addDamage(50);
 			}
 			return fraction;
 		}

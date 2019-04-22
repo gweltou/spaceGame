@@ -57,7 +57,7 @@ public class ScreenInSpace implements Screen {
 		this.game = game;
 		destroy = false;
 		game_speed = 1.0f;
-		droidPool = importPool("d4a60c25-ee4f-4a7d-ac5b-505ee002fd6e");
+		droidPool = importPool("a0861cff-74ed-4531-a1de-4b2a0d6b6272");
 		
 		b2world = new World(new Vector2(0.0f, 0.0f), true);
 		b2world.setContactListener(new MyContactListener(game));
@@ -153,154 +153,175 @@ public class ScreenInSpace implements Screen {
 		for (Contact c: b2world.getContactList()) {
 			Fixture f1 = c.getFixtureA();
 			Fixture f2 = c.getFixtureB();
-			Fixture f;
+			Fixture sensor, object;
+			
+			if (!c.isTouching())
+				continue;
 			
 			// Sensors for Neural Network
-			// OBSTACLE SENSORS
 			if (f1.getUserData() == Enums.SENSOR_F || f2.getUserData() == Enums.SENSOR_F) {
-				f = f1;
-				if (f2.getUserData() == Enums.SENSOR_F) {
-					f = f2;
+				if (f1.getUserData() == Enums.SENSOR_F) {
+					sensor = f1;
+					object = f2;
+				} else {
+					sensor = f2;
+					object = f1;
 				}
+				// Distance between the 2 bodies
 				Vector2 dPos = f1.getBody().getPosition().sub(f2.getBody().getPosition());
 				float thickness = ((Collidable) f1.getBody().getUserData()).getBoundingRadius()
 						+ ((Collidable) (f2.getBody().getUserData())).getBoundingRadius();
-				((DroidShip) f.getBody().getUserData()).setSensor(Enums.SENSOR_F, dPos.len()-thickness);
+				Vector2 normal = dPos.cpy().nor(); 
+				float vns = normal.dot(sensor.getBody().getLinearVelocity());  
+				float vno = normal.dot(object.getBody().getLinearVelocity());  
+				// Check if object is another ship or droid
+				if (object.getUserData() == Enums.DROID || object.getUserData() == Enums.SHIP) {
+					((DroidShip) sensor.getBody().getUserData()).setSensor(Enums.SENSOR_SF, dPos.len()-thickness, vns+vno);
+				} else {
+					// Another type of obstacle
+					((DroidShip) sensor.getBody().getUserData()).setSensor(Enums.SENSOR_F, dPos.len()-thickness, vns+vno);
+				}
 			}
 			if (f1.getUserData() == Enums.SENSOR_FR || f2.getUserData() == Enums.SENSOR_FR) {
-				f = f1;
-				if (f2.getUserData() == Enums.SENSOR_FR) {
-					f = f2;
+				if (f1.getUserData() == Enums.SENSOR_FR) {
+					sensor = f1;
+					object = f2;
+				} else {
+					sensor = f2;
+					object = f1;
 				}
+				// Distance between the 2 bodies
 				Vector2 dPos = f1.getBody().getPosition().sub(f2.getBody().getPosition());
 				float thickness = ((Collidable) f1.getBody().getUserData()).getBoundingRadius()
 						+ ((Collidable) (f2.getBody().getUserData())).getBoundingRadius();
-				((DroidShip) f.getBody().getUserData()).setSensor(Enums.SENSOR_FR, dPos.len()-thickness);
+				Vector2 normal = dPos.cpy().nor(); 
+				float vns = normal.dot(sensor.getBody().getLinearVelocity());  
+				float vno = normal.dot(object.getBody().getLinearVelocity());  
+				// Check if object is another ship or droid
+				if (object.getUserData() == Enums.DROID || object.getUserData() == Enums.SHIP) {
+					((DroidShip) sensor.getBody().getUserData()).setSensor(Enums.SENSOR_SFR, dPos.len()-thickness, vns+vno);
+				} else {
+					// Another type of obstacle
+					((DroidShip) sensor.getBody().getUserData()).setSensor(Enums.SENSOR_FR, dPos.len()-thickness, vns+vno);
+				}
 			}
 			if (f1.getUserData() == Enums.SENSOR_FL || f2.getUserData() == Enums.SENSOR_FL) {
-				f = f1;
-				if (f2.getUserData() == Enums.SENSOR_FL) {
-					f = f2;
+				if (f1.getUserData() == Enums.SENSOR_FL) {
+					sensor = f1;
+					object = f2;
+				} else {
+					sensor = f2;
+					object = f1;
 				}
+				// Distance between the 2 bodies
 				Vector2 dPos = f1.getBody().getPosition().sub(f2.getBody().getPosition());
 				float thickness = ((Collidable) f1.getBody().getUserData()).getBoundingRadius()
 						+ ((Collidable) (f2.getBody().getUserData())).getBoundingRadius();
-				((DroidShip) f.getBody().getUserData()).setSensor(Enums.SENSOR_FL, dPos.len()-thickness);
+				Vector2 normal = dPos.cpy().nor(); 
+				float vns = normal.dot(sensor.getBody().getLinearVelocity());  
+				float vno = normal.dot(object.getBody().getLinearVelocity());  
+				// Check if object is another ship or droid
+				if (object.getUserData() == Enums.DROID || object.getUserData() == Enums.SHIP) {
+					((DroidShip) sensor.getBody().getUserData()).setSensor(Enums.SENSOR_SFL, dPos.len()-thickness, vns+vno);
+				} else {
+					// Another type of obstacle
+					((DroidShip) sensor.getBody().getUserData()).setSensor(Enums.SENSOR_FL, dPos.len()-thickness, vns+vno);
+				}
 			}
 			if (f1.getUserData() == Enums.SENSOR_MR || f2.getUserData() == Enums.SENSOR_MR) {
-				f = f1;
-				if (f2.getUserData() == Enums.SENSOR_MR) {
-					f = f2;
+				if (f1.getUserData() == Enums.SENSOR_MR) {
+					sensor = f1;
+					object = f2;
+				} else {
+					sensor = f2;
+					object = f1;
 				}
+				// Distance between the 2 bodies
 				Vector2 dPos = f1.getBody().getPosition().sub(f2.getBody().getPosition());
 				float thickness = ((Collidable) f1.getBody().getUserData()).getBoundingRadius()
 						+ ((Collidable) (f2.getBody().getUserData())).getBoundingRadius();
-				((DroidShip) f.getBody().getUserData()).setSensor(Enums.SENSOR_MR, dPos.len()-thickness);
+				Vector2 normal = dPos.cpy().nor(); 
+				float vns = normal.dot(sensor.getBody().getLinearVelocity());  
+				float vno = normal.dot(object.getBody().getLinearVelocity());  
+				float value = ((dPos.len()-thickness)/DroidShip.SIGHT_DISTANCE) * (vns+vno)/(2*DroidShip.MAX_VEL);
+				// Check if object is another ship or droid
+				if (object.getUserData() == Enums.DROID || object.getUserData() == Enums.SHIP) {
+					((DroidShip) sensor.getBody().getUserData()).setSensor(Enums.SENSOR_SMR, dPos.len()-thickness, vns+vno);
+				} else {
+					// Another type of obstacle
+					((DroidShip) sensor.getBody().getUserData()).setSensor(Enums.SENSOR_MR, dPos.len()-thickness, vns+vno);
+				}
 			}
 			if (f1.getUserData() == Enums.SENSOR_ML || f2.getUserData() == Enums.SENSOR_ML) {
-				f = f1;
-				if (f2.getUserData() == Enums.SENSOR_ML) {
-					f = f2;
+				if (f1.getUserData() == Enums.SENSOR_ML) {
+					sensor = f1;
+					object = f2;
+				} else {
+					sensor = f2;
+					object = f1;
 				}
+				// Distance between the 2 bodies
 				Vector2 dPos = f1.getBody().getPosition().sub(f2.getBody().getPosition());
 				float thickness = ((Collidable) f1.getBody().getUserData()).getBoundingRadius()
 						+ ((Collidable) (f2.getBody().getUserData())).getBoundingRadius();
-				((DroidShip) f.getBody().getUserData()).setSensor(Enums.SENSOR_ML, dPos.len()-thickness);
+				Vector2 normal = dPos.cpy().nor(); 
+				float vns = normal.dot(sensor.getBody().getLinearVelocity());  
+				float vno = normal.dot(object.getBody().getLinearVelocity());  
+				// Check if object is another ship or droid
+				if (object.getUserData() == Enums.DROID || object.getUserData() == Enums.SHIP) {
+					((DroidShip) sensor.getBody().getUserData()).setSensor(Enums.SENSOR_SML, dPos.len()-thickness, vns+vno);
+				} else {
+					// Another type of obstacle
+					((DroidShip) sensor.getBody().getUserData()).setSensor(Enums.SENSOR_ML, dPos.len()-thickness, vns+vno);
+				}
 			}
 			if (f1.getUserData() == Enums.SENSOR_BR || f2.getUserData() == Enums.SENSOR_BR) {
-				f = f1;
-				if (f2.getUserData() == Enums.SENSOR_BR) {
-					f = f2;
+				if (f1.getUserData() == Enums.SENSOR_BR) {
+					sensor = f1;
+					object = f2;
+				} else {
+					sensor = f2;
+					object = f1;
 				}
+				// Distance between the 2 bodies
 				Vector2 dPos = f1.getBody().getPosition().sub(f2.getBody().getPosition());
 				float thickness = ((Collidable) f1.getBody().getUserData()).getBoundingRadius()
 						+ ((Collidable) (f2.getBody().getUserData())).getBoundingRadius();
-				((DroidShip) f.getBody().getUserData()).setSensor(Enums.SENSOR_BR, dPos.len()-thickness);
+				Vector2 normal = dPos.cpy().nor(); 
+				float vns = normal.dot(sensor.getBody().getLinearVelocity());  
+				float vno = normal.dot(object.getBody().getLinearVelocity());  
+				// Check if object is another ship or droid
+				if (object.getUserData() == Enums.DROID || object.getUserData() == Enums.SHIP) {
+					((DroidShip) sensor.getBody().getUserData()).setSensor(Enums.SENSOR_SBR, dPos.len()-thickness, vns+vno);
+				} else {
+					// Another type of obstacle
+					((DroidShip) sensor.getBody().getUserData()).setSensor(Enums.SENSOR_BR, dPos.len()-thickness, vns+vno);
+				}
 			}
 			if (f1.getUserData() == Enums.SENSOR_BL || f2.getUserData() == Enums.SENSOR_BL) {
-				f = f1;
-				if (f2.getUserData() == Enums.SENSOR_BL) {
-					f = f2;
+				if (f1.getUserData() == Enums.SENSOR_BL) {
+					sensor = f1;
+					object = f2;
+				} else {
+					sensor = f2;
+					object = f1;
 				}
+				// Distance between the 2 bodies
 				Vector2 dPos = f1.getBody().getPosition().sub(f2.getBody().getPosition());
 				float thickness = ((Collidable) f1.getBody().getUserData()).getBoundingRadius()
 						+ ((Collidable) (f2.getBody().getUserData())).getBoundingRadius();
-				((DroidShip) f.getBody().getUserData()).setSensor(Enums.SENSOR_BL, dPos.len()-thickness);
-			}
-			
-			// SHIP SENSORS
-			if (f1.getUserData() == Enums.SENSOR_SF || f2.getUserData() == Enums.SENSOR_SF) {
-				f = f1;
-				if (f2.getUserData() == Enums.SENSOR_SF) {
-					f = f2;
+				Vector2 normal = dPos.cpy().nor(); 
+				float vns = normal.dot(sensor.getBody().getLinearVelocity());  
+				float vno = normal.dot(object.getBody().getLinearVelocity());  
+				// Check if object is another ship or droid
+				if (object.getUserData() == Enums.DROID || object.getUserData() == Enums.SHIP) {
+					((DroidShip) sensor.getBody().getUserData()).setSensor(Enums.SENSOR_SBL, dPos.len()-thickness, vns+vno);
+				} else {
+					// Another type of obstacle
+					((DroidShip) sensor.getBody().getUserData()).setSensor(Enums.SENSOR_BL, dPos.len()-thickness, vns+vno);
 				}
-				Vector2 dPos = f1.getBody().getPosition().sub(f2.getBody().getPosition());
-				float thickness = ((Collidable) f1.getBody().getUserData()).getBoundingRadius()
-						+ ((Collidable) (f2.getBody().getUserData())).getBoundingRadius();
-				((DroidShip) f.getBody().getUserData()).setSensor(Enums.SENSOR_SF, dPos.len()-thickness);
-			}
-			if (f1.getUserData() == Enums.SENSOR_SFR || f2.getUserData() == Enums.SENSOR_SFR) {
-				f = f1;
-				if (f2.getUserData() == Enums.SENSOR_SFR) {
-					f = f2;
-				}
-				Vector2 dPos = f1.getBody().getPosition().sub(f2.getBody().getPosition());
-				float thickness = ((Collidable) f1.getBody().getUserData()).getBoundingRadius()
-						+ ((Collidable) (f2.getBody().getUserData())).getBoundingRadius();
-				((DroidShip) f.getBody().getUserData()).setSensor(Enums.SENSOR_SFR, dPos.len()-thickness);
-			}
-			if (f1.getUserData() == Enums.SENSOR_SFL || f2.getUserData() == Enums.SENSOR_SFL) {
-				f = f1;
-				if (f2.getUserData() == Enums.SENSOR_SFL) {
-					f = f2;
-				}
-				Vector2 dPos = f1.getBody().getPosition().sub(f2.getBody().getPosition());
-				float thickness = ((Collidable) f1.getBody().getUserData()).getBoundingRadius()
-						+ ((Collidable) (f2.getBody().getUserData())).getBoundingRadius();
-				((DroidShip) f.getBody().getUserData()).setSensor(Enums.SENSOR_SFL, dPos.len()-thickness);
-			}
-			if (f1.getUserData() == Enums.SENSOR_SMR || f2.getUserData() == Enums.SENSOR_SMR) {
-				f = f1;
-				if (f2.getUserData() == Enums.SENSOR_SMR) {
-					f = f2;
-				}
-				Vector2 dPos = f1.getBody().getPosition().sub(f2.getBody().getPosition());
-				float thickness = ((Collidable) f1.getBody().getUserData()).getBoundingRadius()
-						+ ((Collidable) (f2.getBody().getUserData())).getBoundingRadius();
-				((DroidShip) f.getBody().getUserData()).setSensor(Enums.SENSOR_SMR, dPos.len()-thickness);
-			}
-			if (f1.getUserData() == Enums.SENSOR_SML || f2.getUserData() == Enums.SENSOR_SML) {
-				f = f1;
-				if (f2.getUserData() == Enums.SENSOR_SML) {
-					f = f2;
-				}
-				Vector2 dPos = f1.getBody().getPosition().sub(f2.getBody().getPosition());
-				float thickness = ((Collidable) f1.getBody().getUserData()).getBoundingRadius()
-						+ ((Collidable) (f2.getBody().getUserData())).getBoundingRadius();
-				((DroidShip) f.getBody().getUserData()).setSensor(Enums.SENSOR_SML, dPos.len()-thickness);
-			}
-			if (f1.getUserData() == Enums.SENSOR_SBR || f2.getUserData() == Enums.SENSOR_SBR) {
-				f = f1;
-				if (f2.getUserData() == Enums.SENSOR_SBR) {
-					f = f2;
-				}
-				Vector2 dPos = f1.getBody().getPosition().sub(f2.getBody().getPosition());
-				float thickness = ((Collidable) f1.getBody().getUserData()).getBoundingRadius()
-						+ ((Collidable) (f2.getBody().getUserData())).getBoundingRadius();
-				((DroidShip) f.getBody().getUserData()).setSensor(Enums.SENSOR_BR, dPos.len()-thickness);
-			}
-			if (f1.getUserData() == Enums.SENSOR_SBL || f2.getUserData() == Enums.SENSOR_SBL) {
-				f = f1;
-				if (f2.getUserData() == Enums.SENSOR_SBL) {
-					f = f2;
-				}
-				Vector2 dPos = f1.getBody().getPosition().sub(f2.getBody().getPosition());
-				float thickness = ((Collidable) f1.getBody().getUserData()).getBoundingRadius()
-						+ ((Collidable) (f2.getBody().getUserData())).getBoundingRadius();
-				((DroidShip) f.getBody().getUserData()).setSensor(Enums.SENSOR_SBL, dPos.len()-thickness);
 			}
 		}
-		
 
 		starfield.update(game.camera.getTravelling());
 		deepfield.update(game.camera.getTravelling());
@@ -346,7 +367,7 @@ public class ScreenInSpace implements Screen {
 	@Override
 	public void resize(int width, int height) {
 		starfield = new Starfield(Gdx.graphics.getWidth(), Gdx.graphics.getHeight(), 0.0001f, 0.9f, 1.6f);
-		deepfield = new Starfield(Gdx.graphics.getWidth(), Gdx.graphics.getHeight(), 0.004f, 0.08f, 0.8f);
+		deepfield = new Starfield(Gdx.graphics.getWidth(), Gdx.graphics.getHeight(), 0.004f, 0.1f, 0.8f);
 	}
 	
 	DroidPool importPool(String filename) {

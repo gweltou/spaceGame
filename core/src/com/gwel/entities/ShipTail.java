@@ -13,8 +13,6 @@ public class ShipTail {
 	boolean t_full;
 	Vector2 last_pos;
 	PhysicBody ship;
-	private float alpha;
-	private float alpha_step;
 	Vector2 local_pos;
 	float radius;
 	private Color baseColor, color;

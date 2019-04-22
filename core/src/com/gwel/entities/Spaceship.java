@@ -15,7 +15,7 @@ import com.gwel.spacegame.MyRenderer;
 import com.gwel.spacegame.Enums;
 
 
-public class Spaceship extends PhysicBody {
+public class Spaceship extends PhysicBody implements Ship {
 	public final float MAX_VEL = 20.0f;
 	public final float MAX_ANG_VEL = 4.0f;
 	private final float FIRE_COOLDOWN = 200.0f; // In milliseconds
@@ -31,6 +31,7 @@ public class Spaceship extends PhysicBody {
 	private Vector2 p2_tmp = new Vector2();
 	private Vector2 p3_tmp = new Vector2();
 	private ShipTail tail1, tail2;
+	private int damageCounter = 0;
 	
 	
 	public Spaceship(Vector2 pos) {
@@ -193,5 +194,10 @@ public class Spaceship extends PhysicBody {
 
 	public float getBoundingRadius() {
 		return size.y / 2f;
+	}
+
+	@Override
+	public void addDamage(int dmg) {
+		damageCounter  += dmg;
 	}
 }

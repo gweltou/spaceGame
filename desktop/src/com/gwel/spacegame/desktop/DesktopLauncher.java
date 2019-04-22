@@ -10,6 +10,7 @@ public class DesktopLauncher {
 		config.title = "SpaceGame 0.1";
 		config.width = 800;
 		config.height = 600;
+		//config.fullscreen = true;
 		new LwjglApplication(new SpaceGame(), config);
 	}
 }

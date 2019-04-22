@@ -18,17 +18,17 @@ import com.gwel.spacegame.Enums;
 import com.gwel.spacegame.MyRenderer;
 
 
-public class DroidShip extends PhysicBody {
-	public final float MAX_VEL = 20.0f;
+public class DroidShip extends PhysicBody implements Ship {
+	public final static float MAX_VEL = 20.0f;
 	public final float MAX_ANG_VEL = 4.0f;
 	private final float FIRE_COOLDOWN = 200.0f; // In milliseconds
 	public final static float SIGHT_DISTANCE = 50.0f;
 	private final static int NN_INPUTS = 14;
-	public static int[] nnLayers = {NN_INPUTS, 42, 28, 8, 4};
+	public static int[] nnLayers = {NN_INPUTS, NN_INPUTS, NN_INPUTS, 4};
 	public static Enums activation = Enums.ACTIVATION_TANH;
 	
 	//public float speed_mag;
-	private final Vector2 size = new Vector2(1.7f, 1.8f);  // Size of spaceship in game units
+	private static final Vector2 size = new Vector2(1.7f, 1.8f);  // Size of spaceship in game units
 	private Vector2 pPosition;
 	
 	public int hitpoints;
@@ -131,10 +131,11 @@ public class DroidShip extends PhysicBody {
 		
 		long now = TimeUtils.millis();
 		if (now-lastFire >= FIRE_COOLDOWN) {
+			//System.out.println("firing");
 			Vector2 dir = new Vector2(2.0f, 0.0f); // Here we set the bullet's velocity
 			dir.setAngleRad(getAngle());
 			Vector2 pos = this.getPosition();
-			Projectile proj = new Projectile(this, pos, dir, 10.0f);
+			Projectile proj = new Projectile(this, pos, dir, 1.0f);
 			projectiles.add(proj);
 			lastFire = now;
 			amunition--;
@@ -149,7 +150,7 @@ public class DroidShip extends PhysicBody {
 		shape.set(vertices);
 		FixtureDef fixtureDef = new FixtureDef();
 		fixtureDef.shape = shape;
-		fixtureDef.density = 0.1f; 
+		fixtureDef.density = 0.1f;
 		fixtureDef.friction = 0.4f;
 		fixtureDef.restitution = 0.6f;
 		fixtureDef.filter.categoryBits = 0x0002;
@@ -252,52 +253,73 @@ public class DroidShip extends PhysicBody {
 		nn = new NeuralNetwork(n);
 	}
 	
-	public void setSensor(Enums sensor, float distance) {
-		distance = Math.min(distance / SIGHT_DISTANCE, 1.0f); // Normalize distance
+	public void setSensor(Enums sensor, float distance, float relSpeed) {
+		distance = 1 - (distance/SIGHT_DISTANCE);
+		relSpeed = MathUtils.clamp(relSpeed, -MAX_VEL, MAX_VEL) / MAX_VEL;
+		// relSpeed is negative when the obstacle is closing in, positive if going away
+		float value = (float) (distance * relSpeed);
+		
 		switch(sensor) {
 		// OBSTACLE SENSORS
 		case SENSOR_BR:
-			nnInput[0] = Math.max(1-distance, nnInput[0]);
+			if (Math.abs(value) > Math.abs(nnInput[0]))
+				nnInput[0] = value;
 			break;
 		case SENSOR_MR:
-			nnInput[1] = Math.max(1-distance, nnInput[1]);
+			if (Math.abs(value) > Math.abs(nnInput[1]))
+				nnInput[1] = value;
 			break;
 		case SENSOR_FR:
-			nnInput[2] = Math.max(1-distance, nnInput[2]);
+			if (Math.abs(value) > Math.abs(nnInput[2]))
+				nnInput[2] = value;
 			break;
 		case SENSOR_F:
-			nnInput[3] = Math.max(1-distance, nnInput[3]);
+			/*System.out.print(String.valueOf(distance) + ' ');
+			System.out.print(String.valueOf(relSpeed) + ' ');
+			System.out.println(String.valueOf(value));*/
+			if (Math.abs(value) > Math.abs(nnInput[3]))
+				nnInput[3] = value;
 			break;
 		case SENSOR_FL:
-			nnInput[4] = Math.max(1-distance, nnInput[4]);
+			if (Math.abs(value) > Math.abs(nnInput[4]))
+				nnInput[4] = value;
 			break;
 		case SENSOR_ML:
-			nnInput[5] = Math.max(1-distance, nnInput[5]);
+			if (Math.abs(value) > Math.abs(nnInput[5]))
+				nnInput[5] = value;
 			break;
 		case SENSOR_BL:
-			nnInput[6] = Math.max(1-distance, nnInput[6]);
+			if (Math.abs(value) > Math.abs(nnInput[6]))
+				nnInput[6] = value;
 			break;
 		// SHIP SENSORS
 		case SENSOR_SBR:
-			nnInput[7] = Math.max(1-distance, nnInput[7]);
+			if (Math.abs(value) > Math.abs(nnInput[7]))
+				nnInput[7] = value;
 			break;
 		case SENSOR_SMR:
-			nnInput[8] = Math.max(1-distance, nnInput[8]);
+			if (Math.abs(value) > Math.abs(nnInput[8]))
+				nnInput[8] = value;
 			break;
 		case SENSOR_SFR:
-			nnInput[9] = Math.max(1-distance, nnInput[9]);
+			if (Math.abs(value) > Math.abs(nnInput[9]))
+				nnInput[9] = value;
 			break;
 		case SENSOR_SF:
-			nnInput[10] = Math.max(1-distance, nnInput[10]);
+			if (Math.abs(value) > Math.abs(nnInput[10]))
+				nnInput[10] = value;
 			break;
 		case SENSOR_SFL:
-			nnInput[11] = Math.max(1-distance, nnInput[11]);
+			if (Math.abs(value) > Math.abs(nnInput[11]))
+				nnInput[11] = value;
 			break;
 		case SENSOR_SML:
-			nnInput[12] = Math.max(1-distance, nnInput[12]);
+			if (Math.abs(value) > Math.abs(nnInput[12]))
+				nnInput[12] = value;
 			break;
 		case SENSOR_SBL:
-			nnInput[13] = Math.max(1-distance, nnInput[13]);
+			if (Math.abs(value) > Math.abs(nnInput[13]))
+				nnInput[13] = value;
 			break;
 		default:
 			break;
@@ -395,7 +417,7 @@ public class DroidShip extends PhysicBody {
 		}
 	}
 
-	@Override
+	//@Override
 	public float getBoundingRadius() {
 		return size.y / 2.0f;
 	}
@@ -422,7 +444,7 @@ public class DroidShip extends PhysicBody {
 	
 	public void resetVars() {
 		hitpoints = 200;
-		amunition = 100;
+		amunition = 200;
 		dstCounter = 0.0f;
 		damageCounter = 0;
 		lastFire = 0;
@@ -432,5 +454,11 @@ public class DroidShip extends PhysicBody {
 		DroidShip newDroid = new DroidShip(getPosition(), getAngle(), projectiles);
 		newDroid.initNN(this.nn);
 		return newDroid;
+	}
+
+	@Override
+	public void addDamage(int dmg) {
+		damageCounter += dmg;
+		
 	}
 }
