@@ -21,10 +21,10 @@ public class MyContactListener implements ContactListener {
 		//Fixture f;
 		
 		//System.out.println(f1.getUserData() + " has hit "+ f2.getUserData());
-		if (f1.getUserData() == "Satellite") {
+		if (f1.getUserData() == Enums.SATELLITE) {
 			((Satellite) f1.getBody().getUserData()).detach();
 		}
-		if (f2.getUserData() == "Satellite") {
+		if (f2.getUserData() == Enums.SATELLITE) {
 			((Satellite) f2.getBody().getUserData()).detach();
 		}
 	}

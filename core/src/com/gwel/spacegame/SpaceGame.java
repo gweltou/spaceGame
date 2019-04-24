@@ -8,6 +8,11 @@ import com.badlogic.gdx.controllers.Controller;
 import com.badlogic.gdx.controllers.Controllers;
 import com.badlogic.gdx.controllers.mappings.Xbox;
 import com.badlogic.gdx.files.FileHandle;
+import com.badlogic.gdx.graphics.Color;
+import com.badlogic.gdx.graphics.g2d.BitmapFont;
+import com.badlogic.gdx.graphics.g2d.SpriteBatch;
+import com.badlogic.gdx.graphics.g2d.freetype.FreeTypeFontGenerator;
+import com.badlogic.gdx.graphics.g2d.freetype.FreeTypeFontGenerator.FreeTypeFontParameter;
 import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.RandomXS128;
 import com.badlogic.gdx.math.Vector2;
@@ -19,13 +24,16 @@ import com.gwel.screens.ScreenTraining;
 
 
 public class SpaceGame extends Game {
-	final boolean TRAINING = true; 
+	final boolean TRAINING = false; 
 	
 	public MyCamera camera;
 	public MyRenderer renderer;
+	public SpriteBatch batch;
 	public Controller controller;
 	public boolean hasController;
 	public String controllerName;
+	FreeTypeFontGenerator fontGenerator;
+	public BitmapFont font, fontSmall;
 	
 	// GAME UNIVERSE VARIABLES
 	final static float UNIVERSE_SIZE = 100000.0f;
@@ -48,7 +56,7 @@ public class SpaceGame extends Game {
 	
 	@Override
 	public void create () {
-		Gdx.graphics.setContinuousRendering(false);
+		//Gdx.graphics.setContinuousRendering(false);
 		//Gdx.graphics.requestRendering();
 		
 		if(Controllers.getControllers().size == 0)
@@ -96,6 +104,16 @@ public class SpaceGame extends Game {
 		camera.setCenter(universeCenter);
 		camera.update();
 		renderer = new MyRenderer(camera);
+		batch = new SpriteBatch();
+		
+		fontGenerator = new FreeTypeFontGenerator(Gdx.files.internal("minotaur.ttf"));
+		FreeTypeFontParameter parameter = new FreeTypeFontParameter();
+		parameter.size = 48;
+		parameter.color = new Color(0.6f, 0.5f, 0.4f, 1.0f);
+		font = fontGenerator.generateFont(parameter);
+		font = new BitmapFont(Gdx.files.internal("greeknames.fnt"));
+		parameter.size = 24;
+		fontSmall = fontGenerator.generateFont(parameter);
 		
 		ship = new Spaceship(universeCenter);
 		
@@ -119,6 +137,8 @@ public class SpaceGame extends Game {
 	@Override
 	public void dispose () {
 		 renderer.dispose();
+		 batch.dispose();
+		 font.dispose();
 	}
 
 	void land(Planet p) {

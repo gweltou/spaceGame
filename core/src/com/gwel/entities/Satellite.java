@@ -3,6 +3,7 @@ package com.gwel.entities;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.physics.box2d.*;
+import com.gwel.spacegame.Enums;
 import com.gwel.spacegame.MyRenderer;
 
 public class Satellite extends PhysicBody {
@@ -27,7 +28,7 @@ public class Satellite extends PhysicBody {
 		fixtureDef.friction = 0.4f;
 		fixtureDef.restitution = 0.6f;
 		Fixture fixture = body.createFixture(fixtureDef);
-		fixture.setUserData("Satellite");
+		fixture.setUserData(Enums.SATELLITE);
 		circle.dispose();
 		detachable = false;
 		

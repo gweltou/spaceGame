@@ -30,7 +30,7 @@ public class Spaceship extends PhysicBody implements Ship {
 	private Vector2 p1_tmp = new Vector2();
 	private Vector2 p2_tmp = new Vector2();
 	private Vector2 p3_tmp = new Vector2();
-	private ShipTail tail1, tail2;
+	private ShipTrail tail1, tail2;
 	private int damageCounter = 0;
 	
 	
@@ -42,8 +42,8 @@ public class Spaceship extends PhysicBody implements Ship {
 		
 		hitpoints = 200.0f;
 		last_fire = TimeUtils.millis();
-		tail1 = new ShipTail(this, new Vector2(0.7f, 0.08f), 0.2f, 512, new Color(0xBF3FBFFF), new Color(0x3FBF3FFF));
-		tail2 = new ShipTail(this, new Vector2(-0.7f, 0.08f), 0.2f, 512, new Color(0xBF3FBFFF), new Color(0x3FBF3FFF));
+		tail1 = new ShipTrail(this, new Vector2(0.7f, 0.08f), 0.2f, 512, new Color(0xBF3FBFFF), new Color(0x3FBF3FFF));
+		tail2 = new ShipTrail(this, new Vector2(-0.7f, 0.08f), 0.2f, 512, new Color(0xBF3FBFFF), new Color(0x3FBF3FFF));
 		
 		readShapeFromFile();
 		disposable = false;
@@ -69,8 +69,10 @@ public class Spaceship extends PhysicBody implements Ship {
 
 	public void hit(float hp) {
 		hitpoints -= hp;
+		/*
 		if (hitpoints <= 0.0)
 			disposable = true;
+		*/
 	}
 	
 	public void fire(LinkedList<Projectile> projectiles) {
@@ -197,7 +199,7 @@ public class Spaceship extends PhysicBody implements Ship {
 	}
 
 	@Override
-	public void addDamage(int dmg) {
-		damageCounter  += dmg;
+	public void addHit() {
+		damageCounter++;
 	}
 }

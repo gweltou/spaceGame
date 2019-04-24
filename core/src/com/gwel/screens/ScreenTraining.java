@@ -48,7 +48,7 @@ public class ScreenTraining implements Screen {
 	private final int STARTING_POP = 32;
 	private final int WINNERS_PER_GENERATION = 6;
 	private final int N_OFFSPRINGS = 8;
-	private final int BRANCH_OUT_TRIES = 4;
+	private final int BRANCH_OUT_TRIES = 3;
 	private final int SIM_STEPS = 40000;
 	
 	final SpaceGame game;
@@ -70,6 +70,7 @@ public class ScreenTraining implements Screen {
 	private long lastFpsDisplay;
 	private int steps;
 	private boolean isEmpty;
+	private float runMaxScore;
 	
 	
 	public ScreenTraining(final SpaceGame game) {
@@ -89,10 +90,11 @@ public class ScreenTraining implements Screen {
 		lastFpsDisplay = TimeUtils.millis();
 		steps = 0;
 		branchTries = 0;
+		runMaxScore = 0;
 		
 		newPool();
 		populateShips(STARTING_POP);
-		//importPool("18fad5e7-1cf7-495c-9b32-913fac006f03");
+		//importPool("c1631afc-6f0e-4389-83e3-8ff6ab1e6990");
 	}
 	
 	@Override
@@ -203,14 +205,15 @@ public class ScreenTraining implements Screen {
 				currentPool.nnBest = nn;
 				currentPool.bestGen = currentPool.generation;
 				branchTries = 0;
-			}
-						
-			// Save every 10 generations to hard-drive
-			if (currentPool.generation>0 && currentPool.scores.size()%10 == 0) {
-				exportPool(winners);
+				
+				// Export only better species to hard-drive
+				if (scoreWin > runMaxScore) {
+					runMaxScore = scoreWin;
+					exportPool(winners);
+				}
 			}
 			
-			if (currentPool.generation - currentPool.bestGen >= 6) {
+			if (currentPool.generation - currentPool.bestGen >= 8) {
 				// Evolution stalled for too long, branch out from last best winners
 				branchTries++;
 				if (branchTries >= BRANCH_OUT_TRIES) {
@@ -334,7 +337,6 @@ public class ScreenTraining implements Screen {
 				Vector2 normal = dPos.cpy().nor(); 
 				float vns = normal.dot(sensor.getBody().getLinearVelocity());  
 				float vno = normal.dot(object.getBody().getLinearVelocity());  
-				float value = ((dPos.len()-thickness)/DroidShip.SIGHT_DISTANCE) * (vns+vno)/(2*DroidShip.MAX_VEL);
 				// Check if object is another ship or droid
 				if (object.getUserData() == Enums.DROID || object.getUserData() == Enums.SHIP) {
 					((DroidShip) sensor.getBody().getUserData()).setSensor(Enums.SENSOR_SMR, dPos.len()-thickness, vns+vno);
@@ -615,6 +617,7 @@ public class ScreenTraining implements Screen {
 		currentPool = pool;
 		droids.clear();
 		podium.clear();
+		runMaxScore = pool.bestGenScore;
 		
 		ArrayList<DroidShip> newDroids = new ArrayList<DroidShip>();
 		for (int i=0; i<pool.nn.size(); i++) {

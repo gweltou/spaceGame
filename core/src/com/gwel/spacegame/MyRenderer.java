@@ -32,9 +32,10 @@ public class MyRenderer {
 			"	gl_FragColor = vColor;\n" + 
 			"}";
 	
-	protected static ShaderProgram createMeshShader() {
+	
+	protected static ShaderProgram createShaderProgram(String vertexShader, String fragShader) {
 		ShaderProgram.pedantic = false;
-		ShaderProgram shader = new ShaderProgram(VERT_SHADER, FRAG_SHADER);
+		ShaderProgram shader = new ShaderProgram(vertexShader, fragShader);
 		String log = shader.getLog();
 		if (!shader.isCompiled())
 			throw new GdxRuntimeException(log);		
@@ -43,15 +44,6 @@ public class MyRenderer {
 		return shader;
 	}
 	
-	//Position attribute - (x, y) 
-	public static final int POSITION_COMPONENTS = 2;
-	
-	//Color attribute - (r, g, b, a)
-	public static final int COLOR_COMPONENTS = 4;
-
-	//Total number of components for all attributes
-	public static final int NUM_COMPONENTS = POSITION_COMPONENTS + COLOR_COMPONENTS;
-
 	//The maximum number of triangles our mesh will hold
 	public static final int MAX_TRIS = 2048;
 
@@ -63,12 +55,12 @@ public class MyRenderer {
 	//    x, y, r, g, b, a, 
 	//    x, y, r, g, b, a, 
 	//    ... etc ...
-	private float[] verts_triangle = new float[3*MAX_TRIS * NUM_COMPONENTS];
-	private float[] verts_trianglestrip = new float[2*MAX_TRIS * NUM_COMPONENTS];
+	private float[] verts_triangle = new float[3*MAX_TRIS * (2+4)];	// POSITION_ATTRIBUTE + COLOR_ATTRIBUTE
+	private float[] verts_trianglestrip = new float[2*MAX_TRIS * (2+4)];	// POSITION_ATTRIBUTE + COLOR_ATTRIBUTE
 
 	//The index position
-	private int idx_triangle;
-	private int idx_trianglestrip;
+	private int iTriangle;
+	private int iTrianglestrip;
 	
 	public MyCamera camera;
 	private Mesh meshTriangles;
@@ -80,15 +72,18 @@ public class MyRenderer {
 	
 	public MyRenderer(MyCamera camera) {
 		this.camera = camera;
-		idx_triangle = 0;
-		idx_trianglestrip = 0;
+		
+		iTriangle = 0;
+		iTrianglestrip = 0;
 		meshTriangles = new Mesh(true, 3*MAX_TRIS, 0, 
-				new VertexAttribute(Usage.Position, POSITION_COMPONENTS, "a_position"),
-				new VertexAttribute(Usage.ColorUnpacked, COLOR_COMPONENTS, "a_color"));
+				new VertexAttribute(Usage.Position, 2, "a_position"),
+				new VertexAttribute(Usage.ColorUnpacked, 4, "a_color"));
 		meshTrianglestrip = new Mesh(true, 2*MAX_TRIS, 0, 
-				new VertexAttribute(Usage.Position, POSITION_COMPONENTS, "a_position"),
-				new VertexAttribute(Usage.ColorUnpacked, COLOR_COMPONENTS, "a_color"));
-		shader = createMeshShader();
+				new VertexAttribute(Usage.Position, 2, "a_position"),
+				new VertexAttribute(Usage.ColorUnpacked, 4, "a_color"));
+		
+		shader = createShaderProgram(VERT_SHADER, FRAG_SHADER);
+		
 		col = new Color(1.0f, 1.0f, 1.0f, 1.0f);
 		System.out.println("Renderer created");
 	}
@@ -116,35 +111,35 @@ public class MyRenderer {
 	public void triangle(float x1, float y1, float x2, float y2, float x3, float y3, Color color) {
 		//we don't want to hit any index out of bounds exception...
 		//so we need to flush the batch if we can't store any more verts
-		if (idx_triangle==verts_triangle.length)
+		if (iTriangle==verts_triangle.length)
 			flush();
 
 		//now we push the vertex data into our array
 		//we are assuming (0, 0) is lower left, and Y is up
 
 		//bottom left vertex
-		verts_triangle[idx_triangle++] = x1; 			//Position(x, y) 
-		verts_triangle[idx_triangle++] = y1;
-		verts_triangle[idx_triangle++] = color.r; 	//Color(r, g, b, a)
-		verts_triangle[idx_triangle++] = color.g;
-		verts_triangle[idx_triangle++] = color.b;
-		verts_triangle[idx_triangle++] = color.a;
+		verts_triangle[iTriangle++] = x1; 			//Position(x, y) 
+		verts_triangle[iTriangle++] = y1;
+		verts_triangle[iTriangle++] = color.r; 	//Color(r, g, b, a)
+		verts_triangle[iTriangle++] = color.g;
+		verts_triangle[iTriangle++] = color.b;
+		verts_triangle[iTriangle++] = color.a;
 
 		//top left vertex
-		verts_triangle[idx_triangle++] = x2; 			//Position(x, y) 
-		verts_triangle[idx_triangle++] = y2 ;
-		verts_triangle[idx_triangle++] = color.r; 	//Color(r, g, b, a)
-		verts_triangle[idx_triangle++] = color.g;
-		verts_triangle[idx_triangle++] = color.b;
-		verts_triangle[idx_triangle++] = color.a;
+		verts_triangle[iTriangle++] = x2; 			//Position(x, y) 
+		verts_triangle[iTriangle++] = y2 ;
+		verts_triangle[iTriangle++] = color.r; 	//Color(r, g, b, a)
+		verts_triangle[iTriangle++] = color.g;
+		verts_triangle[iTriangle++] = color.b;
+		verts_triangle[iTriangle++] = color.a;
 
 		//bottom right vertex
-		verts_triangle[idx_triangle++] = x3;	 //Position(x, y) 
-		verts_triangle[idx_triangle++] = y3;
-		verts_triangle[idx_triangle++] = color.r;		 //Color(r, g, b, a)
-		verts_triangle[idx_triangle++] = color.g;
-		verts_triangle[idx_triangle++] = color.b;
-		verts_triangle[idx_triangle++] = color.a;
+		verts_triangle[iTriangle++] = x3;	 //Position(x, y) 
+		verts_triangle[iTriangle++] = y3;
+		verts_triangle[iTriangle++] = color.r;		 //Color(r, g, b, a)
+		verts_triangle[iTriangle++] = color.g;
+		verts_triangle[iTriangle++] = color.b;
+		verts_triangle[iTriangle++] = color.a;
 	}
 	
 	public void triangleStrip(double x1, double y1, double x2, double y2) {
@@ -152,27 +147,31 @@ public class MyRenderer {
 	}
 	
 	private void triangleStrip(double x1, double y1, double x2, double y2, Color color) {
-		if (idx_trianglestrip==verts_trianglestrip.length)
+		if (iTrianglestrip==verts_trianglestrip.length)
 			flush();
 
-		verts_trianglestrip[idx_trianglestrip++] = (float) x1; 			//Position(x, y) 
-		verts_trianglestrip[idx_trianglestrip++] = (float) y1;
-		verts_trianglestrip[idx_trianglestrip++] = color.r; 	//Color(r, g, b, a)
-		verts_trianglestrip[idx_trianglestrip++] = color.g;
-		verts_trianglestrip[idx_trianglestrip++] = color.b;
-		verts_trianglestrip[idx_trianglestrip++] = color.a;
+		verts_trianglestrip[iTrianglestrip++] = (float) x1; 			//Position(x, y) 
+		verts_trianglestrip[iTrianglestrip++] = (float) y1;
+		verts_trianglestrip[iTrianglestrip++] = color.r; 	//Color(r, g, b, a)
+		verts_trianglestrip[iTrianglestrip++] = color.g;
+		verts_trianglestrip[iTrianglestrip++] = color.b;
+		verts_trianglestrip[iTrianglestrip++] = color.a;
 
-		verts_trianglestrip[idx_trianglestrip++] = (float) x2; 			//Position(x, y) 
-		verts_trianglestrip[idx_trianglestrip++] = (float) y2 ;
-		verts_trianglestrip[idx_trianglestrip++] = color.r; 	//Color(r, g, b, a)
-		verts_trianglestrip[idx_trianglestrip++] = color.g;
-		verts_trianglestrip[idx_trianglestrip++] = color.b;
-		verts_trianglestrip[idx_trianglestrip++] = color.a;
+		verts_trianglestrip[iTrianglestrip++] = (float) x2; 			//Position(x, y) 
+		verts_trianglestrip[iTrianglestrip++] = (float) y2 ;
+		verts_trianglestrip[iTrianglestrip++] = color.r; 	//Color(r, g, b, a)
+		verts_trianglestrip[iTrianglestrip++] = color.g;
+		verts_trianglestrip[iTrianglestrip++] = color.b;
+		verts_trianglestrip[iTrianglestrip++] = color.a;
+	}
+	
+	public void texturedSquare(float xPos, float yPos, float width, float height, Vector2 uv0, Vector2 uv1, Vector2 uv2) {
+		
 	}
 	
 	public void flush() {
 		//if we've not already flushed
-		if (idx_triangle>0 || idx_trianglestrip>0) {
+		if (iTriangle>0 || iTrianglestrip>0) {
 			//no need for depth...
 			Gdx.gl.glDepthMask(false);
 
@@ -182,21 +181,21 @@ public class MyRenderer {
 
 			shader.begin();
 			shader.setUniformMatrix("u_projTrans", projMatrix);
-			if (idx_triangle>0) {
+			if (iTriangle>0) {
 				//number of vertices we need to render
-				int vertexCount = (idx_triangle/NUM_COMPONENTS);
+				int vertexCount = (iTriangle/6); // Number of triangles divided by number of components
 				meshTriangles.setVertices(verts_triangle);
 				meshTriangles.render(shader, GL20.GL_TRIANGLES, 0, vertexCount);
 				//reset index to zero
-				idx_triangle = 0;
+				iTriangle = 0;
 			}
-			if (idx_trianglestrip>0) {
-				System.out.println(idx_trianglestrip);
-				int vertexCount = (idx_trianglestrip/NUM_COMPONENTS);
+			if (iTrianglestrip>0) {
+				System.out.println(iTrianglestrip);
+				int vertexCount = (iTrianglestrip/6); // Number of triangles divided by number of components
 				meshTrianglestrip.setVertices(verts_trianglestrip);
 				meshTrianglestrip.render(shader, GL20.GL_TRIANGLE_STRIP, 0, vertexCount);
 				System.out.println("end");
-				idx_trianglestrip = 0;
+				iTrianglestrip = 0;
 			}
 			shader.end();
 

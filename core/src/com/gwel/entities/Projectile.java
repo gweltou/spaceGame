@@ -60,11 +60,13 @@ public class Projectile {
 			if (fixture.getUserData() == Enums.SATELLITE) {
 				Satellite sat = (Satellite) fixture.getBody().getUserData();
 				sat.detach();
-				sat.push(speed.cpy().scl(damage*damage));
+				//sat.push(speed.cpy().scl(damage*damage));
+				sat.push(speed.cpy().scl(damage), point.cpy());
 			} else if (fixture.getUserData() == Enums.DROID || fixture.getUserData() == Enums.SHIP) {
 				Ship enemy = (Ship) fixture.getBody().getUserData();
 				enemy.hit(damage);
-				parent.addDamage(50);
+				enemy.push(speed.cpy().scl(damage), point.cpy());
+				parent.addHit();
 			}
 			return fraction;
 		}

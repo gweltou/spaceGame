@@ -9,6 +9,7 @@ import com.badlogic.gdx.Screen;
 import com.badlogic.gdx.Input.Keys;
 import com.badlogic.gdx.controllers.PovDirection;
 import com.badlogic.gdx.files.FileHandle;
+import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.Pixmap;
 import com.badlogic.gdx.graphics.PixmapIO;
@@ -43,9 +44,11 @@ public class ScreenInSpace implements Screen {
 	private LinkedList<Satellite> local_sats = new LinkedList<Satellite>();
 	private ListIterator<Satellite> sat_iter;
 	private LinkedList<MovingObject> free_bodies = new LinkedList<MovingObject>();
-	private ListIterator<MovingObject> bod_iter;
+	private ListIterator<MovingObject> iterBodies;
 	private LinkedList<Projectile> projectiles = new LinkedList<Projectile>();
-	private ListIterator<Projectile> proj_iter;
+	private ListIterator<Projectile> iterProj;
+	private LinkedList<ShipTrail> trails = new LinkedList<ShipTrail>();
+	private ListIterator<ShipTrail> iterTrails;
 	private DroidPool droidPool;
 	
 	private Starfield starfield;
@@ -57,12 +60,13 @@ public class ScreenInSpace implements Screen {
 		this.game = game;
 		destroy = false;
 		game_speed = 1.0f;
-		droidPool = importPool("a0861cff-74ed-4531-a1de-4b2a0d6b6272");
+		droidPool = importPool("db12cde7-a1bf-442e-a563-36f51b0c27b2");
 		
 		b2world = new World(new Vector2(0.0f, 0.0f), true);
 		b2world.setContactListener(new MyContactListener(game));
 		
 		game.ship.initBody(b2world);
+		
 		
 		free_bodies.add(game.ship);
 	}
@@ -87,6 +91,7 @@ public class ScreenInSpace implements Screen {
 		handleInput();
 
 		// UPDATING GAME STATE
+		b2world.step(game_speed/60f, 8, 3);
 		AABB local_range = new AABB(game.ship.getPosition().sub(SpaceGame.LOCAL_RADIUS, SpaceGame.LOCAL_RADIUS),
 				game.ship.getPosition().add(SpaceGame.LOCAL_RADIUS, SpaceGame.LOCAL_RADIUS));
 		local_planets_prev = local_planets;
@@ -117,20 +122,20 @@ public class ScreenInSpace implements Screen {
 				free_bodies.add(sat);
 		}
 		// Removing free bodies outside of local zone
-		bod_iter = free_bodies.listIterator();
-		while (bod_iter.hasNext()) {
-			MovingObject bod = bod_iter.next();
+		iterBodies = free_bodies.listIterator();
+		while (iterBodies.hasNext()) {
+			MovingObject bod = iterBodies.next();
 			if (bod.getClass() == DroidShip.class) {
 				if (((DroidShip) bod).disposable) {
 					System.out.println("removing droid");
 					((DroidShip) bod).dispose();
-					bod_iter.remove();
+					iterBodies.remove();
 				} else {
 					((DroidShip) bod).update();
 				}
 			}
 			if (!local_range.containsPoint(bod.getPosition()))
-				bod_iter.remove();
+				iterBodies.remove();
 			
 		}
 		// Applying gravity to the free bodies
@@ -141,15 +146,24 @@ public class ScreenInSpace implements Screen {
 			}
 		}
 		// Removing projectiles outside of local zone
-		proj_iter = projectiles.listIterator();
-		while (proj_iter.hasNext()) {
-			Projectile proj = proj_iter.next();
+		iterProj = projectiles.listIterator();
+		while (iterProj.hasNext()) {
+			Projectile proj = iterProj.next();
 			if (!local_range.containsPoint(proj.position) || proj.disposable)
-				proj_iter.remove();
+				iterProj.remove();
 			else
 			    proj.update(b2world, game_speed);
 		}
-		b2world.step(game_speed/60f, 8, 3);
+		// Updating and removing ship trails
+		iterTrails = trails.listIterator();
+		while (iterTrails.hasNext()) {
+			ShipTrail trail = iterTrails.next();
+			if (trail.disposable)
+				iterTrails.remove();
+			else
+			    trail.update();
+		}
+		
 		for (Contact c: b2world.getContactList()) {
 			Fixture f1 = c.getFixtureA();
 			Fixture f2 = c.getFixtureB();
@@ -243,7 +257,6 @@ public class ScreenInSpace implements Screen {
 				Vector2 normal = dPos.cpy().nor(); 
 				float vns = normal.dot(sensor.getBody().getLinearVelocity());  
 				float vno = normal.dot(object.getBody().getLinearVelocity());  
-				float value = ((dPos.len()-thickness)/DroidShip.SIGHT_DISTANCE) * (vns+vno)/(2*DroidShip.MAX_VEL);
 				// Check if object is another ship or droid
 				if (object.getUserData() == Enums.DROID || object.getUserData() == Enums.SHIP) {
 					((DroidShip) sensor.getBody().getUserData()).setSensor(Enums.SENSOR_SMR, dPos.len()-thickness, vns+vno);
@@ -322,9 +335,6 @@ public class ScreenInSpace implements Screen {
 				}
 			}
 		}
-
-		starfield.update(game.camera.getTravelling());
-		deepfield.update(game.camera.getTravelling());
 		
 		//  Camera update
 		game.camera.glideTo(game.ship.getPosition());
@@ -332,6 +342,8 @@ public class ScreenInSpace implements Screen {
 			game.camera.zoomTo(200.0f/game.ship.getVelocity().len());
 		game.camera.update();
 		
+		starfield.update(game.camera.getTravelling());
+		deepfield.update(game.camera.getTravelling());
 		
 		// North and East directions are POSITIVE !
 		AABB camera_range = new AABB(game.camera.sw.cpy().sub(Const.PLANET_MAX_RADIUS, Const.PLANET_MAX_RADIUS), 
@@ -346,6 +358,9 @@ public class ScreenInSpace implements Screen {
 		game.renderer.setProjectionMatrix(new Matrix4().set(game.camera.affine));
 		for (Planet p : game.Qt.query(camera_range)) {
 			p.render(game.renderer);
+		}
+		for (ShipTrail trail: trails) {
+			trail.render(game.renderer);
 		}
 		for (MovingObject b : free_bodies) {
 			if (camera_range.containsPoint(b.getPosition())) {
@@ -366,8 +381,8 @@ public class ScreenInSpace implements Screen {
 
 	@Override
 	public void resize(int width, int height) {
-		starfield = new Starfield(Gdx.graphics.getWidth(), Gdx.graphics.getHeight(), 0.0001f, 0.9f, 1.6f);
-		deepfield = new Starfield(Gdx.graphics.getWidth(), Gdx.graphics.getHeight(), 0.004f, 0.1f, 0.8f);
+		starfield = new Starfield(Gdx.graphics.getWidth(), Gdx.graphics.getHeight(), 0.0001f, 0.9f, 1.5f);
+		deepfield = new Starfield(Gdx.graphics.getWidth(), Gdx.graphics.getHeight(), 0.004f, 0.15f, 0.8f);
 	}
 	
 	DroidPool importPool(String filename) {
@@ -412,6 +427,10 @@ public class ScreenInSpace implements Screen {
 				droid.nn.weights = droidPool.nnBest.get(i).clone();
 				droid.initBody(b2world);
 				free_bodies.add(droid);
+				// Add ship trails
+				trails.add(new ShipTrail(droid, new Vector2(0.7f, 0.08f), 0.2f, 256, new Color(0xFF0000FF), new Color(0xFFFF0000)));
+				trails.add(new ShipTrail(droid, new Vector2(-0.7f, 0.08f), 0.2f, 256, new Color(0xFF0000FF), new Color(0xFFFF0000)));
+				
 				number--;
 			}
 		}
@@ -459,11 +478,11 @@ public class ScreenInSpace implements Screen {
 		}
 		
 		if (Gdx.input.isKeyPressed(Keys.A)) {
-			game.camera.zoom(1.04f);
+			game.camera.zoomIn();
 			game.camera.autozoom = false;
 		}
 		if (Gdx.input.isKeyPressed(Keys.Z)) {
-			game.camera.zoom(0.95f);
+			game.camera.zoomOut();
 			game.camera.autozoom = false;
 		}
 		if (Gdx.input.isKeyPressed(Keys.SPACE)) {

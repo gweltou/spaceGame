@@ -14,7 +14,7 @@ public class MyCamera {
 	public int height;
 	public Affine2 affine;
 	public float angle;
-	private float finalZoom;	// Camera continuously interpolates toward this values
+	private float finalPPU;	// Camera continuously interpolates toward this values
 	private float finalAngle;
 
 	public float PPU = 10.0f ; // Pixel per game unit
@@ -25,7 +25,7 @@ public class MyCamera {
 		this.width = width;
 		this.height = height;
 		affine = new Affine2();
-		finalZoom = PPU;
+		finalPPU = PPU;
 		angle = 0.0f;
 		finalAngle = 0.0f;
 	}
@@ -53,17 +53,25 @@ public class MyCamera {
 	}
 
 	public void zoom(float z) {
-		this.PPU = MathUtils.clamp(this.PPU*z, 0.01f, 100.0f);
+		this.PPU = MathUtils.clamp(this.PPU*z, 0.02f, 100.0f);
 	}
 
 	public void setZoom(float ppu) {
-		this.PPU = MathUtils.clamp(ppu, 0.01f, 100.0f);
+		this.PPU = MathUtils.clamp(ppu, 0.02f, 100.0f);
 	}
 
 	public void zoomTo(float ppu) {
-		setZoom(MathUtils.lerp(PPU, ppu, 0.02f));
+		finalPPU = MathUtils.clamp(ppu, 0.02f, 100.0f);
 	}
-
+	
+	public void zoomIn() {
+		zoomTo(finalPPU * 1.06f);
+	}
+	
+	public void zoomOut() {
+		zoomTo(finalPPU * 0.92f);
+	}
+	
 	public Vector2 getTravelling() {
 		Vector2 travelling = center.cpy().sub(pCenter);
 		return travelling.scl(PPU);
@@ -71,6 +79,7 @@ public class MyCamera {
 	
 	public void update() {
 		angle = utils.wrapAngleAroundZero(MathUtils.lerp(angle, finalAngle, 0.02f));
+		PPU = MathUtils.lerp(PPU, finalPPU, 0.1f);
 		// North and East directions are POSITIVE !
 		this.sw = new Vector2(center.x-width/(2.0f*PPU), center.y-height/(2.0f*PPU));
 		this.ne = new Vector2(center.x+width/(2.0f*PPU), center.y+height/(2.0f*PPU));

@@ -15,12 +15,14 @@ import com.gwel.spacegame.utils;
 public class ScreenOnPlanet implements Screen {
 	final SpaceGame game;
 	Planet planet;
+	String planetName;
 	
 	public ScreenOnPlanet(final SpaceGame game, Planet p) {
 		this.game = game;
 		planet = p;
+		planetName = game.getPlanetName(planet.seed);
 		System.out.println("Switched to planet Screen");
-		System.out.println("Welcome to " + game.getPlanetName(planet.seed));
+		System.out.println("Welcome to " + planetName);
 		
 		Vector2 dPos = game.ship.getPosition().sub(planet.getPosition());
 		float cameraRotate = utils.wrapAngleAroundZero(MathUtils.PI*0.5f-dPos.angleRad());
@@ -55,11 +57,16 @@ public class ScreenOnPlanet implements Screen {
 		game.camera.update();
 
 		game.renderer.setProjectionMatrix(new Matrix4().set(game.camera.affine));
+		Matrix4 normalProjection = new Matrix4().setToOrtho2D(0, 0, Gdx.graphics.getWidth(),  Gdx.graphics.getHeight());
+		game.batch.setProjectionMatrix(normalProjection);
 		Gdx.gl.glClearColor(0.2f, 1f, 0.9f, 1f);
 		Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
 		game.ship.render(game.renderer);
 		planet.render(game.renderer);
 		game.renderer.flush();
+		game.batch.begin();
+		game.font.draw(game.batch, planetName, 20, Gdx.graphics.getHeight()-game.font.getXHeight());
+		game.batch.end();
 	}
 
 	@Override

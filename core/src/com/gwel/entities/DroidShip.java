@@ -23,8 +23,9 @@ public class DroidShip extends PhysicBody implements Ship {
 	public final float MAX_ANG_VEL = 4.0f;
 	private final float FIRE_COOLDOWN = 200.0f; // In milliseconds
 	public final static float SIGHT_DISTANCE = 50.0f;
-	private final static int NN_INPUTS = 14;
-	public static int[] nnLayers = {NN_INPUTS, NN_INPUTS, NN_INPUTS, 4};
+	private final static int NN_INPUTS = 15;
+	private final static int NN_OUTPUTS = 3;
+	public static int[] nnLayers = {NN_INPUTS, NN_INPUTS, NN_INPUTS, NN_OUTPUTS};
 	public static Enums activation = Enums.ACTIVATION_TANH;
 	
 	//public float speed_mag;
@@ -35,7 +36,8 @@ public class DroidShip extends PhysicBody implements Ship {
 	private long lastFire;
 	private int amunition;
 	private float dstCounter = 0; // For NN training
-	private int damageCounter = 0; 
+	private int hitCounter = 0;
+	private float avCounter = 0;	// Angular Velocity Counter (penalty for turning around)
 	private int[] scores = new int[5];
 	private int iScore = 0;
 	
@@ -45,7 +47,6 @@ public class DroidShip extends PhysicBody implements Ship {
 	private Vector2 p1_tmp = new Vector2();
 	private Vector2 p2_tmp = new Vector2();
 	private Vector2 p3_tmp = new Vector2();
-	private ShipTail tail1, tail2;
 	
 	public NeuralNetwork nn = null;
 	private float[] nnInput;
@@ -58,8 +59,6 @@ public class DroidShip extends PhysicBody implements Ship {
 		
 		transform = new Affine2();
 		vertices = new Vector2[4];
-		tail1 = new ShipTail(this, new Vector2(0.7f, 0.08f), 0.2f, 256, new Color(0xFF0000FF), new Color(0xFFFF0000));
-		tail2 = new ShipTail(this, new Vector2(-0.7f, 0.08f), 0.2f, 256, new Color(0xFF0000FF), new Color(0xFFFF0000));
 		
 		nnInput = new float[NN_INPUTS];
 		resetVars();
@@ -70,32 +69,43 @@ public class DroidShip extends PhysicBody implements Ship {
 	public void update() {
 		pPosition = position;
 		position = body.getPosition().cpy();
-		dstCounter += position.dst(pPosition);		
+		dstCounter += position.dst(pPosition);
+		avCounter += Math.abs(getAngularVelocity());
 		
 		float[] output;
 		output = nn.feedforward(nnInput);
 		// reset nnInput to 0
 		for (int i=0; i<nnInput.length; i++)
 			nnInput[i] = 0.0f;
-		
-		float max = -1.0f;
-		int maxIdx = 0;
-		for (int i=0; i<output.length; i++) {
-			if (output[i] > max) {
-				max = output[i];
-				maxIdx = i;
+		// Set last NN input to angular velocity
+		nnInput[14] = MathUtils.clamp(getAngularVelocity()/MAX_ANG_VEL, -1, 1);
+
+		if (output.length == 4) {
+			float max = -1.0f;
+			int maxIdx = 0;
+			for (int i=0; i<output.length; i++) {
+				if (output[i] > max) {
+					max = output[i];
+					maxIdx = i;
+				}
 			}
-		}
-		
-		switch (maxIdx) {
+
+			switch (maxIdx) {
 			case 0: steer(1.0f);
-					break;
+			break;
 			case 1:	steer(-1.0f);
-					break;
+			break;
 			case 2: accelerate(1.0f);
-					break;
+			break;
 			case 3:	fire(projectiles);
-					break;
+			break;
+			}
+		} else if (output.length == 3) {
+			steer(output[0]);
+			if (output[1] > 0.0)
+				accelerate(output[1]);
+			if (output[2] > 0.5)
+				fire(projectiles);
 		}
 	}
 	
@@ -135,7 +145,7 @@ public class DroidShip extends PhysicBody implements Ship {
 			Vector2 dir = new Vector2(2.0f, 0.0f); // Here we set the bullet's velocity
 			dir.setAngleRad(getAngle());
 			Vector2 pos = this.getPosition();
-			Projectile proj = new Projectile(this, pos, dir, 1.0f);
+			Projectile proj = new Projectile(this, pos, dir, 10.0f);
 			projectiles.add(proj);
 			lastFire = now;
 			amunition--;
@@ -255,7 +265,7 @@ public class DroidShip extends PhysicBody implements Ship {
 	
 	public void setSensor(Enums sensor, float distance, float relSpeed) {
 		distance = 1 - (distance/SIGHT_DISTANCE);
-		relSpeed = MathUtils.clamp(relSpeed, -MAX_VEL, MAX_VEL) / MAX_VEL;
+		relSpeed = MathUtils.clamp(relSpeed, -2*MAX_VEL, 2*MAX_VEL) / 2*MAX_VEL;
 		// relSpeed is negative when the obstacle is closing in, positive if going away
 		float value = (float) (distance * relSpeed);
 		
@@ -274,9 +284,6 @@ public class DroidShip extends PhysicBody implements Ship {
 				nnInput[2] = value;
 			break;
 		case SENSOR_F:
-			/*System.out.print(String.valueOf(distance) + ' ');
-			System.out.print(String.valueOf(relSpeed) + ' ');
-			System.out.println(String.valueOf(value));*/
 			if (Math.abs(value) > Math.abs(nnInput[3]))
 				nnInput[3] = value;
 			break;
@@ -397,11 +404,6 @@ public class DroidShip extends PhysicBody implements Ship {
 	}
 
 	public void render(MyRenderer renderer) {
-		tail1.update();
-		tail2.update();
-		tail1.render(renderer);
-		tail2.render(renderer);
-		
 		transform.idt();
 		transform.translate(getPosition());
 		transform.rotateRad(getAngle() + MathUtils.PI/2);
@@ -429,9 +431,9 @@ public class DroidShip extends PhysicBody implements Ship {
 				// Shift scores to the left
 				scores[i] = scores[i+1];
 			}
-			scores[iScore-1] = (int) (steps + amunition + hitpoints + dstCounter + damageCounter);
+			scores[iScore-1] = (int) (steps + 2*amunition + hitpoints + dstCounter + 50*hitCounter - avCounter/2);
 		} else {
-			scores[iScore++] = (int) (steps + amunition + hitpoints + dstCounter + damageCounter);
+			scores[iScore++] = (int) (steps + 2*amunition + hitpoints + dstCounter + 50*hitCounter - avCounter/2);
 		}
 	}
 	
@@ -443,10 +445,10 @@ public class DroidShip extends PhysicBody implements Ship {
 	}
 	
 	public void resetVars() {
-		hitpoints = 200;
+		hitpoints = 100;
 		amunition = 200;
 		dstCounter = 0.0f;
-		damageCounter = 0;
+		hitCounter = 0;
 		lastFire = 0;
 	}
 
@@ -457,8 +459,7 @@ public class DroidShip extends PhysicBody implements Ship {
 	}
 
 	@Override
-	public void addDamage(int dmg) {
-		damageCounter += dmg;
-		
+	public void addHit() {
+		hitCounter++;
 	}
 }

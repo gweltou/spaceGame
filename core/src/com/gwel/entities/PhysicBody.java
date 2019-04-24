@@ -72,6 +72,9 @@ public abstract class PhysicBody implements MovingObject, Collidable {
 	public void push(Vector2 force) {
 		body.applyForceToCenter(force, true);
 	}
+	public void push(Vector2 force, Vector2 point) {
+		body.applyForce(force, point, true);
+	}
 
 	public abstract void render(MyRenderer renderer);
 	
