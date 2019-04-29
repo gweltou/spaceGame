@@ -54,6 +54,10 @@ public class Projectile {
 					fixture.getUserData() == Enums.SENSOR_SBR) {
 				return -1;
 			}
+			// Filter out attacker
+			if (fixture.getBody().getUserData() == parent) {
+				return -1;
+			}
 			
 			disposable = true;
 			position = point.cpy();

@@ -92,9 +92,9 @@ public class ScreenTraining implements Screen {
 		branchTries = 0;
 		runMaxScore = 0;
 		
-		newPool();
-		populateShips(STARTING_POP);
-		//importPool("c1631afc-6f0e-4389-83e3-8ff6ab1e6990");
+		//newPool();
+		//populateShips(STARTING_POP);
+		importPool("cb141565-a486-4173-8811-b08a1574aef9");
 	}
 	
 	@Override

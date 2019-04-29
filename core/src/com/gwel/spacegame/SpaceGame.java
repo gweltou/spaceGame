@@ -33,7 +33,7 @@ public class SpaceGame extends Game {
 	public boolean hasController;
 	public String controllerName;
 	FreeTypeFontGenerator fontGenerator;
-	public BitmapFont font, fontSmall;
+	public BitmapFont font, fontHUD;
 	
 	// GAME UNIVERSE VARIABLES
 	final static float UNIVERSE_SIZE = 100000.0f;
@@ -56,9 +56,6 @@ public class SpaceGame extends Game {
 	
 	@Override
 	public void create () {
-		//Gdx.graphics.setContinuousRendering(false);
-		//Gdx.graphics.requestRendering();
-		
 		if(Controllers.getControllers().size == 0)
             hasController = false;
         else {
@@ -109,11 +106,10 @@ public class SpaceGame extends Game {
 		fontGenerator = new FreeTypeFontGenerator(Gdx.files.internal("minotaur.ttf"));
 		FreeTypeFontParameter parameter = new FreeTypeFontParameter();
 		parameter.size = 48;
-		parameter.color = new Color(0.6f, 0.5f, 0.4f, 1.0f);
-		font = fontGenerator.generateFont(parameter);
+		parameter.color = new Color(1f, 0.5f, 0.4f, 1.0f);
 		font = new BitmapFont(Gdx.files.internal("greeknames.fnt"));
 		parameter.size = 24;
-		fontSmall = fontGenerator.generateFont(parameter);
+		fontHUD = fontGenerator.generateFont(parameter);
 		
 		ship = new Spaceship(universeCenter);
 		

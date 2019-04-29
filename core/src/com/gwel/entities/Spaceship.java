@@ -16,13 +16,15 @@ import com.gwel.spacegame.Enums;
 
 
 public class Spaceship extends PhysicBody implements Ship {
-	public final float MAX_VEL = 20.0f;
-	public final float MAX_ANG_VEL = 4.0f;
+	public final float MAX_VEL = 35.0f;
+	public final float MAX_ANG_VEL = 8.0f;
 	private final float FIRE_COOLDOWN = 200.0f; // In milliseconds
+	public final int MAX_HITPOINTS = 500;
+	public final int MAX_AMMUNITION = 300;
 	
 	//public float speed_mag;
 	private Vector2 size = new Vector2(1.7f, 1.8f);  // Size of spaceship in game units
-	private float hitpoints;
+	public int hitpoints;
 	private long last_fire;
 	private Affine2 transform;
 	private float[][] triangles;
@@ -32,6 +34,7 @@ public class Spaceship extends PhysicBody implements Ship {
 	private Vector2 p3_tmp = new Vector2();
 	private ShipTrail tail1, tail2;
 	private int damageCounter = 0;
+	public int ammunition;
 	
 	
 	public Spaceship(Vector2 pos) {
@@ -40,7 +43,8 @@ public class Spaceship extends PhysicBody implements Ship {
 		transform = new Affine2();
 		vertices = new Vector2[4];
 		
-		hitpoints = 200.0f;
+		hitpoints = MAX_HITPOINTS;
+		ammunition = MAX_AMMUNITION;
 		last_fire = TimeUtils.millis();
 		tail1 = new ShipTrail(this, new Vector2(0.7f, 0.08f), 0.2f, 512, new Color(0xBF3FBFFF), new Color(0x3FBF3FFF));
 		tail2 = new ShipTrail(this, new Vector2(-0.7f, 0.08f), 0.2f, 512, new Color(0xBF3FBFFF), new Color(0x3FBF3FFF));
@@ -68,21 +72,23 @@ public class Spaceship extends PhysicBody implements Ship {
 	}
 
 	public void hit(float hp) {
-		hitpoints -= hp;
-		/*
-		if (hitpoints <= 0.0)
+		hitpoints -= Math.round(hp);
+		
+		if (hitpoints <= 0.0) {
 			disposable = true;
-		*/
+			Gdx.app.exit();
+		}
 	}
 	
 	public void fire(LinkedList<Projectile> projectiles) {
 		long now = TimeUtils.millis();
-		if (now-last_fire >= FIRE_COOLDOWN) {
+		if (ammunition > 0 && now-last_fire >= FIRE_COOLDOWN) {
 			Vector2 dir = new Vector2(2.0f, 0.0f); // Here we set the bullet's velocity
 			dir.setAngleRad(getAngle());
 			Vector2 pos = this.getPosition();
-			Projectile proj = new Projectile(this, pos, dir, 50.0f);
+			Projectile proj = new Projectile(this, pos, dir, 100.0f);
 			projectiles.add(proj);
+			ammunition--;
 			last_fire = now;
 		}
 	}

@@ -5,6 +5,7 @@ import com.badlogic.gdx.Screen;
 import com.badlogic.gdx.Input.Keys;
 import com.badlogic.gdx.controllers.PovDirection;
 import com.badlogic.gdx.graphics.GL20;
+import com.badlogic.gdx.graphics.g2d.GlyphLayout;
 import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Matrix4;
 import com.badlogic.gdx.math.Vector2;
@@ -14,15 +15,22 @@ import com.gwel.spacegame.utils;
 
 public class ScreenOnPlanet implements Screen {
 	final SpaceGame game;
-	Planet planet;
-	String planetName;
+	private Planet planet;
+	private String strName;
+	private GlyphLayout layoutName;
 	
 	public ScreenOnPlanet(final SpaceGame game, Planet p) {
 		this.game = game;
 		planet = p;
-		planetName = game.getPlanetName(planet.seed);
+		strName = game.getPlanetName(planet.seed);
+		layoutName = new GlyphLayout();
+		layoutName.setText(game.font, strName);
 		System.out.println("Switched to planet Screen");
-		System.out.println("Welcome to " + planetName);
+		System.out.println("Welcome to " + strName);
+		
+		// Regenerating ship
+		game.ship.hitpoints = game.ship.MAX_HITPOINTS;
+		game.ship.ammunition = game.ship.MAX_AMMUNITION;
 		
 		Vector2 dPos = game.ship.getPosition().sub(planet.getPosition());
 		float cameraRotate = utils.wrapAngleAroundZero(MathUtils.PI*0.5f-dPos.angleRad());
@@ -36,16 +44,10 @@ public class ScreenOnPlanet implements Screen {
 	}
 
 	@Override
-	public void hide() {
-		// TODO Auto-generated method stub
-		
-	}
+	public void hide() {}
 
 	@Override
-	public void pause() {
-		// TODO Auto-generated method stub
-		
-	}
+	public void pause() {}
 
 	@Override
 	public void render(float arg0) {
@@ -59,13 +61,13 @@ public class ScreenOnPlanet implements Screen {
 		game.renderer.setProjectionMatrix(new Matrix4().set(game.camera.affine));
 		Matrix4 normalProjection = new Matrix4().setToOrtho2D(0, 0, Gdx.graphics.getWidth(),  Gdx.graphics.getHeight());
 		game.batch.setProjectionMatrix(normalProjection);
-		Gdx.gl.glClearColor(0.2f, 1f, 0.9f, 1f);
+		Gdx.gl.glClearColor(0.4f, 1f, 1f, 1f);
 		Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
 		game.ship.render(game.renderer);
 		planet.render(game.renderer);
 		game.renderer.flush();
 		game.batch.begin();
-		game.font.draw(game.batch, planetName, 20, Gdx.graphics.getHeight()-game.font.getXHeight());
+		game.font.draw(game.batch, strName, (Gdx.graphics.getWidth()-layoutName.width)/2, Gdx.graphics.getHeight()-game.font.getXHeight());
 		game.batch.end();
 	}
 

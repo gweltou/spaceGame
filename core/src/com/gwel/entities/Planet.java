@@ -14,7 +14,7 @@ public class Planet implements Collidable {
 	public long seed;
 	private Body body;
 	public Vector2 position;
-	private float mass;
+	public float mass;
 	private float radius;
 	private Color color;
 	int n_sat;

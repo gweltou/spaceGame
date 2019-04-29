@@ -7,7 +7,7 @@ import com.gwel.spacegame.SpaceGame;
 public class DesktopLauncher {
 	public static void main (String[] arg) {
 		LwjglApplicationConfiguration config = new LwjglApplicationConfiguration();
-		config.title = "SpaceGame 0.1";
+		config.title = "SpaceGame 0.2";
 		config.width = 800;
 		config.height = 600;
 		//config.fullscreen = true;

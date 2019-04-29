@@ -45,6 +45,8 @@ public class ScreenInSpace implements Screen {
 	private ListIterator<Satellite> sat_iter;
 	private LinkedList<MovingObject> free_bodies = new LinkedList<MovingObject>();
 	private ListIterator<MovingObject> iterBodies;
+	private LinkedList<DroidShip> droids = new LinkedList<DroidShip>();
+	private ListIterator<DroidShip> iterDroids;
 	private LinkedList<Projectile> projectiles = new LinkedList<Projectile>();
 	private ListIterator<Projectile> iterProj;
 	private LinkedList<ShipTrail> trails = new LinkedList<ShipTrail>();
@@ -60,13 +62,12 @@ public class ScreenInSpace implements Screen {
 		this.game = game;
 		destroy = false;
 		game_speed = 1.0f;
-		droidPool = importPool("db12cde7-a1bf-442e-a563-36f51b0c27b2");
+		droidPool = importPool("ec8a21fd-4969-495e-8157-5f30e72a0715");
 		
 		b2world = new World(new Vector2(0.0f, 0.0f), true);
 		b2world.setContactListener(new MyContactListener(game));
 		
 		game.ship.initBody(b2world);
-		
 		
 		free_bodies.add(game.ship);
 	}
@@ -91,6 +92,10 @@ public class ScreenInSpace implements Screen {
 		handleInput();
 
 		// UPDATING GAME STATE
+		// Adding Droids
+		if (droids.size() < 5) {
+			spawnDroids(32);
+		}
 		b2world.step(game_speed/60f, 8, 3);
 		AABB local_range = new AABB(game.ship.getPosition().sub(SpaceGame.LOCAL_RADIUS, SpaceGame.LOCAL_RADIUS),
 				game.ship.getPosition().add(SpaceGame.LOCAL_RADIUS, SpaceGame.LOCAL_RADIUS));
@@ -121,27 +126,39 @@ public class ScreenInSpace implements Screen {
 			if (sat.detachable)
 				free_bodies.add(sat);
 		}
+		
 		// Removing free bodies outside of local zone
 		iterBodies = free_bodies.listIterator();
 		while (iterBodies.hasNext()) {
 			MovingObject bod = iterBodies.next();
-			if (bod.getClass() == DroidShip.class) {
-				if (((DroidShip) bod).disposable) {
-					System.out.println("removing droid");
-					((DroidShip) bod).dispose();
-					iterBodies.remove();
-				} else {
-					((DroidShip) bod).update();
-				}
-			}
-			if (!local_range.containsPoint(bod.getPosition()))
+			if (!local_range.containsPoint(bod.getPosition())) {
+				bod.dispose();
 				iterBodies.remove();
-			
+			}
 		}
-		// Applying gravity to the free bodies
+		
+		// Removing dead Droids and droids outside of local zone
+		iterDroids = droids.listIterator();
+		while (iterDroids.hasNext()) {
+			DroidShip bod = iterDroids.next();
+			if (!local_range.containsPoint(bod.getPosition())) {
+				bod.dispose();
+			} else {
+				bod.update();
+			}
+			if (bod.disposable) {
+				System.out.println("removing droid");
+				iterDroids.remove();
+			}
+		}
+		
+		// Applying gravity to the free bodies and droids
 		for (Planet pl: local_planets) {
 			pl.update(); // Apply gravity force to attached satellites
 			for (MovingObject bod: free_bodies) {
+				bod.push(pl.getGravityAccel(bod.getPosition()).scl(bod.getMass()));
+			}
+			for (MovingObject bod: droids) {
 				bod.push(pl.getGravityAccel(bod.getPosition()).scl(bod.getMass()));
 			}
 		}
@@ -367,6 +384,11 @@ public class ScreenInSpace implements Screen {
 				b.render(game.renderer);
 			}
 		}
+		for (MovingObject b : droids) {
+			if (camera_range.containsPoint(b.getPosition())) {
+				b.render(game.renderer);
+			}
+		}
 		for (Satellite sat: local_sats) {
 			if (camera_range.containsPoint(sat.getPosition())) {
 				sat.render(game.renderer);
@@ -377,6 +399,14 @@ public class ScreenInSpace implements Screen {
 				proj.render(game.renderer);
 		}
 		game.renderer.flush();
+		
+		// HUD
+		Matrix4 normalProjection = new Matrix4().setToOrtho2D(0, 0, Gdx.graphics.getWidth(),  Gdx.graphics.getHeight());
+		game.batch.setProjectionMatrix(normalProjection);
+		game.batch.begin();
+		game.fontHUD.draw(game.batch, String.valueOf(game.ship.hitpoints), 20, Gdx.graphics.getHeight()-game.font.getXHeight());
+		game.fontHUD.draw(game.batch, String.valueOf(game.ship.ammunition), 20, 30);
+		game.batch.end();
 	}
 
 	@Override
@@ -426,7 +456,7 @@ public class ScreenInSpace implements Screen {
 				droid.initNN(droidPool.activationFunc);
 				droid.nn.weights = droidPool.nnBest.get(i).clone();
 				droid.initBody(b2world);
-				free_bodies.add(droid);
+				droids.add(droid);
 				// Add ship trails
 				trails.add(new ShipTrail(droid, new Vector2(0.7f, 0.08f), 0.2f, 256, new Color(0xFF0000FF), new Color(0xFFFF0000)));
 				trails.add(new ShipTrail(droid, new Vector2(-0.7f, 0.08f), 0.2f, 256, new Color(0xFF0000FF), new Color(0xFFFF0000)));
@@ -443,16 +473,16 @@ public class ScreenInSpace implements Screen {
 		
 		if (game.hasController) {
 			if(game.controller.getButton(game.PAD_BOOST)) {
-				game.ship.accelerate(1.0f);
+				game.ship.accelerate(2.5f);
 				game.camera.autozoom = true;
 			}
 			PovDirection pov = game.controller.getPov(0);
 			if (pov == PovDirection.north) {
-				game.camera.zoom(1.04f);
+				game.camera.zoomIn();
 				game.camera.autozoom = false;
 			}
 			if (pov == PovDirection.south) {
-				game.camera.zoom(0.95f);
+				game.camera.zoomOut();
 				game.camera.autozoom = false;
 			}
 			
@@ -488,19 +518,17 @@ public class ScreenInSpace implements Screen {
 		if (Gdx.input.isKeyPressed(Keys.SPACE)) {
 			game.ship.fire(projectiles);
 		}
-		if (Gdx.input.isKeyPressed(Keys.S)) {
-			spawnDroids(2);
-		}
 		
 		amp = (float) Math.sqrt(x_axis*x_axis + y_axis*y_axis);
 		if (amp > 1.0f)
 			amp = 1.0f;
-		//if (amp < 0.15)
-		//	amp = 0.0f;
+		if (amp < 0.15)
+			amp = 0.0f;
 		// Calculate angle between ship angle and directional stick angle
 		float dAngle = game.ship.getAngleDiff(MathUtils.atan2(y_axis, x_axis));
 		float steering = 4.0f*dAngle-game.ship.getAngularVelocity();
-		game.ship.steer(steering*amp*amp);
+		//game.ship.steer(steering*amp*amp);
+		game.ship.steer(steering*amp);
 		game.ship.accelerate((1.0f-Math.abs(dAngle)/MathUtils.PI)*amp*amp);
 		
 		

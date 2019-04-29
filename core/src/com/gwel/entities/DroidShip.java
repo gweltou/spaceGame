@@ -20,8 +20,9 @@ import com.gwel.spacegame.MyRenderer;
 
 public class DroidShip extends PhysicBody implements Ship {
 	public final static float MAX_VEL = 20.0f;
-	public final float MAX_ANG_VEL = 4.0f;
+	public final float MAX_ANG_VEL = 6.0f;
 	private final float FIRE_COOLDOWN = 200.0f; // In milliseconds
+	private final int MAX_HITPOINTS = 300;
 	public final static float SIGHT_DISTANCE = 50.0f;
 	private final static int NN_INPUTS = 15;
 	private final static int NN_OUTPUTS = 3;
@@ -29,7 +30,7 @@ public class DroidShip extends PhysicBody implements Ship {
 	public static Enums activation = Enums.ACTIVATION_TANH;
 	
 	//public float speed_mag;
-	private static final Vector2 size = new Vector2(1.7f, 1.8f);  // Size of spaceship in game units
+	private static final Vector2 size = new Vector2(2.2f, 2.2f);  // Size of spaceship in game units
 	private Vector2 pPosition;
 	
 	public int hitpoints;
@@ -130,7 +131,6 @@ public class DroidShip extends PhysicBody implements Ship {
 	public void hit(float hp) {
 		hitpoints -= Math.round(hp);
 		if (hitpoints <= 0) {
-			//System.out.println("Droid died");
 			disposable = true;
 		}
 	}
@@ -145,7 +145,7 @@ public class DroidShip extends PhysicBody implements Ship {
 			Vector2 dir = new Vector2(2.0f, 0.0f); // Here we set the bullet's velocity
 			dir.setAngleRad(getAngle());
 			Vector2 pos = this.getPosition();
-			Projectile proj = new Projectile(this, pos, dir, 10.0f);
+			Projectile proj = new Projectile(this, pos, dir, 100.0f);
 			projectiles.add(proj);
 			lastFire = now;
 			amunition--;
@@ -340,7 +340,7 @@ public class DroidShip extends PhysicBody implements Ship {
 		Vector2 leftmost = new Vector2(1.0f, 0.0f);
 		Vector2 rightmost = new Vector2(-1.0f, 0.0f);
 		
-		FileHandle file = Gdx.files.internal("svg/ship.tdat");
+		FileHandle file = Gdx.files.internal("svg/stranger.tdat");
 		String text = file.readString();
 
 		String[] linesArray = text.split("\n");
@@ -445,7 +445,7 @@ public class DroidShip extends PhysicBody implements Ship {
 	}
 	
 	public void resetVars() {
-		hitpoints = 100;
+		hitpoints = MAX_HITPOINTS;
 		amunition = 200;
 		dstCounter = 0.0f;
 		hitCounter = 0;

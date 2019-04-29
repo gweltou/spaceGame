@@ -23,7 +23,7 @@ public class DroidPool {
 	public DroidPool() {
 		id = UUID.randomUUID().toString();
 		generation = 0;
-		bestGenScore = 0;
+		bestGenScore = -9999;
 		scores = new ArrayList<Integer>();
 	}
 }

@@ -18,9 +18,10 @@ public class MyContactListener implements ContactListener {
 	public void beginContact(Contact contact) {
 		Fixture f1 = contact.getFixtureA();
 		Fixture f2 = contact.getFixtureB();
-		//Fixture f;
 		
-		//System.out.println(f1.getUserData() + " has hit "+ f2.getUserData());
+		//if (f1.getUserData() == Enums.SHIP || f2.getUserData() == Enums.SHIP)
+		//	System.out.println(f1.getUserData() + " has hit "+ f2.getUserData());
+		
 		if (f1.getUserData() == Enums.SATELLITE) {
 			((Satellite) f1.getBody().getUserData()).detach();
 		}
@@ -40,25 +41,24 @@ public class MyContactListener implements ContactListener {
 		Fixture f1 = contact.getFixtureA();
 		Fixture f2 = contact.getFixtureB();
 		
-		float hitforce = 0.0f;
-		//hitforce += impulse.getNormalImpulses()[0];
-		//hitforce += impulse.getTangentImpulses()[0];
-		
-		for (float force: impulse.getNormalImpulses())
-			hitforce += force;
+		//float hitforce = 0.0f;
+		float hitforce = impulse.getNormalImpulses()[0];
+			
 		
 		// Ship collision damage
-		if (f1.getUserData() == Enums.SHIP && hitforce >= 1.0f) {
-			((Spaceship) f1.getBody().getUserData()).hit(hitforce*hitforce);
-		}
-		if (f2.getUserData() == Enums.SHIP && hitforce >= 1.0f) {
-			((Spaceship) f2.getBody().getUserData()).hit(hitforce*hitforce);
-		}
-		if (f1.getUserData() == Enums.DROID && hitforce >= 0f) {
-			((DroidShip) f1.getBody().getUserData()).hit(hitforce*hitforce);
-		}
-		if (f2.getUserData() == Enums.DROID && hitforce >= 0f) {
-			((DroidShip) f2.getBody().getUserData()).hit(hitforce*hitforce);
+		if (hitforce >= 1.0) {
+			if (f1.getUserData() == Enums.SHIP) {
+				((Spaceship) f1.getBody().getUserData()).hit(hitforce*hitforce);
+			}
+			if (f2.getUserData() == Enums.SHIP) {
+				((Spaceship) f2.getBody().getUserData()).hit(hitforce*hitforce);
+			}
+			if (f1.getUserData() == Enums.DROID) {
+				((DroidShip) f1.getBody().getUserData()).hit(hitforce*hitforce);
+			}
+			if (f2.getUserData() == Enums.DROID) {
+				((DroidShip) f2.getBody().getUserData()).hit(hitforce*hitforce);
+			}
 		}
 		
 		// Detect landing

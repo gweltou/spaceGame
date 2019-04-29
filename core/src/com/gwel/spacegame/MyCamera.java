@@ -57,7 +57,8 @@ public class MyCamera {
 	}
 
 	public void setZoom(float ppu) {
-		this.PPU = MathUtils.clamp(ppu, 0.02f, 100.0f);
+		PPU = MathUtils.clamp(ppu, 0.02f, 100.0f);
+		finalPPU = PPU;
 	}
 
 	public void zoomTo(float ppu) {
