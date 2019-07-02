@@ -9,24 +9,42 @@ import com.badlogic.gdx.graphics.g2d.GlyphLayout;
 import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Matrix4;
 import com.badlogic.gdx.math.Vector2;
+import com.badlogic.gdx.physics.box2d.World;
+import com.gwel.entities.LandedPlayer;
 import com.gwel.entities.Planet;
+import com.gwel.entities.Spaceship;
+import com.gwel.spacegame.MyCamera;
 import com.gwel.spacegame.SpaceGame;
 import com.gwel.spacegame.utils;
 
 public class ScreenOnPlanet implements Screen {
 	final SpaceGame game;
+	private MyCamera camera;
+	private World world;
 	private Planet planet;
 	private String strName;
 	private GlyphLayout layoutName;
+	private LandedPlayer player;
+	private boolean landingIntro;
+	private float surfaceLength;
+	private Spaceship ship;
 	
 	public ScreenOnPlanet(final SpaceGame game, Planet p) {
 		this.game = game;
+		world = new World(new Vector2(0.0f, -10.0f), true);
+		camera = new MyCamera(Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
 		planet = p;
 		strName = game.getPlanetName(planet.seed);
 		layoutName = new GlyphLayout();
 		layoutName.setText(game.font, strName);
 		System.out.println("Switched to planet Screen");
-		System.out.println("Welcome to " + strName);
+		System.out.println("Welcome to " + strName);		
+		
+		surfaceLength = MathUtils.PI2 * planet.radius;
+		float landingPointAngle = game.ship.getPosition().sub(planet.getPosition()).angleRad();
+		float landingHPos = surfaceLength * landingPointAngle/MathUtils.PI2;
+		System.out.println("Surface Length :" + surfaceLength);
+		System.out.println("Landing angle :" + landingPointAngle);
 		
 		// Regenerating ship
 		game.ship.hitpoints = game.ship.MAX_HITPOINTS;
@@ -35,11 +53,21 @@ public class ScreenOnPlanet implements Screen {
 		Vector2 dPos = game.ship.getPosition().sub(planet.getPosition());
 		float cameraRotate = utils.wrapAngleAroundZero(MathUtils.PI*0.5f-dPos.angleRad());
 		game.camera.rotateTo(cameraRotate);
+		
+		ship = new Spaceship(new Vector2(landingHPos, 1.0f));
+		ship.setAngle(game.ship.getAngle());
+		player = new LandedPlayer(new Vector2(landingHPos, 1.0f));
+		player.initBody(world);
+		
+		landingIntro = false;
 	}
 	
 	@Override
 	public void dispose() {
 		game.camera.rotateTo(0.0f);
+		player.dispose();
+		ship.dispose();
+		world.dispose();
 		System.out.println("Planet screen disposed");
 	}
 
@@ -53,28 +81,41 @@ public class ScreenOnPlanet implements Screen {
 	public void render(float arg0) {
 		handleInput();
 		
-		//  Camera update
-		game.camera.glideTo(game.ship.getPosition());
-		game.camera.zoomTo(200.0f);
-		game.camera.update();
-
-		game.renderer.setProjectionMatrix(new Matrix4().set(game.camera.affine));
-		Matrix4 normalProjection = new Matrix4().setToOrtho2D(0, 0, Gdx.graphics.getWidth(),  Gdx.graphics.getHeight());
-		game.batch.setProjectionMatrix(normalProjection);
-		Gdx.gl.glClearColor(0.4f, 1f, 1f, 1f);
-		Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
-		game.ship.render(game.renderer);
-		planet.render(game.renderer);
-		game.renderer.flush();
-		game.batch.begin();
-		game.font.draw(game.batch, strName, (Gdx.graphics.getWidth()-layoutName.width)/2, Gdx.graphics.getHeight()-game.font.getXHeight());
-		game.batch.end();
+		if (landingIntro) {
+			//  Camera update
+			game.camera.glideTo(game.ship.getPosition());
+			game.camera.zoomTo(200.0f);
+			game.camera.update();
+	
+			game.renderer.setProjectionMatrix(new Matrix4().set(game.camera.affine));
+			Gdx.gl.glClearColor(0.4f, 1f, 1f, 1f);
+			Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
+			game.ship.render(game.renderer);
+			planet.render(game.renderer);
+			player.render(game.renderer);
+			game.renderer.flush();
+			
+			Matrix4 normalProjection = new Matrix4().setToOrtho2D(0, 0, Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
+			game.batch.setProjectionMatrix(normalProjection);
+			game.batch.begin();
+			game.font.draw(game.batch, strName, (Gdx.graphics.getWidth()-layoutName.width)/2, Gdx.graphics.getHeight()-game.font.getXHeight());
+			game.batch.end();
+		} else {
+			camera.glideTo(player.getPosition());
+			camera.update();
+			game.renderer.setProjectionMatrix(new Matrix4().set(camera.affine));
+			Gdx.gl.glClearColor(0.4f, 1f, 1f, 1f);
+			Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
+			ship.render(game.renderer);
+			player.render(game.renderer);
+			game.renderer.flush();
+		}
+		
+		world.step(1.0f/60f, 8, 3);
 	}
 
 	@Override
-	public void resize(int arg0, int arg1) {
-		// TODO Auto-generated method stub
-		
+	public void resize(int width, int height) {
 	}
 
 	@Override

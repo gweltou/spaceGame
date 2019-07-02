@@ -50,8 +50,10 @@ public class SpaceGame extends Game {
 	public int PAD_BOOST;
 	public int PAD_FIRE;
 	
+	// GAME STATE VARIABLES
 	public Spaceship ship;
 	private ScreenInSpace spaceScreen;
+	private Planet mustLandOnPlanet;
 	
 	
 	@Override
@@ -97,7 +99,7 @@ public class SpaceGame extends Game {
 		populateUniverse(Qt);
 		
 		Vector2 universeCenter = new Vector2(UNIVERSE_SIZE/2, UNIVERSE_SIZE/2);
-		camera = new MyCamera(Gdx.graphics.getWidth(),Gdx.graphics.getHeight());
+		camera = new MyCamera(Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
 		camera.setCenter(universeCenter);
 		camera.update();
 		renderer = new MyRenderer(camera);
@@ -115,11 +117,18 @@ public class SpaceGame extends Game {
 		
 		spaceScreen = new ScreenInSpace(this);
 		setScreen(spaceScreen);
+		mustLandOnPlanet = null;
 	}
 
 	@Override
 	public void render () {
 		super.render();
+		
+		// Landing on planet
+		if (mustLandOnPlanet != null) {
+			setScreen(new ScreenOnPlanet(this, mustLandOnPlanet));
+			mustLandOnPlanet = null;
+		}
 	}
 	
 	@Override
@@ -138,8 +147,11 @@ public class SpaceGame extends Game {
 	}
 
 	void land(Planet p) {
-		// Don't dispose of spaceScreen !
-		setScreen(new ScreenOnPlanet(this, p));
+		// Don't dispose of ScreenInSpace !
+		if (mustLandOnPlanet == null) {
+			// This test prevents a change of screen during a Box2D step
+			mustLandOnPlanet = p;
+		}		
 	}
 	
 	public void takeOff() {

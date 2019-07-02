@@ -18,7 +18,7 @@ import com.gwel.spacegame.Enums;
 public class Spaceship extends PhysicBody implements Ship {
 	public final float MAX_VEL = 35.0f;
 	public final float MAX_ANG_VEL = 8.0f;
-	private final float FIRE_COOLDOWN = 200.0f; // In milliseconds
+	private final float FIRE_COOLDOWN = 150.0f; // In milliseconds
 	public final int MAX_HITPOINTS = 500;
 	public final int MAX_AMMUNITION = 300;
 	

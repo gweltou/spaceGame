@@ -36,7 +36,7 @@ import com.gwel.spacegame.SpaceGame;
 public class ScreenInSpace implements Screen {
 	final SpaceGame game;
 	private World b2world;
-	private boolean destroy;
+	private boolean mustDestroy;
 	private float game_speed;	// set to <1.0 for slow-mo
 	
 	private ArrayList<Planet> local_planets = new ArrayList<Planet>();
@@ -60,7 +60,7 @@ public class ScreenInSpace implements Screen {
 	
 	public ScreenInSpace(final SpaceGame game) {
 		this.game = game;
-		destroy = false;
+		mustDestroy = false;
 		game_speed = 1.0f;
 		droidPool = importPool("ec8a21fd-4969-495e-8157-5f30e72a0715");
 		
@@ -75,18 +75,18 @@ public class ScreenInSpace implements Screen {
 	@Override
 	public void dispose() {
 		// This test case prevents the world from being destroyed during a step
-		if (destroy) {
+		if (mustDestroy) {
 			System.out.println("Destroying space");
 			game.ship.dispose();	// Important, so the ship position and angle is saved
 			b2world.dispose();
 		} else {
-			destroy = true;
+			mustDestroy = true;
 		}
 	}
 
 	@Override
 	public void render(float delta_time) {
-		if (destroy)
+		if (mustDestroy)
 			dispose(); // doesn't work
 		
 		handleInput();

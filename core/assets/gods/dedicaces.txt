@@ -6,6 +6,7 @@ Trantor
 Zgeg
 Zgegopolis
 Zgegoland
+Thanos
 
 # Dune
 Arrakis

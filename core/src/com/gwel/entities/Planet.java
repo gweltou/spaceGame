@@ -13,9 +13,9 @@ import com.badlogic.gdx.math.MathUtils;
 public class Planet implements Collidable {	
 	public long seed;
 	private Body body;
-	public Vector2 position;
+	private Vector2 position;
 	public float mass;
-	private float radius;
+	public float radius;
 	private Color color;
 	int n_sat;
 	float[] sat_orbit;
