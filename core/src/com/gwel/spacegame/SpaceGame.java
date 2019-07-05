@@ -13,7 +13,6 @@ import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.freetype.FreeTypeFontGenerator;
 import com.badlogic.gdx.graphics.g2d.freetype.FreeTypeFontGenerator.FreeTypeFontParameter;
-import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.RandomXS128;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.utils.TimeUtils;
@@ -34,10 +33,11 @@ public class SpaceGame extends Game {
 	public String controllerName;
 	FreeTypeFontGenerator fontGenerator;
 	public BitmapFont font, fontHUD;
+	public RandomXS128 generator;
 	
 	// GAME UNIVERSE VARIABLES
-	final static float UNIVERSE_SIZE = 100000.0f;
-	final static float GRAVITY_ACTIVE_RADIUS = 800.0f;
+	private final static float UNIVERSE_SIZE = 100000.0f;
+	private final static float GRAVITY_ACTIVE_RADIUS = 800.0f;
 	public final static float LOCAL_RADIUS = GRAVITY_ACTIVE_RADIUS;
 	final static float exit_radius = GRAVITY_ACTIVE_RADIUS+200.0f;
 	public QuadTree Qt;
@@ -92,6 +92,8 @@ public class SpaceGame extends Game {
 			return;
 		}
 		
+		generator = new RandomXS128();
+		generator.setSeed((long) 6.0f);
 		godNames = new ArrayList<ArrayList<String>>();
 		loadGodNames();
 		AABB universe_boundary = new AABB(new Vector2(0, 0), new Vector2(UNIVERSE_SIZE, UNIVERSE_SIZE));
@@ -117,7 +119,7 @@ public class SpaceGame extends Game {
 		
 		spaceScreen = new ScreenInSpace(this);
 		setScreen(spaceScreen);
-		mustLandOnPlanet = null;
+		mustLandOnPlanet = Qt.element;
 	}
 
 	@Override
@@ -164,10 +166,9 @@ public class SpaceGame extends Game {
 	void populateUniverse(QuadTree qt) {
 		long start_time = TimeUtils.millis();
 		int i=0;
-		RandomXS128 randGenerator = new RandomXS128();
 		while (i<Const.NUMBER_PLANETS) {
-			Vector2 position = new Vector2(MathUtils.random(UNIVERSE_SIZE), MathUtils.random(UNIVERSE_SIZE));
-			float radius = MathUtils.random(Const.PLANET_MIN_RADIUS, Const.PLANET_MAX_RADIUS);
+			Vector2 position = new Vector2(generator.nextFloat()*UNIVERSE_SIZE, generator.nextFloat()*UNIVERSE_SIZE);
+			float radius = generator.nextFloat() * (Const.PLANET_MAX_RADIUS-Const.PLANET_MIN_RADIUS) + Const.PLANET_MIN_RADIUS;
 
 			// Check if other planets are near this position
 			float min_dist = 3*Const.PLANET_MAX_RADIUS;
@@ -183,7 +184,7 @@ public class SpaceGame extends Game {
 				}
 			}
 			if (empty) {
-				Planet new_planet = new Planet(position, radius, randGenerator.nextLong());
+				Planet new_planet = new Planet(position, radius, generator.nextLong());
 				qt.insert(new_planet);
 				i += 1;
 			}
@@ -218,7 +219,7 @@ public class SpaceGame extends Game {
 	}
 	
 	public String getPlanetName(long seed) {
-		RandomXS128 generator = new RandomXS128(seed);
+		generator.setSeed(seed);
 		int totNames = 0;
 		for (ArrayList<String> array: godNames) {
 			totNames += array.size();

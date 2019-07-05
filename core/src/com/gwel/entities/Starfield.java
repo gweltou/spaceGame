@@ -33,7 +33,8 @@ public class Starfield {
 		transform.scale(2.0f/width, 2.0f/height, 1.0f);
 	}
 	
-	public void update(Vector2 travelling) {
+	public void update(Vector2 travelling, float factor) {
+		travelling.scl(factor);
 		for (int i=0; i<nStars; i++) {
 			stars[i].sub(stars[i].z*travelling.x*speedScale*speedScale, stars[i].z*travelling.y*speedScale*speedScale, 0.0f);
 			if (stars[i].x > width)

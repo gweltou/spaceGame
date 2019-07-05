@@ -2,6 +2,7 @@ package com.gwel.entities;
 
 import com.badlogic.gdx.math.Affine2;
 import com.badlogic.gdx.math.Vector2;
+import com.badlogic.gdx.physics.box2d.Body;
 import com.badlogic.gdx.physics.box2d.BodyDef;
 import com.badlogic.gdx.physics.box2d.Fixture;
 import com.badlogic.gdx.physics.box2d.FixtureDef;
@@ -32,12 +33,14 @@ public class LandedPlayer extends PhysicBody {
 
 	@Override
 	public void initBody(World world) {
+		//super.initBody(world);
+		
 		bodyDef = new BodyDef();
 		bodyDef.type = BodyType.DynamicBody;
 		bodyDef.position.set(getPosition());
-		bodyDef.angle = getAngle();
+		//bodyDef.angle = getAngle();
 		bodyDef.fixedRotation = true;
-		bodyDef.linearVelocity.set(getVelocity());
+		//bodyDef.linearVelocity.set(getVelocity());
 		
 		body = world.createBody(bodyDef);
 		body.setUserData(this);
@@ -59,6 +62,10 @@ public class LandedPlayer extends PhysicBody {
 	public float getBoundingRadius() {
 		// TODO Auto-generated method stub
 		return 0;
+	}
+	
+	public void move(Vector2 dir) {
+		body.applyLinearImpulse(dir, body.getWorldCenter(), true);
 	}
 
 	@Override

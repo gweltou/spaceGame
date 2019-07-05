@@ -74,8 +74,7 @@ public class MyCamera {
 	}
 	
 	public Vector2 getTravelling() {
-		Vector2 travelling = center.cpy().sub(pCenter);
-		return travelling.scl(PPU);
+		return center.cpy().sub(pCenter);
 	}
 	
 	public void update() {

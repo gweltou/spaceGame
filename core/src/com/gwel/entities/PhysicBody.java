@@ -93,6 +93,7 @@ public abstract class PhysicBody implements MovingObject, Collidable {
 	}
 	
 	public void dispose() {
+		// TODO : next few lines not needed anymore
 		angle = getAngle();
 		angleVel = getAngularVelocity();
 		position = getPosition();

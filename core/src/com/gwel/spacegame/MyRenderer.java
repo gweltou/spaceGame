@@ -16,11 +16,11 @@ public class MyRenderer {
 	public static final String VERT_SHADER =  
 			"attribute vec2 a_position;\n" +
 			"attribute vec4 a_color;\n" +			
-			"uniform mat4 u_projTrans;\n" + 
+			"uniform mat4 u_projModelView;\n" + 
 			"varying vec4 vColor;\n" +			
 			"void main() {\n" +  
 			"	vColor = a_color;\n" +
-			"	gl_Position =  u_projTrans * vec4(a_position.xy, 0.0, 1.0);\n" +
+			"	gl_Position =  u_projModelView * vec4(a_position.xy, 0.0, 1.0);\n" +
 			"}";
 	
 	public static final String FRAG_SHADER = 
@@ -65,9 +65,12 @@ public class MyRenderer {
 	public MyCamera camera;
 	private Mesh meshTriangles;
 	private Mesh meshTrianglestrip;
-	private ShaderProgram shader;
-	private Color col;
-	private Matrix4 projMatrix;
+	private final ShaderProgram shader;
+	private final Color color = new Color(1, 1, 1, 1);
+	private final Matrix4 projectionMatrix = new Matrix4();
+	private final Matrix4 transformMatrix = new Matrix4();
+	private final Matrix4 combinedMatrix = new Matrix4();
+	private boolean matrixDirty = false;
 	
 	
 	public MyRenderer(MyCamera camera) {
@@ -84,28 +87,57 @@ public class MyRenderer {
 		
 		shader = createShaderProgram(VERT_SHADER, FRAG_SHADER);
 		
-		col = new Color(1.0f, 1.0f, 1.0f, 1.0f);
 		System.out.println("Renderer created");
 	}
 
-	public void setColor(float i, float j, float k, float l) {
-		this.col.set(i, j, k, l);
+	public void setColor(float r, float g, float b, float a) {
+		this.color.set(r, g, b, a);
 	}
 	
 	public void setColor(Color color) {
-		this.col.set(color);
+		this.color.set(color);
 	}
 	
-	public void setProjectionMatrix(Matrix4 proj) {
-		projMatrix = proj;
+	public void setProjectionMatrix(Matrix4 matrix) {
+		projectionMatrix.set(matrix);
+		matrixDirty = true;
+	}
+	
+	public void setTransformMatrix (Matrix4 matrix) {
+		transformMatrix.set(matrix);
+		matrixDirty = true;
+	}
+	
+	/** Sets the transformation matrix to identity. */
+	public void identity () {
+		transformMatrix.idt();
+		matrixDirty = true;
+	}
+
+	/** Multiplies the current transformation matrix by a translation matrix. */
+	public void translate (float x, float y, float z) {
+		transformMatrix.translate(x, y, z);
+		matrixDirty = true;
+	}
+
+	/** Multiplies the current transformation matrix by a rotation matrix. */
+	public void rotate (float axisX, float axisY, float axisZ, float degrees) {
+		transformMatrix.rotate(axisX, axisY, axisZ, degrees);
+		matrixDirty = true;
+	}
+
+	/** Multiplies the current transformation matrix by a scale matrix. */
+	public void scale (float scaleX, float scaleY, float scaleZ) {
+		transformMatrix.scale(scaleX, scaleY, scaleZ);
+		matrixDirty = true;
 	}
 	
 	public void triangle(Vector2 p1, Vector2 p2, Vector2 p3) {
-		triangle(p1.x, p1.y, p2.x, p2.y, p3.x, p3.y, col);
+		triangle(p1.x, p1.y, p2.x, p2.y, p3.x, p3.y, color);
 	}
 	
 	public void triangle(float x1, float y1, float x2, float y2, float x3, float y3) {
-		triangle(x1, y1, x2, y2, x3, y3, col);
+		triangle(x1, y1, x2, y2, x3, y3, color);
 	}
 	
 	public void triangle(float x1, float y1, float x2, float y2, float x3, float y3, Color color) {
@@ -143,7 +175,7 @@ public class MyRenderer {
 	}
 	
 	public void triangleStrip(double x1, double y1, double x2, double y2) {
-		triangleStrip(x1, y1, x2, y2, col);
+		triangleStrip(x1, y1, x2, y2, color);
 	}
 	
 	private void triangleStrip(double x1, double y1, double x2, double y2, Color color) {
@@ -165,50 +197,9 @@ public class MyRenderer {
 		verts_trianglestrip[iTrianglestrip++] = color.a;
 	}
 	
-	public void texturedSquare(float xPos, float yPos, float width, float height, Vector2 uv0, Vector2 uv1, Vector2 uv2) {
-		
-	}
+	public void texturedSquare(float xPos, float yPos, float width, float height, Vector2 uv0, Vector2 uv1, Vector2 uv2) {	}
 	
-	public void flush() {
-		//if we've not already flushed
-		if (iTriangle>0 || iTrianglestrip>0) {
-			//no need for depth...
-			Gdx.gl.glDepthMask(false);
-
-			//enable blending, for alpha
-			Gdx.gl.glEnable(GL20.GL_BLEND);
-			Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA);
-
-			shader.begin();
-			shader.setUniformMatrix("u_projTrans", projMatrix);
-			if (iTriangle>0) {
-				//number of vertices we need to render
-				int vertexCount = (iTriangle/6); // Number of triangles divided by number of components
-				meshTriangles.setVertices(verts_triangle);
-				meshTriangles.render(shader, GL20.GL_TRIANGLES, 0, vertexCount);
-				//reset index to zero
-				iTriangle = 0;
-			}
-			if (iTrianglestrip>0) {
-				System.out.println(iTrianglestrip);
-				int vertexCount = (iTrianglestrip/6); // Number of triangles divided by number of components
-				meshTrianglestrip.setVertices(verts_trianglestrip);
-				meshTrianglestrip.render(shader, GL20.GL_TRIANGLE_STRIP, 0, vertexCount);
-				System.out.println("end");
-				iTrianglestrip = 0;
-			}
-			shader.end();
-
-			//re-enable depth to reset states to their default
-			Gdx.gl.glDepthMask(true);
-		}
-	}
 	
-	public void dispose() {
-		meshTriangles.dispose();
-		meshTrianglestrip.dispose();
-	}
-
 	/** Calls circle(Vector2, float, int)} by estimating the number of segments needed for a smooth circle. */
 	public void circle (Vector2 pos, float radius) {
 		circle(pos, radius, Math.max(1,  ((int) Math.sqrt(radius*camera.PPU))<<2 ));
@@ -378,5 +369,50 @@ public class MyRenderer {
 	public void line(Vector2 position, Vector2 pposition) {
 		// TODO Auto-generated method stub
 		
+	}
+	
+	public void flush() {
+		//if we've not already flushed
+		if (iTriangle>0 || iTrianglestrip>0) {
+			//no need for depth...
+			Gdx.gl.glDepthMask(false);
+
+			//enable blending, for alpha
+			Gdx.gl.glEnable(GL20.GL_BLEND);
+			Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA);
+
+			if (matrixDirty) {
+				combinedMatrix.set(projectionMatrix);
+				Matrix4.mul(combinedMatrix.val, transformMatrix.val);
+				matrixDirty = false;
+			}
+			shader.begin();
+			shader.setUniformMatrix("u_projModelView", combinedMatrix);
+			
+			if (iTriangle>0) {
+				//number of vertices we need to render
+				int vertexCount = (iTriangle/6); // Number of triangles divided by number of components
+				meshTriangles.setVertices(verts_triangle);
+				meshTriangles.render(shader, GL20.GL_TRIANGLES, 0, vertexCount);
+				//reset index to zero
+				iTriangle = 0;
+			}
+			if (iTrianglestrip>0) {
+				int vertexCount = (iTrianglestrip/6); // Number of triangles divided by number of components
+				meshTrianglestrip.setVertices(verts_trianglestrip);
+				meshTrianglestrip.render(shader, GL20.GL_TRIANGLE_STRIP, 0, vertexCount);
+				iTrianglestrip = 0;
+			}
+			shader.end();
+
+			//re-enable depth to reset states to their default
+			Gdx.gl.glDepthMask(true);
+		}
+	}
+	
+	public void dispose() {
+		meshTriangles.dispose();
+		meshTrianglestrip.dispose();
+		shader.dispose();
 	}
 }

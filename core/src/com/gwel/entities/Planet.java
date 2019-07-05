@@ -9,6 +9,7 @@ import com.gwel.spacegame.Enums;
 import com.gwel.spacegame.MyRenderer;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.math.MathUtils;
+import com.badlogic.gdx.math.RandomXS128;
 
 public class Planet implements Collidable {	
 	public long seed;
@@ -16,7 +17,10 @@ public class Planet implements Collidable {
 	private Vector2 position;
 	public float mass;
 	public float radius;
-	private Color color;
+	public Color color;
+	public float colorHue;
+	public float colorSat;
+	public float colorVal;
 	int n_sat;
 	float[] sat_orbit;
 	float[] sat_radius;
@@ -28,7 +32,14 @@ public class Planet implements Collidable {
 		position = pos.cpy();
 		radius = rad;
 		this.seed = seed;
-		color = new Color(MathUtils.random(), MathUtils.random(), MathUtils.random(), 1.0f);
+		RandomXS128 generator = new RandomXS128(seed);
+		
+		colorHue = generator.nextFloat();
+		colorSat = generator.nextFloat();
+		colorVal = generator.nextFloat();
+		color = new Color().fromHsv(colorHue, colorSat, colorVal);
+		color.a = 1.0f; // We need to set the alpha component manually, for some reason
+		
 		mass = (float) Math.PI * rad * rad;
 		// Create satellites configuration, if any (not the actual Satellite instances)
 		n_sat = (int) Math.floor(MathUtils.random(Const.PLANET_MAX_SAT+1));

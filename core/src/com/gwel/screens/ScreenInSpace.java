@@ -39,6 +39,9 @@ public class ScreenInSpace implements Screen {
 	private boolean mustDestroy;
 	private float game_speed;	// set to <1.0 for slow-mo
 	
+	private final static int NUM_DROIDS_AROUND = 8;
+
+	
 	private ArrayList<Planet> local_planets = new ArrayList<Planet>();
 	private ArrayList<Planet> local_planets_prev;
 	private LinkedList<Satellite> local_sats = new LinkedList<Satellite>();
@@ -93,8 +96,8 @@ public class ScreenInSpace implements Screen {
 
 		// UPDATING GAME STATE
 		// Adding Droids
-		if (droids.size() < 5) {
-			spawnDroids(32);
+		if (droids.size() < NUM_DROIDS_AROUND/2) {
+			spawnDroids(NUM_DROIDS_AROUND);
 		}
 		b2world.step(game_speed/60f, 8, 3);
 		AABB local_range = new AABB(game.ship.getPosition().sub(SpaceGame.LOCAL_RADIUS, SpaceGame.LOCAL_RADIUS),
@@ -359,8 +362,8 @@ public class ScreenInSpace implements Screen {
 			game.camera.zoomTo(200.0f/game.ship.getVelocity().len());
 		game.camera.update();
 		
-		starfield.update(game.camera.getTravelling());
-		deepfield.update(game.camera.getTravelling());
+		starfield.update(game.camera.getTravelling(), game.camera.PPU);
+		deepfield.update(game.camera.getTravelling(), game.camera.PPU);
 		
 		// North and East directions are POSITIVE !
 		AABB camera_range = new AABB(game.camera.sw.cpy().sub(Const.PLANET_MAX_RADIUS, Const.PLANET_MAX_RADIUS), 
