@@ -7,7 +7,7 @@ import com.badlogic.gdx.math.Vector2;
 public class MyCamera {
 	public Vector2 sw;
 	public Vector2 ne;
-	public Vector2 center;
+	public final Vector2 center = new Vector2();
 	private Vector2 pCenter;  // Previous center (in game unit coordinates)
 	public boolean autozoom;
 	public int width;
@@ -20,7 +20,6 @@ public class MyCamera {
 	public float PPU = 10.0f ; // Pixel per game unit
 
 	public MyCamera(int width, int height) {
-		center = new Vector2();
 		autozoom = true;
 		this.width = width;
 		this.height = height;

@@ -13,13 +13,13 @@ import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Matrix4;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.physics.box2d.World;
-import com.gwel.entities.LandedPlayer;
 import com.gwel.entities.Planet;
 import com.gwel.entities.Spaceship;
 import com.gwel.spacegame.MyCamera;
 import com.gwel.spacegame.SpaceGame;
 import com.gwel.spacegame.utils;
 import com.gwel.surfaceEntities.HeightArray;
+import com.gwel.surfaceEntities.LandedPlayer;
 import com.gwel.surfaceEntities.TerrainBlock;
 
 public class ScreenOnPlanet implements Screen {
@@ -35,14 +35,16 @@ public class ScreenOnPlanet implements Screen {
 	private LandedPlayer player;
 	private boolean landingIntro;
 	private float surfaceLength;
+	private float sunHPos;
 	private Spaceship ship;
 	private boolean showShip = false;
+	private final static float SUN_SIZE = 200f;
 	
 	// Terrain data
 	private final ArrayDeque<TerrainBlock>[] parallaxLayers;
-	HeightArray primaryHeightArray;
-	TerrainBlock parallaxBlock1;
-	TerrainBlock parallaxBlock2;
+	//HeightArray primaryHeightArray;
+	//TerrainBlock parallaxBlock1;
+	//TerrainBlock parallaxBlock2;
 	
 	public ScreenOnPlanet(final SpaceGame game, Planet p) {
 		this.game = game;
@@ -53,22 +55,25 @@ public class ScreenOnPlanet implements Screen {
 		strName = game.getPlanetName(planet.seed);
 		layoutName = new GlyphLayout();
 		layoutName.setText(game.font, strName);
-		System.out.println("Switched to planet Screen");
-		System.out.println("Welcome to " + strName);		
+		
+		System.out.println("Welcome to planet \"" + strName + "\"");
+		System.out.println("Universal position : " + planet.getPosition());
 		
 		surfaceLength = MathUtils.PI2 * planet.radius;
-		float landingPointAngle = game.ship.getPosition().sub(planet.getPosition()).angleRad();
+		float landingPointAngle = -game.ship.getPosition().sub(planet.getPosition()).angleRad();
 		float landingHPos = surfaceLength * landingPointAngle/MathUtils.PI2;
-		
+		sunHPos = surfaceLength * planet.getPosition().angleRad()/MathUtils.PI2;
+		System.out.println("Sun local position : " + sunHPos);
 		
 		// GENERATE TERRAIN DATA
 		parallaxLayers = new ArrayDeque[NUM_PARALLAX_LAYERS];
 		game.generator.setSeed(planet.seed);
 		HeightArray[] hArrays = {
-				new HeightArray(game.generator, 200.0f, 0.1f),
-				new HeightArray(game.generator, 10.0f, 1f),
-				new HeightArray(game.generator, 20.0f, 3f)};
-		float[] amps = {10.0f, 0.4f, 0.15f};
+				new HeightArray(game.generator, surfaceLength, 0.001f, surfaceLength),
+				new HeightArray(game.generator, surfaceLength/3, 0.1f, surfaceLength),
+				new HeightArray(game.generator, 10.0f, 1f, surfaceLength),
+				new HeightArray(game.generator, 10.0f, 3f, surfaceLength)};
+		float[] amps = {20f, 8f, 1.0f, 0.15f};
 		
 		Vector2 blockPos = new Vector2(landingHPos-50, 0.0f);
 		TerrainBlock terrainBlock;
@@ -81,7 +86,8 @@ public class ScreenOnPlanet implements Screen {
 		col.a = 1.0f;
 		float colVal = planet.colorVal;
 		for (int i=1; i<parallaxLayers.length; i++) {
-			for (int j=0; j<amps.length; j++)	amps[j] = game.generator.nextFloat() * (float) i;
+			for (int j=0; j<amps.length; j++)
+				amps[j] = game.generator.nextFloat() * (float) i;
 			float colSat = planet.colorSat*((float) Math.pow(0.6f, i));
 			colVal += (1.0f-colVal)*((float) Math.pow(0.4f, i));
 			col.fromHsv(planet.colorHue, colSat, colVal);
@@ -100,11 +106,12 @@ public class ScreenOnPlanet implements Screen {
 		game.camera.rotateTo(cameraRotate);
 		
 		// Create a mock-up ship to draw
-		ship = new Spaceship(new Vector2(landingHPos, 5.0f));
+		float spawningHeight = parallaxLayers[0].getFirst().getHeight(landingHPos)+2f;
+		ship = new Spaceship(new Vector2(landingHPos, spawningHeight));
 		ship.setAngle(game.ship.getAngle()-landingPointAngle);
 		//ship.initBody(world);
 		
-		player = new LandedPlayer(new Vector2(landingHPos, 5.0f));
+		player = new LandedPlayer(new Vector2(landingHPos, spawningHeight));
 		player.initBody(world);
 		
 		landingIntro = false;
@@ -131,6 +138,7 @@ public class ScreenOnPlanet implements Screen {
 	@Override
 	public void render(float arg0) {
 		handleInput();
+		Matrix4 normalProjection = new Matrix4().setToOrtho2D(0, 0, Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
 		
 		if (landingIntro) {
 			//  Camera update
@@ -146,7 +154,6 @@ public class ScreenOnPlanet implements Screen {
 			player.render(game.renderer);
 			game.renderer.flush();
 			
-			Matrix4 normalProjection = new Matrix4().setToOrtho2D(0, 0, Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
 			game.batch.setProjectionMatrix(normalProjection);
 			game.batch.begin();
 			game.font.draw(game.batch, strName, (Gdx.graphics.getWidth()-layoutName.width)/2, Gdx.graphics.getHeight()-game.font.getXHeight());
@@ -205,16 +212,29 @@ public class ScreenOnPlanet implements Screen {
 				}
 			}
 			
+			
+			float playerHPos = player.getPosition().x % surfaceLength;
+			if (playerHPos < 0.0f)	playerHPos += surfaceLength;
+			
+			// CALCULATE SUN RELATIVE POSITION AND SKY COLOR
+			float dPos = (playerHPos - sunHPos) / surfaceLength;
+			if (dPos > 0.5f)	dPos -= 1.0f;
+			else if (dPos < -0.5f) dPos += 1.0f;
+			Color skyColor = new Color().fromHsv((planet.colorHue+180.0f)%360.0f, 0.5f*Math.abs(dPos), 1.0f-Math.abs(dPos));
+			float sunRise = MathUtils.cos(dPos*MathUtils.PI2);
+			Color sunColor = new Color(1.0f, 0.5f*(sunRise+1f), 0.4f*(sunRise+1f), 1.0f);
+			Vector2 sunPos = new Vector2((float) Gdx.graphics.getWidth()/2,
+					Gdx.graphics.getHeight()*(0.5f + 0.45f*sunRise));
+			
 			// UPDATE SHIP POSITION
 			// so it wraps around the planet
-			float xPlayerPos = player.getPosition().x % surfaceLength;
-			if (xPlayerPos < 0.0f)	xPlayerPos += surfaceLength;
 			float xShipPos = ship.getPosition().x % surfaceLength;
 			if (xShipPos < 0.0f)	xShipPos += surfaceLength;
-			float dPos = xPlayerPos - xShipPos;
+			dPos = playerHPos - xShipPos;
 			if (dPos > surfaceLength/2)	dPos -= surfaceLength;
+			else if (dPos < -surfaceLength/2) dPos += surfaceLength;
 //			System.out.println("");
-//			System.out.println("xPlayerPos " + xPlayerPos);
+//			System.out.println("playerHPos " + playerHPos);
 //			System.out.println("xShipPos " + xShipPos);
 //			System.out.println("dPos " + dPos);
 			if (showShip) {
@@ -234,11 +254,18 @@ public class ScreenOnPlanet implements Screen {
 				}
 			}
 			
-			game.renderer.setProjectionMatrix(new Matrix4().set(camera.affine));
-			Gdx.gl.glClearColor(0.4f, 1f, 1f, 1f);
+			Gdx.gl.glClearColor(skyColor.r, skyColor.g, skyColor.b, 1f);
 			Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
 			
 			
+			// DRAW SUN
+			game.renderer.setProjectionMatrix(normalProjection);
+			game.renderer.setColor(sunColor);
+			game.renderer.circle(sunPos, 200.0f);
+			game.renderer.flush();
+			
+			
+			game.renderer.setProjectionMatrix(new Matrix4().set(camera.affine));
 			// Draw terrain
 			for (int i=parallaxLayers.length-1; i>0; i--) {
 				for (TerrainBlock tb: parallaxLayers[i]) {
@@ -258,7 +285,7 @@ public class ScreenOnPlanet implements Screen {
 			game.renderer.flush();
 			
 			// DISPLAY PLANET NAME
-			Matrix4 normalProjection = new Matrix4().setToOrtho2D(0, 0, Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
+			
 			game.batch.setProjectionMatrix(normalProjection);
 			game.batch.begin();
 			game.font.draw(game.batch, strName, (Gdx.graphics.getWidth()-layoutName.width)/2, Gdx.graphics.getHeight()-game.font.getXHeight());

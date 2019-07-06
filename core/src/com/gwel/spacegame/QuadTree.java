@@ -28,7 +28,7 @@ public class QuadTree {
 		// Ignore objects that do not belong in this quad tree
 		if (!boundary.containsPoint(p.getPosition()))
 			return false;
-
+//		System.out.println(p.getPosition());
 		// If there is space in this quad tree and if doesn't have subdivisions, add the object here
 		if (element == null && nw == null) {
 			this.element = p;

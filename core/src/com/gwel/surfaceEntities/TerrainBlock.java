@@ -23,6 +23,7 @@ public class TerrainBlock {
 	public float leftBoundary, rightBoundary;
 	public HeightArray[] heightArrays;
 	public float[] amps;
+	private float tmpFloat;
 	
 	public TerrainBlock(Vector2 position, HeightArray[] heightArrays, float[] amps, float leftCoord, float rightCoord, Color color) {
 		this.position.set(position);
@@ -52,29 +53,31 @@ public class TerrainBlock {
 		xCoords.add(rightCoord+0.01f);	// add rightmost boundary coordinate
 		Collections.sort(xCoords);
 		
-		// Remove duplicate coords:
+		// Remove duplicate coords
 		ArrayList<Float> tmpArray = new ArrayList<Float>();
 		float lastItem = xCoords.get(0);
-		float curItem;
 		tmpArray.add(lastItem);
 		for (int i=1; i<xCoords.size(); i++) {
-			curItem = xCoords.get(i);
-			if (Math.abs(lastItem-curItem) > 0.01f)	tmpArray.add(curItem);
-			lastItem = curItem;
+			tmpFloat = xCoords.get(i);
+			if (Math.abs(lastItem-tmpFloat) > 0.01f)	tmpArray.add(tmpFloat);
+			lastItem = tmpFloat;
 		}
 		xCoords = tmpArray;
 		
 		// Now convert every horizontal coordinate to a height value
 		coords = new Vector2[xCoords.size()];
 		int i = 0;
-		float yCoord;
 		for (float xCoord: xCoords) {
-			yCoord = 0.0f;
-			for (int j=0; j<heightArrays.length; j++)
-				yCoord += amps[j] * heightArrays[j].getHeight(xCoord); // we should multiply by amp
-			coords[i++] = new Vector2(xCoord-leftCoord, yCoord);
+			coords[i++] = new Vector2(xCoord-leftCoord, getHeight(xCoord));
 		}
 		//System.out.println(xCoords);
+	}
+	
+	public float getHeight(float xPos) {
+		tmpFloat = 0.0f;
+		for (int j=0; j<heightArrays.length; j++)
+			tmpFloat += amps[j] * heightArrays[j].getHeight(xPos);
+		return tmpFloat;
 	}
 	
 	public void initBody(World world) {

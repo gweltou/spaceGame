@@ -16,7 +16,7 @@ public abstract class PhysicBody implements MovingObject, Collidable {
 	protected float angleVel;
 	public boolean disposable;
 
-	PhysicBody(Vector2 pos, float angle) {
+	protected PhysicBody(Vector2 pos, float angle) {
 		position = pos.cpy();
 		this.angle = angle;
 		velocity = new Vector2();

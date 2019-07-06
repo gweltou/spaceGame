@@ -44,7 +44,7 @@ public class Satellite extends PhysicBody {
 	public void render(MyRenderer renderer) {
 		//System.out.println("Rendering satellite");
 		renderer.setColor(color);
-		renderer.circle(getPosition(), radius);
+		renderer.circleOpt(getPosition(), radius);
 	}
 
 	@Override

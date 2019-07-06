@@ -96,13 +96,12 @@ public class SpaceGame extends Game {
 		generator.setSeed((long) 6.0f);
 		godNames = new ArrayList<ArrayList<String>>();
 		loadGodNames();
-		AABB universe_boundary = new AABB(new Vector2(0, 0), new Vector2(UNIVERSE_SIZE, UNIVERSE_SIZE));
+		AABB universe_boundary = new AABB(new Vector2(-UNIVERSE_SIZE/2, -UNIVERSE_SIZE/2), new Vector2(UNIVERSE_SIZE/2, UNIVERSE_SIZE/2));
 		Qt = new QuadTree(universe_boundary);
 		populateUniverse(Qt);
 		
-		Vector2 universeCenter = new Vector2(UNIVERSE_SIZE/2, UNIVERSE_SIZE/2);
 		camera = new MyCamera(Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
-		camera.setCenter(universeCenter);
+		//camera.setCenter();
 		camera.update();
 		renderer = new MyRenderer(camera);
 		batch = new SpriteBatch();
@@ -115,7 +114,7 @@ public class SpaceGame extends Game {
 		parameter.size = 24;
 		fontHUD = fontGenerator.generateFont(parameter);
 		
-		ship = new Spaceship(universeCenter);
+		ship = new Spaceship(new Vector2());
 		
 		spaceScreen = new ScreenInSpace(this);
 		setScreen(spaceScreen);
@@ -167,7 +166,9 @@ public class SpaceGame extends Game {
 		long start_time = TimeUtils.millis();
 		int i=0;
 		while (i<Const.NUMBER_PLANETS) {
-			Vector2 position = new Vector2(generator.nextFloat()*UNIVERSE_SIZE, generator.nextFloat()*UNIVERSE_SIZE);
+			Vector2 position = new Vector2(generator.nextFloat()*UNIVERSE_SIZE - UNIVERSE_SIZE/2,
+					generator.nextFloat()*UNIVERSE_SIZE - UNIVERSE_SIZE/2);
+			
 			float radius = generator.nextFloat() * (Const.PLANET_MAX_RADIUS-Const.PLANET_MIN_RADIUS) + Const.PLANET_MIN_RADIUS;
 
 			// Check if other planets are near this position
@@ -207,7 +208,7 @@ public class SpaceGame extends Game {
 			for (String line: lines) {
 				String name = line.split("\t")[0];
 				//name = name.strip();
-				if (!name.isEmpty()) {
+				if (!name.isEmpty() && !name.startsWith("#")) {
 					num++;
 					array.add(name);
 				}
@@ -258,7 +259,7 @@ public class SpaceGame extends Game {
 
 		// Add something in the end
 		if (generator.nextFloat() < 0.2) {
-			String[] romanNums = {"II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X", "XI", "XII", "XIII", "XIV", "XV"};
+			String[] romanNums = {"Prime", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X", "XI", "XII", "XIII", "XIV", "XV"};
 			String str = null;
 			r = generator.nextFloat();
 			if (r < 0.1f) {

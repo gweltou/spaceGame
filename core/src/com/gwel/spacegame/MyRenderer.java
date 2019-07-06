@@ -11,6 +11,7 @@ import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Matrix4;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.utils.GdxRuntimeException;
+import com.gwel.spacegame.MyShapeRenderer.ShapeType;
 
 public class MyRenderer {
 	public static final String VERT_SHADER =  
@@ -200,13 +201,40 @@ public class MyRenderer {
 	public void texturedSquare(float xPos, float yPos, float width, float height, Vector2 uv0, Vector2 uv1, Vector2 uv2) {	}
 	
 	
-	/** Calls circle(Vector2, float, int)} by estimating the number of segments needed for a smooth circle. */
-	public void circle (Vector2 pos, float radius) {
-		circle(pos, radius, Math.max(1,  ((int) Math.sqrt(radius*camera.PPU))<<2 ));
+	/** Calls circleOpt(Vector2, float, int)} by estimating the number of segments needed for a smooth circle. */
+	public void circleOpt (Vector2 pos, float radius) {
+		circleOpt(pos, radius, Math.max(1,  ((int) Math.sqrt(radius*camera.PPU))<<2 ));
 	}
 
+	/** Calls circle(Vector2, float, int)} by estimating the number of segments needed for a smooth circle. */
+	public void circle (Vector2 pos, float radius) {
+		circle(pos.x, pos.y, radius, Math.max(1,  ((int) Math.sqrt(radius*camera.PPU))<<2 ));
+	}
+	
+	public void circle (float x, float y, float radius, int segments) {
+		if (segments <= 0) throw new IllegalArgumentException("segments must be > 0.");
+		float angle = 2 * MathUtils.PI / segments;
+		float cos = MathUtils.cos(angle);
+		float sin = MathUtils.sin(angle);
+		float cx = radius, cy = 0;
+		float newX, newY;
+		
+		segments--;
+		for (int i = 0; i < segments; i++) {
+			newX = cos * cx - sin * cy;
+			newY = sin * cx + cos * cy;
+			triangle(x, y, x + cx, y + cy, x + newX, y + newY);
+			cx = newX;
+			cy = newY;
+		}
+		// Ensure the last segment is identical to the first.
+		newX = radius;
+		newY = 0;
+		triangle(x, y, x + cx, y + cy, x + newX, y + newY);
+	}
+	
 	/** Draws a circle using {@link ShapeType#Line} or {@link ShapeType#Filled}. */
-	public void circle (Vector2 pos, final float radius, final int segments) {
+	public void circleOpt (Vector2 pos, final float radius, final int segments) {
 		if (segments <= 0) throw new IllegalArgumentException("segments must be > 0.");
 		//float colorBits = color.toFloatBits();
 		
@@ -220,6 +248,7 @@ public class MyRenderer {
 		float angle = 2 * MathUtils.PI / segments;
 		double cos = Math.cos(angle);
 		double sin = Math.sin(angle);
+		double newX, newY;
 		Vector2 rotated = pos.cpy();
 		rotated.sub(camera.center);
 		rotated.rotate(-camera.angle);
@@ -233,8 +262,8 @@ public class MyRenderer {
 				double cy = 0;
 				// Draw a quarter circle only
 				for (int i=0; i<segments/4; i++) {
-					double newX = cx*cos - cy*sin;
-					double newY = cx*sin + cy*cos;
+					newX = cx*cos - cy*sin;
+					newY = cx*sin + cy*cos;
 					//triangleStrip(x+pos.x, camera.sw.y, newX+pos.x, newY+pos.y);
 					triangle(pos.x, pos.y,(float) cx+pos.x,(float) cy+pos.y,(float) newX+pos.x,(float) newY+pos.y);
 					cx = newX;
@@ -247,8 +276,8 @@ public class MyRenderer {
 				double cy = -radius;
 				// Draw a quarter circle only
 				for (int i=0; i<segments/4; i++) {
-					double newX = cx*cos - cy*sin;
-					double newY = cx*sin + cy*cos;
+					newX = cx*cos - cy*sin;
+					newY = cx*sin + cy*cos;
 					//triangleStrip(x+pos.x, camera.sw.y, newX+pos.x, newY+pos.y);
 					triangle(pos.x, pos.y,(float) cx+pos.x,(float) cy+pos.y,(float) newX+pos.x,(float) newY+pos.y);
 					cx = newX;
@@ -261,8 +290,8 @@ public class MyRenderer {
 				double cy = -radius;
 				// Draw a half circle only
 				for (int i=0; i<segments/2; i++) {
-					double newX = cx*cos - cy*sin;
-					double newY = cx*sin + cy*cos;
+					newX = cx*cos - cy*sin;
+					newY = cx*sin + cy*cos;
 					//triangleStrip(x+pos.x, camera.sw.y, newX+pos.x, newY+pos.y);
 					triangle(pos.x, pos.y,(float) cx+pos.x,(float) cy+pos.y,(float) newX+pos.x,(float) newY+pos.y);
 					cx = newX;
@@ -278,8 +307,8 @@ public class MyRenderer {
 				double y = radius;
 				// Draw a quarter circle only
 				for (int i=0; i<segments/4; i++) {
-					double newX = x*cos - y*sin;
-					double newY = x*sin + y*cos;
+					newX = x*cos - y*sin;
+					newY = x*sin + y*cos;
 					//triangleStrip(x+pos.x, camera.sw.y, newX+pos.x, newY+pos.y);
 					triangle(pos.x, pos.y,(float) x+pos.x,(float) y+pos.y,(float) newX+pos.x,(float) newY+pos.y);
 					x = newX;
@@ -292,8 +321,8 @@ public class MyRenderer {
 				double cy = 0;
 				// Draw a quarter circle only
 				for (int i=0; i<segments/4; i++) {
-					double newX = cx*cos - cy*sin;
-					double newY = cx*sin + cy*cos;
+					newX = cx*cos - cy*sin;
+					newY = cx*sin + cy*cos;
 					//triangleStrip(x+pos.x, camera.sw.y, newX+pos.x, newY+pos.y);
 					triangle(pos.x, pos.y,(float) cx+pos.x,(float) cy+pos.y,(float) newX+pos.x,(float) newY+pos.y);
 					cx = newX;
@@ -306,8 +335,8 @@ public class MyRenderer {
 				double cy = radius;
 				// Draw a half circle only
 				for (int i=0; i<segments/2; i++) {
-					double newX = cx*cos - cy*sin;
-					double newY = cx*sin + cy*cos;
+					newX = cx*cos - cy*sin;
+					newY = cx*sin + cy*cos;
 					//triangleStrip(x+pos.x, camera.sw.y, newX+pos.x, newY+pos.y);
 					triangle(pos.x, pos.y,(float) cx+pos.x,(float) cy+pos.y,(float) newX+pos.x,(float) newY+pos.y);
 					cx = newX;
@@ -321,8 +350,8 @@ public class MyRenderer {
 			double cy = 0;
 			// Draw a half circle only
 			for (int i=0; i<segments/2; i++) {
-				double newX = cx*cos - cy*sin;
-				double newY = cx*sin + cy*cos;
+				newX = cx*cos - cy*sin;
+				newY = cx*sin + cy*cos;
 				//triangleStrip(x+pos.x, camera.sw.y, newX+pos.x, newY+pos.y);
 				triangle(pos.x, pos.y,(float) cx+pos.x,(float) cy+pos.y,(float) newX+pos.x,(float) newY+pos.y);
 				cx = newX;
@@ -335,8 +364,8 @@ public class MyRenderer {
 			double cy = 0;
 			// Draw a half circle only
 			for (int i=0; i<segments/2; i++) {
-				double newX = cx*cos - cy*sin;
-				double newY = cx*sin + cy*cos;
+				newX = cx*cos - cy*sin;
+				newY = cx*sin + cy*cos;
 				//triangleStrip(x+pos.x, camera.sw.y, newX+pos.x, newY+pos.y);
 				triangle(pos.x, pos.y,(float) cx+pos.x,(float) cy+pos.y,(float) newX+pos.x,(float) newY+pos.y);
 				cx = newX;
@@ -347,8 +376,8 @@ public class MyRenderer {
 			// Circle center is in the viewport
 			double cx = radius;
 			double cy = 0;
-			double newX = 0;
-			double newY = 0;
+			newX = 0;
+			newY = 0;
 			for (int i = 0; i < segments-1; i++) {
 				newX = cos*cx - sin*cy;
 				newY = sin*cx + cos*cy;

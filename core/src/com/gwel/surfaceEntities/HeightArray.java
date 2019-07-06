@@ -9,23 +9,26 @@ public class HeightArray {
 	public float span;
 	public float[] values;
 	public float vpu;
+	private float wrap;
 	
-	public HeightArray(RandomXS128 generator, float span, float vpu) {
+	public HeightArray(RandomXS128 generator, float span, float vpu, float wrap) {
 		// span : length covered by the height array (in game units)
 		// vpu	: values per game unit (value density)
 		this.span = span;
 		this.vpu = vpu;
+		this.wrap = wrap;
 		int numValues = MathUtils.ceil(span * vpu);
 		values = new float[numValues];
 		for (int i=0; i<numValues; i++) {
 			values[i] = generator.nextFloat();
 		}
-		System.out.println("new Height Array");
 		System.out.println("span " + span);
 		System.out.println("num values " + numValues);
 	}
 	
 	public float getHeight(float x) {
+		x %= wrap;
+		if (x < 0)	x += wrap;
 		// Calculate a decimal index (between 0 and values.length) from x
 		float floatIdx = values.length * (x%span) / span;
 		// Wrap around if index is negative

@@ -1,14 +1,14 @@
-package com.gwel.entities;
+package com.gwel.surfaceEntities;
 
 import com.badlogic.gdx.math.Affine2;
 import com.badlogic.gdx.math.Vector2;
-import com.badlogic.gdx.physics.box2d.Body;
 import com.badlogic.gdx.physics.box2d.BodyDef;
 import com.badlogic.gdx.physics.box2d.Fixture;
 import com.badlogic.gdx.physics.box2d.FixtureDef;
 import com.badlogic.gdx.physics.box2d.PolygonShape;
 import com.badlogic.gdx.physics.box2d.BodyDef.BodyType;
 import com.badlogic.gdx.physics.box2d.World;
+import com.gwel.entities.PhysicBody;
 import com.gwel.spacegame.Enums;
 import com.gwel.spacegame.MyRenderer;
 
@@ -26,7 +26,7 @@ public class LandedPlayer extends PhysicBody {
 		
 		// Set shape triangles
 		triangles = new float[1][10];
-		float[] triangle = {-1.0f, 0.0f, 1.0f, 0.0f, 0.0f, 2.0f, 1.0f, 1.0f, 1.0f, 1.0f};
+		float[] triangle = {-0.5f, 0.0f, 0.5f, 0.0f, 0.0f, 1.0f, 1f, 1f, 1f, 1f};
 		triangles[0] = triangle;
 		transform = new Affine2();
 	}
@@ -46,7 +46,7 @@ public class LandedPlayer extends PhysicBody {
 		body.setUserData(this);
 		
 		PolygonShape boxShape = new PolygonShape();
-		boxShape.setAsBox(2.0f, 0.5f);
+		boxShape.set(triangles[0]);
 		FixtureDef fixtureDef = new FixtureDef();
 		fixtureDef.shape = boxShape;
 		fixtureDef.density = 1.0f; 
@@ -65,7 +65,7 @@ public class LandedPlayer extends PhysicBody {
 	}
 	
 	public void move(Vector2 dir) {
-		body.applyLinearImpulse(dir, body.getWorldCenter(), true);
+		body.applyLinearImpulse(dir.limit2(0.1f), body.getWorldCenter(), true);
 	}
 
 	@Override

@@ -33,8 +33,7 @@ public class Planet implements Collidable {
 		radius = rad;
 		this.seed = seed;
 		RandomXS128 generator = new RandomXS128(seed);
-		
-		colorHue = generator.nextFloat();
+		colorHue = generator.nextFloat()*360.0f;
 		colorSat = generator.nextFloat();
 		colorVal = generator.nextFloat();
 		color = new Color().fromHsv(colorHue, colorSat, colorVal);
@@ -135,7 +134,7 @@ public class Planet implements Collidable {
 	    }*/
 		//System.out.println("rendering planet");
 		renderer.setColor(color);
-		renderer.circle(getPosition(), radius);	
+		renderer.circleOpt(getPosition(), radius);	
 	}
 
 	public void dispose() {
