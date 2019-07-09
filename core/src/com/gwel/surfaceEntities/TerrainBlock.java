@@ -102,13 +102,17 @@ public class TerrainBlock {
 		position.add(travelling);
 	}
 	
+	public void addTree(XenoTree tree) {
+		trees.add(tree);
+	}
+	
 	public void render(MyRenderer renderer, float screenBottom, float scale) {
 		for (XenoTree tree: trees) {
 			tree.render(renderer);
 		}
 		for (Vector2 point: coords) {
 			renderer.setColor(color);
-			renderer.triangleStrip(position.x+point.x*scale, screenBottom, position.x+point.x*scale, position.y+point.y);
+			renderer.triangleStrip(position.x+point.x, screenBottom, position.x+point.x, position.y+point.y);
 			//renderer.flush(); // This doesn't work for some reason
 		}
 	}

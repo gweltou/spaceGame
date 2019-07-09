@@ -65,7 +65,7 @@ public class ScreenOnPlanet implements Screen {
 		System.out.println("Sun local position : " + sunHPos);
 		
 		// TREE MANAGER
-		xtm = new XenoTreeManager(game.generator, surfaceLength);
+		xtm = new XenoTreeManager(game.generator, world, surfaceLength);
 		
 		// GENERATE TERRAIN DATA
 		HeightArray[] hArrays = {

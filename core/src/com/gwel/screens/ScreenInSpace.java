@@ -370,7 +370,7 @@ public class ScreenInSpace implements Screen {
 				game.camera.ne.cpy().add(Const.PLANET_MAX_RADIUS, Const.PLANET_MAX_RADIUS));
 		
 		float shipSpaceAngle = game.ship.getPosition().angle();
-		spaceColor.fromHsv(shipSpaceAngle, 0.2f, 1.0f);
+		spaceColor.fromHsv(shipSpaceAngle, 0.15f, 1.0f);
 		
 		Gdx.gl.glClearColor(spaceColor.r, spaceColor.g, spaceColor.b, 1f);
 		Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
