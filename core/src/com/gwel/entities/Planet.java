@@ -35,7 +35,7 @@ public class Planet implements Collidable {
 		RandomXS128 generator = new RandomXS128(seed);
 		colorHue = generator.nextFloat()*360.0f;
 		colorSat = generator.nextFloat();
-		colorVal = generator.nextFloat();
+		colorVal = generator.nextFloat()*0.8f;
 		color = new Color().fromHsv(colorHue, colorSat, colorVal);
 		color.a = 1.0f; // We need to set the alpha component manually, for some reason
 		

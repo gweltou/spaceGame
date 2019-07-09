@@ -24,6 +24,7 @@ public class TerrainBlock {
 	public HeightArray[] heightArrays;
 	public float[] amps;
 	private float tmpFloat;
+	private ArrayList<XenoTree> trees = new ArrayList<XenoTree>();
 	
 	public TerrainBlock(Vector2 position, HeightArray[] heightArrays, float[] amps, float leftCoord, float rightCoord, Color color) {
 		this.position.set(position);
@@ -95,21 +96,26 @@ public class TerrainBlock {
 		solidTerrainShape.dispose();
 	}
 	
-	public void updateParallaxPosition(Vector2 travelling, float factor) {
+	public void updateParallaxPosition(Vector2 travelling) {
 		// That'a a shitty to update the TerrainBlock's position according to the camera translation
 		// so it looks like it's on a different depth
-		position.add(travelling.scl(1.0f-factor));
+		position.add(travelling);
 	}
 	
-	public void render(MyRenderer renderer, float screenBottom) {
+	public void render(MyRenderer renderer, float screenBottom, float scale) {
+		for (XenoTree tree: trees) {
+			tree.render(renderer);
+		}
 		for (Vector2 point: coords) {
 			renderer.setColor(color);
-			renderer.triangleStrip(position.x+point.x, screenBottom, position.x+point.x, position.y+point.y);
+			renderer.triangleStrip(position.x+point.x*scale, screenBottom, position.x+point.x*scale, position.y+point.y);
 			//renderer.flush(); // This doesn't work for some reason
 		}
 	}
 	
 	public void dispose() {
+		for (XenoTree tree: trees)
+			tree.dispose();
 		if (terrainBody != null)	terrainBody.getWorld().destroyBody(terrainBody);
 	}
 }

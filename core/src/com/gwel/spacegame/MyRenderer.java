@@ -1,5 +1,7 @@
 package com.gwel.spacegame;
 
+import java.util.ArrayDeque;
+
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.GL20;
@@ -7,13 +9,15 @@ import com.badlogic.gdx.graphics.Mesh;
 import com.badlogic.gdx.graphics.VertexAttribute;
 import com.badlogic.gdx.graphics.VertexAttributes.Usage;
 import com.badlogic.gdx.graphics.glutils.ShaderProgram;
+import com.badlogic.gdx.math.Affine2;
 import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Matrix4;
 import com.badlogic.gdx.math.Vector2;
+import com.badlogic.gdx.utils.Disposable;
 import com.badlogic.gdx.utils.GdxRuntimeException;
-import com.gwel.spacegame.MyShapeRenderer.ShapeType;
 
-public class MyRenderer {
+
+public class MyRenderer implements Disposable {
 	public static final String VERT_SHADER =  
 			"attribute vec2 a_position;\n" +
 			"attribute vec4 a_color;\n" +			
@@ -32,7 +36,6 @@ public class MyRenderer {
 			"void main() {\n" +  
 			"	gl_FragColor = vColor;\n" + 
 			"}";
-	
 	
 	protected static ShaderProgram createShaderProgram(String vertexShader, String fragShader) {
 		ShaderProgram.pedantic = false;
@@ -59,7 +62,7 @@ public class MyRenderer {
 	private float[] verts_triangle = new float[3*MAX_TRIS * (2+4)];	// POSITION_ATTRIBUTE + COLOR_ATTRIBUTE
 	private float[] verts_trianglestrip = new float[2*MAX_TRIS * (2+4)];	// POSITION_ATTRIBUTE + COLOR_ATTRIBUTE
 
-	//The index position
+	//The index positions
 	private int iTriangle;
 	private int iTrianglestrip;
 	
@@ -72,11 +75,14 @@ public class MyRenderer {
 	private final Matrix4 transformMatrix = new Matrix4();
 	private final Matrix4 combinedMatrix = new Matrix4();
 	private boolean matrixDirty = false;
+	private final ArrayDeque<Affine2> matrixStack = new ArrayDeque<Affine2>();
+	private final Vector2 tmpv1 = new Vector2();
+	private final Vector2 tmpv2 = new Vector2();
+	private final Vector2 tmpv3 = new Vector2();
 	
 	
 	public MyRenderer(MyCamera camera) {
 		this.camera = camera;
-		
 		iTriangle = 0;
 		iTrianglestrip = 0;
 		meshTriangles = new Mesh(true, 3*MAX_TRIS, 0, 
@@ -91,6 +97,10 @@ public class MyRenderer {
 		System.out.println("Renderer created");
 	}
 
+	public void setCamera(MyCamera cam) {
+		camera = cam;
+	}
+	
 	public void setColor(float r, float g, float b, float a) {
 		this.color.set(r, g, b, a);
 	}
@@ -104,13 +114,13 @@ public class MyRenderer {
 		matrixDirty = true;
 	}
 	
-	public void setTransformMatrix (Matrix4 matrix) {
+	public void setTransformMatrix(Matrix4 matrix) {
 		transformMatrix.set(matrix);
 		matrixDirty = true;
 	}
 	
 	/** Sets the transformation matrix to identity. */
-	public void identity () {
+	public void identity() {
 		transformMatrix.idt();
 		matrixDirty = true;
 	}
@@ -133,15 +143,37 @@ public class MyRenderer {
 		matrixDirty = true;
 	}
 	
+	public void pushMatrix(Affine2 matrix) {
+		Affine2 cpy = new Affine2();
+		cpy.set(matrix);
+		if (matrixStack.isEmpty()) {
+			matrixStack.push(cpy);
+		} else {
+			matrixStack.push(cpy.mul(matrixStack.getFirst()));
+		}
+		//System.out.println("push");
+	}
+	
+	public void popMatrix() {
+		matrixStack.pop();
+		//System.out.println("pop");
+	}
+	
 	public void triangle(Vector2 p1, Vector2 p2, Vector2 p3) {
-		triangle(p1.x, p1.y, p2.x, p2.y, p3.x, p3.y, color);
+		if (matrixStack.isEmpty()) {
+			triangle(p1.x, p1.y, p2.x, p2.y, p3.x, p3.y);
+		} else {
+			tmpv1.set(p1);
+			tmpv2.set(p2);
+			tmpv3.set(p3);
+			matrixStack.getFirst().applyTo(tmpv1);
+			matrixStack.getFirst().applyTo(tmpv2);
+			matrixStack.getFirst().applyTo(tmpv3);
+			triangle(tmpv1.x, tmpv1.y, tmpv2.x, tmpv2.y, tmpv3.x, tmpv3.y);
+		}
 	}
 	
 	public void triangle(float x1, float y1, float x2, float y2, float x3, float y3) {
-		triangle(x1, y1, x2, y2, x3, y3, color);
-	}
-	
-	public void triangle(float x1, float y1, float x2, float y2, float x3, float y3, Color color) {
 		//we don't want to hit any index out of bounds exception...
 		//so we need to flush the batch if we can't store any more verts
 		if (iTriangle==verts_triangle.length)

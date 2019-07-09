@@ -1,7 +1,5 @@
 package com.gwel.screens;
 
-import java.util.ArrayDeque;
-
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Screen;
 import com.badlogic.gdx.Input.Keys;
@@ -18,14 +16,13 @@ import com.gwel.entities.Spaceship;
 import com.gwel.spacegame.MyCamera;
 import com.gwel.spacegame.SpaceGame;
 import com.gwel.spacegame.utils;
+import com.gwel.surfaceEntities.XenoTreeManager;
 import com.gwel.surfaceEntities.HeightArray;
 import com.gwel.surfaceEntities.LandedPlayer;
-import com.gwel.surfaceEntities.TerrainBlock;
+import com.gwel.surfaceEntities.TerrainLayer;
 
 public class ScreenOnPlanet implements Screen {
-	private final static float TERRAIN_BLOCK_WIDTH = 100.0f;	// in game units
 	private final static int NUM_PARALLAX_LAYERS = 6;
-	private final static float TERRAIN_BLOCK_SPAWN_RADIUS = 100.0f;	// in game units
 	final SpaceGame game;
 	private MyCamera camera;
 	private World world;
@@ -39,19 +36,21 @@ public class ScreenOnPlanet implements Screen {
 	private Spaceship ship;
 	private boolean showShip = false;
 	private final static float SUN_SIZE = 200f;
-	
+	private static XenoTreeManager xtm;
+		
 	// Terrain data
-	private final ArrayDeque<TerrainBlock>[] parallaxLayers;
-	//HeightArray primaryHeightArray;
-	//TerrainBlock parallaxBlock1;
-	//TerrainBlock parallaxBlock2;
+	private TerrainLayer[]	parallaxLayers;
+	private TerrainLayer	walkingLayer;
+	
 	
 	public ScreenOnPlanet(final SpaceGame game, Planet p) {
 		this.game = game;
 		world = new World(new Vector2(0.0f, -10.0f), true);
 		camera = new MyCamera(Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
 		camera.zoomTo(100.0f);
+		game.renderer.setCamera(camera);
 		planet = p;
+		game.generator.setSeed(planet.seed);
 		strName = game.getPlanetName(planet.seed);
 		layoutName = new GlyphLayout();
 		layoutName.setText(game.font, strName);
@@ -65,9 +64,10 @@ public class ScreenOnPlanet implements Screen {
 		sunHPos = surfaceLength * planet.getPosition().angleRad()/MathUtils.PI2;
 		System.out.println("Sun local position : " + sunHPos);
 		
+		// TREE MANAGER
+		xtm = new XenoTreeManager(game.generator, surfaceLength);
+		
 		// GENERATE TERRAIN DATA
-		parallaxLayers = new ArrayDeque[NUM_PARALLAX_LAYERS];
-		game.generator.setSeed(planet.seed);
 		HeightArray[] hArrays = {
 				new HeightArray(game.generator, surfaceLength, 0.001f, surfaceLength),
 				new HeightArray(game.generator, surfaceLength/3, 0.1f, surfaceLength),
@@ -75,28 +75,14 @@ public class ScreenOnPlanet implements Screen {
 				new HeightArray(game.generator, 10.0f, 3f, surfaceLength)};
 		float[] amps = {20f, 8f, 1.0f, 0.15f};
 		
-		Vector2 blockPos = new Vector2(landingHPos-50, 0.0f);
-		TerrainBlock terrainBlock;
-		terrainBlock = new TerrainBlock(blockPos, hArrays, amps, blockPos.x, blockPos.x+100, planet.color);
-		terrainBlock.initBody(world);
-		ArrayDeque<TerrainBlock> terrainLayer = new ArrayDeque<TerrainBlock>();
-		terrainLayer.add(terrainBlock);
-		parallaxLayers[0] = terrainLayer;
-		Color col = new Color();
-		col.a = 1.0f;
-		float colVal = planet.colorVal;
-		for (int i=1; i<parallaxLayers.length; i++) {
-			for (int j=0; j<amps.length; j++)
-				amps[j] = game.generator.nextFloat() * (float) i;
-			float colSat = planet.colorSat*((float) Math.pow(0.6f, i));
-			colVal += (1.0f-colVal)*((float) Math.pow(0.4f, i));
-			col.fromHsv(planet.colorHue, colSat, colVal);
-			terrainBlock = new TerrainBlock(blockPos.add(0.0f, 1f), hArrays, amps, blockPos.x, blockPos.x+TERRAIN_BLOCK_WIDTH, col);
-			terrainLayer = new ArrayDeque<TerrainBlock>();
-			terrainLayer.add(terrainBlock);
-			parallaxLayers[i] = terrainLayer;
+		Vector2 blockPos = new Vector2(landingHPos-50f, 0.0f);
+		walkingLayer = new TerrainLayer(game.generator, world, surfaceLength, hArrays, amps, blockPos, 1f, xtm, true, true, planet.color);
+		parallaxLayers = new TerrainLayer[NUM_PARALLAX_LAYERS];
+		for (int i=0; i<NUM_PARALLAX_LAYERS; i++) {
+			float scale = (float) Math.pow(0.5f, i+1);
+			parallaxLayers[i] = new TerrainLayer(game.generator, world, surfaceLength, hArrays, amps, blockPos, scale, xtm, false, false, planet.color);
 		}
-		
+				
 		// Regenerating ship
 		game.ship.hitpoints = game.ship.MAX_HITPOINTS;
 		game.ship.ammunition = game.ship.MAX_AMMUNITION;
@@ -106,7 +92,7 @@ public class ScreenOnPlanet implements Screen {
 		game.camera.rotateTo(cameraRotate);
 		
 		// Create a mock-up ship to draw
-		float spawningHeight = parallaxLayers[0].getFirst().getHeight(landingHPos)+2f;
+		float spawningHeight = walkingLayer.getHeight(landingHPos)+2f;
 		ship = new Spaceship(new Vector2(landingHPos, spawningHeight));
 		ship.setAngle(game.ship.getAngle()-landingPointAngle);
 		//ship.initBody(world);
@@ -122,8 +108,8 @@ public class ScreenOnPlanet implements Screen {
 		game.camera.rotateTo(0.0f);
 		player.dispose();
 		ship.dispose();
-		for (ArrayDeque<TerrainBlock> layer: parallaxLayers) {
-			for (TerrainBlock block: layer)	block.dispose();
+		for (TerrainLayer layer: parallaxLayers) {
+			layer.dispose();
 		}
 		world.dispose();
 		System.out.println("Planet screen disposed");
@@ -162,56 +148,6 @@ public class ScreenOnPlanet implements Screen {
 			camera.glideTo(player.getPosition().add(0f, 100.0f/camera.PPU));
 			camera.update();
 			
-			// Update terrain blocks
-			for (ArrayDeque<TerrainBlock> pl: parallaxLayers) {
-				TerrainBlock leftb = pl.getFirst();
-				TerrainBlock rightb = pl.getLast();
-				// Add a terrain block on the left if needed
-				if (player.getPosition().x - leftb.position.x < TERRAIN_BLOCK_SPAWN_RADIUS) {
-					Vector2 blockPos = new Vector2(leftb.position.x-TERRAIN_BLOCK_WIDTH, leftb.position.y);
-					TerrainBlock newBlock = new TerrainBlock(blockPos,
-							leftb.heightArrays, leftb.amps,
-							leftb.leftBoundary-TERRAIN_BLOCK_WIDTH,
-							leftb.rightBoundary-TERRAIN_BLOCK_WIDTH,
-							leftb.color);
-					// Initialize collision layer if needed
-					if (leftb.terrainBody != null)	newBlock.initBody(world);
-					pl.addFirst(newBlock);
-					leftb = newBlock;
-					//System.out.println("Added left");
-							
-					// Remove rightmost terrain block if needed
-					if (rightb.position.x - player.getPosition().x > TERRAIN_BLOCK_SPAWN_RADIUS) {
-						rightb.dispose();
-						pl.removeLast();
-						rightb = pl.getLast();
-						//System.out.println("Removed right");
-					}
-				}
-				// Add a terrain block on the right if needed
-				if (rightb.position.x + TERRAIN_BLOCK_WIDTH - player.getPosition().x < TERRAIN_BLOCK_SPAWN_RADIUS) {
-					Vector2 blockPos = new Vector2(rightb.position.x+TERRAIN_BLOCK_WIDTH, rightb.position.y);
-					TerrainBlock newBlock = new TerrainBlock(blockPos,
-							rightb.heightArrays, rightb.amps,
-							rightb.leftBoundary+TERRAIN_BLOCK_WIDTH,
-							rightb.rightBoundary+TERRAIN_BLOCK_WIDTH,
-							rightb.color);
-					// Initialize collision layer if needed
-					if (leftb.terrainBody != null)	newBlock.initBody(world);
-					pl.addLast(newBlock);
-					rightb = newBlock;
-					//System.out.println("Added right");
-							
-					// Remove leftmost terrain block if needed
-					if (player.getPosition().x - leftb.position.x + TERRAIN_BLOCK_WIDTH > TERRAIN_BLOCK_SPAWN_RADIUS) {
-						leftb.dispose();
-						pl.removeFirst();
-						leftb = pl.getFirst();
-						//System.out.println("Removed left");
-					}
-				}
-			}
-			
 			
 			float playerHPos = player.getPosition().x % surfaceLength;
 			if (playerHPos < 0.0f)	playerHPos += surfaceLength;
@@ -238,54 +174,48 @@ public class ScreenOnPlanet implements Screen {
 //			System.out.println("xShipPos " + xShipPos);
 //			System.out.println("dPos " + dPos);
 			if (showShip) {
-				if (dPos < -TERRAIN_BLOCK_SPAWN_RADIUS || dPos > TERRAIN_BLOCK_SPAWN_RADIUS) {
+				// Remove ship if outside player's range
+				if (dPos < -TerrainLayer.TERRAIN_BLOCK_SPAWN_RADIUS || dPos > TerrainLayer.TERRAIN_BLOCK_SPAWN_RADIUS) {
 					ship.dispose();
-					System.out.println(ship.getPosition());
 					showShip = false;
 				}
 			} else {
 				// Check if ship should be displayed
-				if (dPos > -TERRAIN_BLOCK_SPAWN_RADIUS && dPos < TERRAIN_BLOCK_SPAWN_RADIUS) {
+				if (dPos > -TerrainLayer.TERRAIN_BLOCK_SPAWN_RADIUS && dPos < TerrainLayer.TERRAIN_BLOCK_SPAWN_RADIUS) {
 					// Spawn and display ship
-					System.out.println("ship spawned");
 					ship.setPosition(new Vector2(player.getPosition().x - dPos, ship.getPosition().y));
 					ship.initBody(world);
 					showShip = true;
 				}
 			}
 			
+			// UPDATE TERRAIN LAYERS
+			for (TerrainLayer layer: parallaxLayers)
+				layer.update(player.getPosition().x);
+			walkingLayer.update(player.getPosition().x);
+			
 			Gdx.gl.glClearColor(skyColor.r, skyColor.g, skyColor.b, 1f);
 			Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
-			
 			
 			// DRAW SUN
 			game.renderer.setProjectionMatrix(normalProjection);
 			game.renderer.setColor(sunColor);
-			game.renderer.circle(sunPos, 200.0f);
+			game.renderer.circle(sunPos, SUN_SIZE);
 			game.renderer.flush();
-			
 			
 			game.renderer.setProjectionMatrix(new Matrix4().set(camera.affine));
 			// Draw terrain
-			for (int i=parallaxLayers.length-1; i>0; i--) {
-				for (TerrainBlock tb: parallaxLayers[i]) {
-					tb.updateParallaxPosition(camera.getTravelling(), 1.0f/(2<<i));
-					tb.render(game.renderer, camera.sw.y);
-					game.renderer.flush();
-				}
+			for (int i = parallaxLayers.length-1; i>=0; i--) {
+				parallaxLayers[i].updateParallaxPosition(camera.getTravelling());
+				parallaxLayers[i].render(game.renderer, camera);
 			}
-			for (TerrainBlock tb: parallaxLayers[0]) {
-				tb.render(game.renderer, camera.sw.y);
-				game.renderer.flush();
-			}
-			
-			game.renderer.flush();
+			walkingLayer.render(game.renderer, camera);
+						
 			ship.render(game.renderer);
 			player.render(game.renderer);
 			game.renderer.flush();
 			
 			// DISPLAY PLANET NAME
-			
 			game.batch.setProjectionMatrix(normalProjection);
 			game.batch.begin();
 			game.font.draw(game.batch, strName, (Gdx.graphics.getWidth()-layoutName.width)/2, Gdx.graphics.getHeight()-game.font.getXHeight());

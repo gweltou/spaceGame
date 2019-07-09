@@ -19,7 +19,6 @@ import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.physics.box2d.Contact;
 import com.badlogic.gdx.physics.box2d.Fixture;
 import com.badlogic.gdx.physics.box2d.QueryCallback;
-import com.badlogic.gdx.physics.box2d.RayCastCallback;
 import com.badlogic.gdx.physics.box2d.World;
 import com.badlogic.gdx.utils.BufferUtils;
 import com.badlogic.gdx.utils.Json;
@@ -59,6 +58,7 @@ public class ScreenInSpace implements Screen {
 	private Starfield starfield;
 	private Starfield deepfield;
 	private boolean empty;
+	private static final Color spaceColor = new Color();
 
 	
 	public ScreenInSpace(final SpaceGame game) {
@@ -369,12 +369,15 @@ public class ScreenInSpace implements Screen {
 		AABB camera_range = new AABB(game.camera.sw.cpy().sub(Const.PLANET_MAX_RADIUS, Const.PLANET_MAX_RADIUS), 
 				game.camera.ne.cpy().add(Const.PLANET_MAX_RADIUS, Const.PLANET_MAX_RADIUS));
 		
-		Gdx.gl.glClearColor(0.96f, 0.96f, 0.96f, 1f);
+		float shipSpaceAngle = game.ship.getPosition().angle();
+		spaceColor.fromHsv(shipSpaceAngle, 0.2f, 1.0f);
+		
+		Gdx.gl.glClearColor(spaceColor.r, spaceColor.g, spaceColor.b, 1f);
 		Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
 		
-		starfield.render(game.renderer);
-		deepfield.render(game.renderer);
-		
+		shipSpaceAngle = (shipSpaceAngle+180f)%360f;
+		starfield.render(game.renderer, shipSpaceAngle);
+		deepfield.render(game.renderer, shipSpaceAngle);
 		game.renderer.setProjectionMatrix(new Matrix4().set(game.camera.affine));
 		for (Planet p : game.Qt.query(camera_range)) {
 			p.render(game.renderer);
@@ -416,6 +419,7 @@ public class ScreenInSpace implements Screen {
 	public void resize(int width, int height) {
 		starfield = new Starfield(Gdx.graphics.getWidth(), Gdx.graphics.getHeight(), 0.0001f, 0.9f, 1.5f);
 		deepfield = new Starfield(Gdx.graphics.getWidth(), Gdx.graphics.getHeight(), 0.004f, 0.15f, 0.8f);
+		game.renderer.setCamera(game.camera);
 	}
 	
 	DroidPool importPool(String filename) {
