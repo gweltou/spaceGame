@@ -34,32 +34,37 @@ public class XenoTreeManager {
 		}
 		Arrays.sort(treeCoords);
 		
-		System.out.println("XenoTreeManager created with " + treeCoords.length + " coords");
+		System.out.println("XenoTreeManager created with " + treeCoords.length + " tree coords");
 	}
 	
 	XenoTree buildTree(float x, float y) {
 		generator.setSeed((long) x);
-		float width = generator.nextFloat()*10f + 2f;
-		return new XenoTree(world, x, y, width, generator);
+		float width = generator.nextFloat()*5f + 1f;
+		return new XenoTree(world, x, y, width, tp, tpm, fp, lp, null, generator);
 	}
 	
 	public float[] getCoordsBetween(float leftCoord, float rightCoord) {
+		float offset = 0f;
 		float[] coords;
 		leftCoord %= surfaceLength;
 		if (leftCoord < 0)	leftCoord += surfaceLength;
 		rightCoord %= surfaceLength;
 		if (rightCoord < 0)	rightCoord += surfaceLength;
-		int leftIndex = findLeftIndex(leftCoord);
-		int rightIndex = findLeftIndex(rightCoord) ;//% treeCoords.length;
+		int leftIndex = findLeftIndex(leftCoord) % treeCoords.length;
+		int rightIndex = findLeftIndex(rightCoord) ;//
 		System.out.println("l " + leftCoord + " r " + rightCoord);
 		System.out.println("li " + leftIndex + " ri " + rightIndex);
 		if (leftIndex > rightIndex) {
 			coords = new float[treeCoords.length - leftIndex + rightIndex];
+			System.out.println("size of coords " + coords.length);
 			int i=0;
-			while (i+leftIndex < treeCoords.length)
-				coords[i++] = treeCoords[leftIndex + i];
+			while (i+leftIndex < treeCoords.length) {
+				coords[i] = treeCoords[leftIndex + i] + offset;
+				i++;
+			}
+			System.out.println("i " + i);
 			for (int j=0; j<rightIndex; j++)
-				coords[i++] = treeCoords[j];
+				coords[i++] = treeCoords[j] = offset;
 		} else {
 			int n = rightIndex - leftIndex;
 			coords = new float[n];

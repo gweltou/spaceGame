@@ -37,6 +37,7 @@ public class ScreenOnPlanet implements Screen {
 	private boolean showShip = false;
 	private final static float SUN_SIZE = 200f;
 	private static XenoTreeManager xtm;
+	public boolean mustDispose = false;
 		
 	// Terrain data
 	private TerrainLayer[]	parallaxLayers;
@@ -164,9 +165,9 @@ public class ScreenOnPlanet implements Screen {
 			
 			// UPDATE SHIP POSITION
 			// so it wraps around the planet
-			float xShipPos = ship.getPosition().x % surfaceLength;
-			if (xShipPos < 0.0f)	xShipPos += surfaceLength;
-			dPos = playerHPos - xShipPos;
+			float shipHPos = ship.getPosition().x % surfaceLength;
+			if (shipHPos < 0.0f)	shipHPos += surfaceLength;
+			dPos = playerHPos - shipHPos;
 			if (dPos > surfaceLength/2)	dPos -= surfaceLength;
 			else if (dPos < -surfaceLength/2) dPos += surfaceLength;
 //			System.out.println("");
@@ -200,16 +201,16 @@ public class ScreenOnPlanet implements Screen {
 			// DRAW SUN
 			game.renderer.setProjectionMatrix(normalProjection);
 			game.renderer.setColor(sunColor);
-			game.renderer.circle(sunPos, SUN_SIZE);
+			game.renderer.circle(sunPos.x, sunPos.y, SUN_SIZE, 48);
 			game.renderer.flush();
 			
 			game.renderer.setProjectionMatrix(new Matrix4().set(camera.affine));
 			// Draw terrain
 			for (int i = parallaxLayers.length-1; i>=0; i--) {
 				parallaxLayers[i].updateParallaxPosition(camera.getTravelling());
-				parallaxLayers[i].render(game.renderer, camera);
+				parallaxLayers[i].render(game.renderer);
 			}
-			walkingLayer.render(game.renderer, camera);
+			walkingLayer.render(game.renderer);
 						
 			ship.render(game.renderer);
 			player.render(game.renderer);
@@ -223,6 +224,10 @@ public class ScreenOnPlanet implements Screen {
 		}
 		
 		world.step(1.0f/60f, 8, 3);
+		
+		if (mustDispose) {
+			game.takeOff();
+		}
 	}
 
 	@Override
@@ -245,15 +250,16 @@ public class ScreenOnPlanet implements Screen {
 		if (game.hasController) {
 			PovDirection pov = game.controller.getPov(0);
 			if (pov == PovDirection.north) {
-				game.camera.zoom(1.04f);
-				game.camera.autozoom = false;
+				camera.zoomIn();
+				camera.autozoom = false;
 			}
 			if (pov == PovDirection.south) {
-				game.camera.zoom(0.95f);
-				game.camera.autozoom = false;
+				camera.zoomOut();
+				camera.autozoom = false;
 			}
 			if (game.controller.getButton(game.PAD_BOOST)) {
-				game.takeOff();
+				// TAKE OFF
+				if (player.getPosition().dst2(ship.getPosition()) < 3.0f)	mustDispose = true;
 			}
 			
 			x_axis = game.controller.getAxis(game.PAD_XAXIS);
@@ -284,7 +290,7 @@ public class ScreenOnPlanet implements Screen {
 		
 		player.move(new Vector2(x_axis, y_axis));
 		if (y_axis > 0.9f) {
-			 if (Math.abs(player.getPosition().x-ship.getPosition().x) < 1.0f)	game.takeOff();
+			 
 		}
 	}
 }

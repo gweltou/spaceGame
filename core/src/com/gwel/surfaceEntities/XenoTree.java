@@ -45,7 +45,8 @@ public class XenoTree {
 		wm = new WindManager();
 	}
 	
-	XenoTree(float x, float y, float w, TreeParam tp, TreeParamMod tpm, FlowerParam fp, LeafParam lp, WindManager wm, RandomXS128 generator) {
+	XenoTree(World world, float x, float y, float w, TreeParam tp, TreeParamMod tpm, FlowerParam fp, LeafParam lp, WindManager wm, RandomXS128 generator) {
+		this.world = world;
 		this.tp = tp;
 		this.tpm = tpm;
 		this.fp = fp;

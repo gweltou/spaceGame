@@ -1,12 +1,14 @@
 package com.gwel.surfaceEntities;
 
 import java.util.ArrayDeque;
+import java.util.ArrayList;
+import java.util.Collections;
 
 import com.badlogic.gdx.graphics.Color;
+import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.RandomXS128;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.physics.box2d.World;
-import com.gwel.spacegame.MyCamera;
 import com.gwel.spacegame.MyRenderer;
 
 
@@ -21,6 +23,8 @@ public class TerrainLayer {
 	private float[] amps;
 	private XenoTreeManager xtm;
 	private boolean withTrees;
+	private float leftBoundary, rightBoundary;
+	private float tmpFloat;
 	Color color;
 	
 	
@@ -34,7 +38,6 @@ public class TerrainLayer {
 		this.withTrees = withTrees;
 		
 		// CREATE 1 INITIAL BLOCK PER LAYER
-		TerrainBlock block;
 		float[] hsv = new float[3];
 		col.toHsv(hsv);
 		float level = (float) (Math.log(scale)/Math.log(0.5));
@@ -44,13 +47,19 @@ public class TerrainLayer {
 		color = new Color();
 		color.a = 1.0f;
 		color.fromHsv(hsv[0], colSat, colVal);
-		block = new TerrainBlock(position, hArrays, amps, position.x, position.x+TERRAIN_BLOCK_WIDTH, color);
+		Vector2[] mesh = createBlockMesh(position.x, position.x+TERRAIN_BLOCK_WIDTH);
+		TerrainBlock block = new TerrainBlock(position, mesh, color);
 		if (walkable)	block.initBody(world);
 		blocks.add(block);
+		leftBoundary = position.x;
+		rightBoundary = leftBoundary + TERRAIN_BLOCK_WIDTH;
 	}
 	
 	public float getHeight(float position) {
-		return blocks.getFirst().getHeight(position);
+		tmpFloat = 0.0f;
+		for (int j=0; j<heightArrays.length; j++)
+			tmpFloat += amps[j] * heightArrays[j].getHeight(position);
+		return tmpFloat;
 	}
 	
 	public void updateParallaxPosition(Vector2 travelling) {
@@ -58,36 +67,76 @@ public class TerrainLayer {
 			tb.updateParallaxPosition(travelling.cpy().scl(1.0f-scale));
 		}
 	}
-	
-	public void render(MyRenderer renderer, MyCamera camera) {
+
+	public void render(MyRenderer renderer) {
 		for (TerrainBlock tb: blocks) {
-			tb.render(renderer, camera.sw.y, scale);
-			
+			tb.render(renderer, scale);
 		}
 		renderer.flush();
 	}
+
+	private Vector2[] createBlockMesh(float leftCoord, float rightCoord) {		
+		// CALCULATE MESH VERTICES HEIGHT COORDINATE
+		
+		ArrayList<Float> xCoords = new ArrayList<Float>();
+		xCoords.add(leftCoord-0.01f);	// Add leftmost boundary coordinate
+		for (HeightArray ha: heightArrays) {
+			// Calculate a decimal index (between 0 and values.length) of leftCoord in height Array
+			float normalizedIdx = ha.values.length * leftCoord / ha.span;
+			normalizedIdx = normalizedIdx % ha.values.length;
+			// Wrap around if index is negative
+			if (normalizedIdx < 0.0f)	normalizedIdx += ha.values.length;
+			float stepLength = ha.span / ha.values.length;	// length between each value (in game units)
+			float stepToNextIndex = ha.vpu * (MathUtils.ceil(normalizedIdx) - normalizedIdx);	// length to next integer (in game units)
+			float nextLength = leftCoord + stepToNextIndex;
+			while (nextLength < rightCoord) {
+				xCoords.add(nextLength);
+				nextLength += stepLength;
+			}
+		}
+		xCoords.add(rightCoord+0.01f);	// add rightmost boundary coordinate
+		Collections.sort(xCoords);
+
+		// Remove duplicate coords
+		ArrayList<Float> tmpArray = new ArrayList<Float>();
+		float lastItem = xCoords.get(0);
+		tmpArray.add(lastItem);
+		for (int i=1; i<xCoords.size(); i++) {
+			tmpFloat = xCoords.get(i);
+			if (Math.abs(lastItem-tmpFloat) > 0.01f)	tmpArray.add(tmpFloat);
+			lastItem = tmpFloat;
+		}
+		xCoords = tmpArray;
+
+		// Now convert every horizontal coordinate to a height value
+		Vector2[] mesh = new Vector2[xCoords.size()];
+		int i = 0;
+		for (float xCoord: xCoords) {
+			mesh[i++] = new Vector2(xCoord-leftCoord, getHeight(xCoord));
+		}
+		
+		return mesh;
+	}
 	
 	public void update(float xCoord) {
-		// xCoord is the absolute horizontal position of the player in world coordinates (no wrapping !)
 		TerrainBlock leftb = blocks.getFirst();
 		TerrainBlock rightb = blocks.getLast();
 		
+		// xCoord is the absolute horizontal position of the player in world coordinates (no wrapping !)
 		// Add a terrain block on the left if needed
 		if (xCoord - leftb.position.x < TERRAIN_BLOCK_SPAWN_RADIUS) {
+			leftBoundary -= TERRAIN_BLOCK_WIDTH;
 			Vector2 blockPos = new Vector2(leftb.position.x-TERRAIN_BLOCK_WIDTH, leftb.position.y);
-			TerrainBlock newBlock = new TerrainBlock(blockPos,
-					heightArrays, amps,
-					leftb.leftBoundary-TERRAIN_BLOCK_WIDTH,
-					leftb.rightBoundary-TERRAIN_BLOCK_WIDTH,
-					color);
+			Vector2[] mesh = createBlockMesh(leftBoundary, leftBoundary+TERRAIN_BLOCK_WIDTH);
+			TerrainBlock newBlock = new TerrainBlock(blockPos, mesh, color);			
 			// Initialize collision layer if needed
 			if (leftb.terrainBody != null)	newBlock.initBody(world);
 			// Add trees if needed
 			if (withTrees) {
-				float[] treeCoords = xtm.getCoordsBetween(newBlock.leftBoundary, newBlock.rightBoundary);
+				float[] treeCoords = xtm.getCoordsBetween(leftBoundary, leftBoundary+TERRAIN_BLOCK_WIDTH);
 				for (float c: treeCoords) {
 					generator.setSeed((long) c);
-					newBlock.addTree(xtm.buildTree(c, getHeight(c)));
+					newBlock.addTree(xtm.buildTree(c, getHeight(c)-2f));
 				}
 			}
 			blocks.addFirst(newBlock);
@@ -96,6 +145,7 @@ public class TerrainLayer {
 
 			// Remove rightmost terrain block if needed
 			if (rightb.position.x - xCoord > TERRAIN_BLOCK_SPAWN_RADIUS) {
+				rightBoundary -= TERRAIN_BLOCK_WIDTH;
 				rightb.dispose();
 				blocks.removeLast();
 				rightb = blocks.getLast();
@@ -104,20 +154,18 @@ public class TerrainLayer {
 		}
 		// Add a terrain block on the right if needed
 		if (rightb.position.x + TERRAIN_BLOCK_WIDTH - xCoord < TERRAIN_BLOCK_SPAWN_RADIUS) {
+			rightBoundary += TERRAIN_BLOCK_WIDTH;
 			Vector2 blockPos = new Vector2(rightb.position.x+TERRAIN_BLOCK_WIDTH, rightb.position.y);
-			TerrainBlock newBlock = new TerrainBlock(blockPos,
-					heightArrays, amps,
-					rightb.leftBoundary+TERRAIN_BLOCK_WIDTH,
-					rightb.rightBoundary+TERRAIN_BLOCK_WIDTH,
-					color);
+			Vector2[] mesh = createBlockMesh(rightBoundary-TERRAIN_BLOCK_WIDTH, rightBoundary);
+			TerrainBlock newBlock = new TerrainBlock(blockPos, mesh, color);
 			// Initialize collision layer if needed
 			if (leftb.terrainBody != null)	newBlock.initBody(world);
 			// Add trees if needed
 			if (withTrees) {
-				float[] treeCoords = xtm.getCoordsBetween(newBlock.leftBoundary, newBlock.rightBoundary);
+				float[] treeCoords = xtm.getCoordsBetween(rightBoundary-TERRAIN_BLOCK_WIDTH, rightBoundary);
 				for (float c: treeCoords) {
 					generator.setSeed((long) c);
-					newBlock.addTree(xtm.buildTree(c, getHeight(c)));
+					newBlock.addTree(xtm.buildTree(c, getHeight(c)-2f));
 				}
 			}
 			blocks.addLast(newBlock);
@@ -126,6 +174,7 @@ public class TerrainLayer {
 					
 			// Remove leftmost terrain block if needed
 			if (xCoord - leftb.position.x + TERRAIN_BLOCK_WIDTH > TERRAIN_BLOCK_SPAWN_RADIUS) {
+				leftBoundary += TERRAIN_BLOCK_WIDTH;
 				leftb.dispose();
 				blocks.removeFirst();
 				leftb = blocks.getFirst();

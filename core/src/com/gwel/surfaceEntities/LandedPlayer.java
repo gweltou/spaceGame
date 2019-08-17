@@ -52,7 +52,7 @@ public class LandedPlayer extends PhysicBody {
 		fixtureDef.density = 1.0f; 
 		fixtureDef.friction = 0.4f;
 		fixtureDef.restitution = 0.1f;
-		//fixtureDef.filter.categoryBits = 0x0002;
+		fixtureDef.filter.groupIndex = -1;
 		Fixture fixture = body.createFixture(fixtureDef);
 		//fixture.setUserData(Enums.SHIP);
 		boxShape.dispose();

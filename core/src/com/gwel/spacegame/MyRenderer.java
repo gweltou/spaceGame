@@ -265,7 +265,9 @@ public class MyRenderer implements Disposable {
 		triangle(x, y, x + cx, y + cy, x + newX, y + newY);
 	}
 	
-	/** Draws a circle using {@link ShapeType#Line} or {@link ShapeType#Filled}. */
+	/* 
+	 * Optimized circle (only visible quarters are drawn)
+	 */
 	public void circleOpt (Vector2 pos, final float radius, final int segments) {
 		if (segments <= 0) throw new IllegalArgumentException("segments must be > 0.");
 		//float colorBits = color.toFloatBits();
@@ -420,16 +422,6 @@ public class MyRenderer implements Disposable {
 			// Ensure the last segment is identical to the first.
 			triangle(pos.x, pos.y, (float) cx+pos.x,(float) cy+pos.y,(float) pos.x+radius, pos.y);
 		}
-	}
-
-	public void line(float x, float y, float x2, float y2) {
-		// TODO Auto-generated method stub
-
-	}
-
-	public void line(Vector2 position, Vector2 pposition) {
-		// TODO Auto-generated method stub
-		
 	}
 	
 	public void flush() {
