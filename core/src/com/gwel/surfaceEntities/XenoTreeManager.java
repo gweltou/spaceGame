@@ -34,42 +34,53 @@ public class XenoTreeManager {
 		}
 		Arrays.sort(treeCoords);
 		
-		System.out.println("XenoTreeManager created with " + treeCoords.length + " tree coords");
+		System.out.print("XenoTreeManager created with " + treeCoords.length + " tree coords");
+		System.out.println(", surface length: " + surfaceLength);
 	}
 	
 	XenoTree buildTree(float x, float y) {
-		generator.setSeed((long) x);
+		generator.setSeed((long) y);
 		float width = generator.nextFloat()*5f + 1f;
 		return new XenoTree(world, x, y, width, tp, tpm, fp, lp, null, generator);
 	}
-	
+
 	public float[] getCoordsBetween(float leftCoord, float rightCoord) {
+		System.out.println("From XenoTreeManager.getCoordsBetween: ");
+		System.out.println("    leftCoord " + leftCoord + " rightCoord " + rightCoord);
+
 		float offset = 0f;
 		float[] coords;
-		leftCoord %= surfaceLength;
-		if (leftCoord < 0)	leftCoord += surfaceLength;
-		rightCoord %= surfaceLength;
-		if (rightCoord < 0)	rightCoord += surfaceLength;
-		int leftIndex = findLeftIndex(leftCoord) % treeCoords.length;
-		int rightIndex = findLeftIndex(rightCoord) ;//
-		System.out.println("l " + leftCoord + " r " + rightCoord);
-		System.out.println("li " + leftIndex + " ri " + rightIndex);
-		if (leftIndex > rightIndex) {
+
+		while (leftCoord < 0) {
+			leftCoord += surfaceLength;
+			rightCoord += surfaceLength;
+			offset -= surfaceLength;
+		}
+		while (leftCoord > surfaceLength) {
+			leftCoord -= surfaceLength;
+			rightCoord -= surfaceLength;
+			offset += surfaceLength;
+		}
+
+		if (rightCoord > surfaceLength) {
+			// Add coordinates from leftCoord to surfaceLength an from 0 to rightCoord-surfaceLength
+			int leftIndex = findLeftIndex(leftCoord);
+			int rightIndex = findLeftIndex(rightCoord-surfaceLength);
 			coords = new float[treeCoords.length - leftIndex + rightIndex];
-			System.out.println("size of coords " + coords.length);
-			int i=0;
-			while (i+leftIndex < treeCoords.length) {
+			int i = 0;
+			for (; i<treeCoords.length-leftIndex; i++) {
 				coords[i] = treeCoords[leftIndex + i] + offset;
-				i++;
 			}
-			System.out.println("i " + i);
-			for (int j=0; j<rightIndex; j++)
-				coords[i++] = treeCoords[j] = offset;
+			for (int j=0; j<rightIndex; j++) {
+				coords[i+j] = treeCoords[j] + offset + surfaceLength;
+			}
 		} else {
-			int n = rightIndex - leftIndex;
-			coords = new float[n];
-			for (int i=0; i<n; i++)
-				coords[i] = treeCoords[i+leftIndex];
+			int leftIndex = findLeftIndex(leftCoord);
+			int rightIndex = findLeftIndex(rightCoord);
+			coords = new float[rightIndex - leftIndex];
+			for (int i=0; i<coords.length; i++) {
+				coords[i] = treeCoords[leftIndex+i] + offset;
+			}
 		}
 		
 		return coords;

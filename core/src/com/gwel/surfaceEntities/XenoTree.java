@@ -40,7 +40,7 @@ public class XenoTree {
 		lp = new LeafParam(generator);
 		odd = Math.round(generator.nextFloat());
 		segs = new ArrayList<TreeSegment>();
-		segs.addAll(branch(x, y, 0.0f, w, tp, tpm, true, 0, 0));
+		segs.addAll(branch(x, y, 0.0f, w, tp, tpm, true, 0, 0, generator));
 		
 		wm = new WindManager();
 	}
@@ -54,7 +54,7 @@ public class XenoTree {
 		this.wm = wm;
 		odd = Math.round(generator.nextFloat());
 		segs = new ArrayList<TreeSegment>();
-		segs.addAll(branch(x, y, 0.0f, w, tp, tpm, true, 0, 0));
+		segs.addAll(branch(x, y, 0.0f, w, tp, tpm, true, 0, 0, generator));
 		/*println();
 	    println("nSegs", segs.size());
 	    println("nFlowers", nFlowers);
@@ -107,7 +107,7 @@ public class XenoTree {
 		}
 	}
 
-	ArrayList<TreeSegment> branch(float x, float y, float angle, float base, TreeParam tp, TreeParamMod tpm, boolean root, int rank, int level) {
+	ArrayList<TreeSegment> branch(float x, float y, float angle, float base, TreeParam tp, TreeParamMod tpm, boolean root, int rank, int level, RandomXS128 generator) {
 		ArrayList<TreeSegment> segs = new ArrayList<TreeSegment>();
 		if (base < 0.1f || segs.size() >= SEG_LIMIT)
 			return segs;
@@ -117,7 +117,7 @@ public class XenoTree {
 
 		// add Flowers
 		if (rank >= tp.floRank && nFlowers < FLOWER_LIMIT) {
-			int nFlo = (int) Math.floor(MathUtils.random(2f));
+			int nFlo = (int) Math.floor(generator.nextFloat()*2f);
 			for (int i=0; i<nFlo; i++) {
 				s.flowers.add(new TreeFlower(s.r1, tall, fp, wm));
 				nFlowers++;
@@ -125,7 +125,7 @@ public class XenoTree {
 		}
 		// Add Leaves
 		if ((rank >= tp.leafRank || level >= 2) && nLeaves < LEAF_LIMIT) {
-			int n = (int) Math.floor(0.1*MathUtils.random(s.surface));
+			int n = (int) Math.floor(0.1*generator.nextFloat()*s.surface);
 			for (int i=0; i<n; i++) {
 				s.leaves.add(new TreeLeaf(s, lp, wm));
 				nLeaves++;
@@ -146,9 +146,10 @@ public class XenoTree {
 				angle -= tp.zigZag;
 			if (angle > MathUtils.PI) angle -= MathUtils.PI2;
 			if (angle < -MathUtils.PI) angle += MathUtils.PI2;
-			angle -= angle*tp.heliotropism ;
+			angle -= angle*tp.heliotropism;
+			float nextAngle = angle + generator.nextFloat()*2*tp.angleChaos - tp.angleChaos;
 
-			segs.addAll(branch(nextX, nextY, angle+MathUtils.random(-tp.angleChaos, tp.angleChaos), base*tp.wCoeff, newTp, tpm, false, rank+1, level));
+			segs.addAll(branch(nextX, nextY, nextAngle, base*tp.wCoeff, newTp, tpm, false, rank+1, level, generator));
 
 			// Add joint if there's a least 2 segments
 			if (segs.size()>1) {
@@ -169,14 +170,14 @@ public class XenoTree {
 			}
 
 			// branch out
-			if (MathUtils.random(1.0f) < tp.branchProb) {	// TODO: should use randomXS128
+			if (generator.nextFloat() < tp.branchProb) {
 				ArrayList<TreeSegment> newBranch;
-				if (MathUtils.random(1.0f) < 0.5f) {
-					angle += tp.branchAngle + MathUtils.random(-tp.angleChaos, tp.angleChaos);
-					newBranch = branch(nextX, nextY, angle, base*tp.wCoeff, newTp, tpm, false, rank+1, level+1);
+				if (generator.nextFloat() < 0.5f) {
+					angle += tp.branchAngle + generator.nextFloat()*2*tp.angleChaos - tp.angleChaos;
+					newBranch = branch(nextX, nextY, angle, base*tp.wCoeff, newTp, tpm, false, rank+1, level+1, generator);
 				} else {
-					angle -= tp.branchAngle + MathUtils.random(-tp.angleChaos, tp.angleChaos);
-					newBranch = branch(nextX, nextY, angle-tp.branchAngle, base*tp.wCoeff, newTp, tpm, false, rank+1, level+1);
+					angle -= tp.branchAngle + generator.nextFloat()*2*tp.angleChaos - tp.angleChaos;
+					newBranch = branch(nextX, nextY, angle-tp.branchAngle, base*tp.wCoeff, newTp, tpm, false, rank+1, level+1, generator);
 				}
 				if (!newBranch.isEmpty()) {
 					RevoluteJointDef rjd = new RevoluteJointDef();

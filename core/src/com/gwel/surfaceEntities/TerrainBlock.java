@@ -14,6 +14,10 @@ import com.gwel.spacegame.MyRenderer;
 
 
 public class TerrainBlock {
+	/* A block of Terrain, part of a Terrain Layer
+	   It has a polygons mesh, a physics body, trees
+	   position is in absolute planet coordinates
+	 */
 	public Body terrainBody;
 	private Vector2[] mesh;
 	public Vector2 position = new Vector2();
@@ -29,6 +33,9 @@ public class TerrainBlock {
 	}
 	
 	public void initBody(World world) {
+		/*
+			initBody is called from the outside (from TerrainLayer)
+		 */
 		BodyDef bodyDef = new BodyDef();
 		bodyDef.type = BodyType.StaticBody;
 		bodyDef.position.set(position);

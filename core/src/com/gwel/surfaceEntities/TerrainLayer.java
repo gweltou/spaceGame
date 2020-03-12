@@ -36,6 +36,11 @@ public class TerrainLayer {
 		this.scale = scale;
 		this.xtm = xtm;
 		this.withTrees = withTrees;
+		leftBoundary = position.x;
+		rightBoundary = leftBoundary + TERRAIN_BLOCK_WIDTH;
+		System.out.println("From TerrainLayer.TerrainLayer:");
+		System.out.print("    leftBoundary " + leftBoundary);
+		System.out.println(" rightBoundary" + rightBoundary);
 		
 		// CREATE 1 INITIAL BLOCK PER LAYER
 		float[] hsv = new float[3];
@@ -43,16 +48,21 @@ public class TerrainLayer {
 		float level = (float) (Math.log(scale)/Math.log(0.5));
 		float colSat = hsv[1]*((float) Math.pow(0.6f, level));
 		float colVal = hsv[2];
-		for (int i=0; i<=level; i++)	colVal += (1.0f-colVal)*0.25f;
+		for (int i=0; i<=level; i++)
+			colVal += (1.0f-colVal)*0.25f;
 		color = new Color();
 		color.a = 1.0f;
 		color.fromHsv(hsv[0], colSat, colVal);
 		Vector2[] mesh = createBlockMesh(position.x, position.x+TERRAIN_BLOCK_WIDTH);
 		TerrainBlock block = new TerrainBlock(position, mesh, color);
 		if (walkable)	block.initBody(world);
+		if (withTrees) {
+			float[] treeCoords = xtm.getCoordsBetween(leftBoundary, rightBoundary);
+			for (float c : treeCoords) {
+				block.addTree(xtm.buildTree(c, getHeight(c) - 2f));
+			}
+		}
 		blocks.add(block);
-		leftBoundary = position.x;
-		rightBoundary = leftBoundary + TERRAIN_BLOCK_WIDTH;
 	}
 	
 	public float getHeight(float position) {
@@ -126,7 +136,7 @@ public class TerrainLayer {
 		// Add a terrain block on the left if needed
 		if (xCoord - leftb.position.x < TERRAIN_BLOCK_SPAWN_RADIUS) {
 			leftBoundary -= TERRAIN_BLOCK_WIDTH;
-			Vector2 blockPos = new Vector2(leftb.position.x-TERRAIN_BLOCK_WIDTH, leftb.position.y);
+			Vector2 blockPos = new Vector2(leftBoundary, leftb.position.y);
 			Vector2[] mesh = createBlockMesh(leftBoundary, leftBoundary+TERRAIN_BLOCK_WIDTH);
 			TerrainBlock newBlock = new TerrainBlock(blockPos, mesh, color);			
 			// Initialize collision layer if needed
@@ -134,9 +144,10 @@ public class TerrainLayer {
 			// Add trees if needed
 			if (withTrees) {
 				float[] treeCoords = xtm.getCoordsBetween(leftBoundary, leftBoundary+TERRAIN_BLOCK_WIDTH);
-				for (float c: treeCoords) {
-					generator.setSeed((long) c);
-					newBlock.addTree(xtm.buildTree(c, getHeight(c)-2f));
+				for (float treeXpos: treeCoords) {
+					float treeYpos = getHeight(treeXpos)-2f;
+					newBlock.addTree(xtm.buildTree(treeXpos, treeYpos));
+					System.out.println("Tree added at :" + treeXpos);
 				}
 			}
 			blocks.addFirst(newBlock);
@@ -163,9 +174,10 @@ public class TerrainLayer {
 			// Add trees if needed
 			if (withTrees) {
 				float[] treeCoords = xtm.getCoordsBetween(rightBoundary-TERRAIN_BLOCK_WIDTH, rightBoundary);
-				for (float c: treeCoords) {
-					generator.setSeed((long) c);
-					newBlock.addTree(xtm.buildTree(c, getHeight(c)-2f));
+				for (float treeXpos: treeCoords) {
+					float treeYpos = getHeight(treeXpos)-2f;
+					newBlock.addTree(xtm.buildTree(treeXpos, treeYpos));
+					System.out.println("Tree added at :" + treeXpos);
 				}
 			}
 			blocks.addLast(newBlock);
