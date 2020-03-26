@@ -107,35 +107,35 @@ public class MyRenderer implements Disposable {
 		projectionMatrix.set(matrix);
 		matrixDirty = true;
 	}
-	
-	public void setTransformMatrix(Matrix4 matrix) {
-		transformMatrix.set(matrix);
-		matrixDirty = true;
-	}
-	
-	/** Sets the transformation matrix to identity. */
-	public void identity() {
-		transformMatrix.idt();
-		matrixDirty = true;
-	}
 
-	/** Multiplies the current transformation matrix by a translation matrix. */
-	public void translate (float x, float y, float z) {
-		transformMatrix.translate(x, y, z);
-		matrixDirty = true;
-	}
-
-	/** Multiplies the current transformation matrix by a rotation matrix. */
-	public void rotate (float axisX, float axisY, float axisZ, float degrees) {
-		transformMatrix.rotate(axisX, axisY, axisZ, degrees);
-		matrixDirty = true;
-	}
-
-	/** Multiplies the current transformation matrix by a scale matrix. */
-	public void scale (float scaleX, float scaleY, float scaleZ) {
-		transformMatrix.scale(scaleX, scaleY, scaleZ);
-		matrixDirty = true;
-	}
+//	public void setTransformMatrix(Matrix4 matrix) {
+//		transformMatrix.set(matrix);
+//		matrixDirty = true;
+//	}
+//
+//	/** Sets the transformation matrix to identity. */
+//	public void identity() {
+//		transformMatrix.idt();
+//		matrixDirty = true;
+//	}
+//
+//	/** Multiplies the current transformation matrix by a translation matrix. */
+//	public void translate (float x, float y, float z) {
+//		transformMatrix.translate(x, y, z);
+//		matrixDirty = true;
+//	}
+//
+//	/** Multiplies the current transformation matrix by a rotation matrix. */
+//	public void rotate (float axisX, float axisY, float axisZ, float degrees) {
+//		transformMatrix.rotate(axisX, axisY, axisZ, degrees);
+//		matrixDirty = true;
+//	}
+//
+//	/** Multiplies the current transformation matrix by a scale matrix. */
+//	public void scale (float scaleX, float scaleY, float scaleZ) {
+//		transformMatrix.scale(scaleX, scaleY, scaleZ);
+//		matrixDirty = true;
+//	}
 	
 	public void pushMatrix(Affine2 matrix) {
 		Affine2 cpy = new Affine2();

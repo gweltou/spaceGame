@@ -14,6 +14,7 @@ public class HeightArray {
 	public HeightArray(RandomXS128 generator, float span, float vpu, float wrap) {
 		// span : length covered by the height array (in game units)
 		// vpu	: values per game unit (value density)
+		// wrap : total length of planet surface (in game units)
 		this.span = span;
 		this.vpu = vpu;
 		this.wrap = wrap;
@@ -27,6 +28,7 @@ public class HeightArray {
 	}
 	
 	public float getHeight(float x) {
+		// x : a horizontal coordinate on planet surface
 		x %= wrap;
 		if (x < 0)	x += wrap;
 		// Calculate a decimal index (between 0 and values.length) from x

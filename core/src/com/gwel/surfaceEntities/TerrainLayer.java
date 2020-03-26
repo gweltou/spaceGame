@@ -24,13 +24,12 @@ public class TerrainLayer {
 	private float[] amps;
 	private XenoTreeManager xtm;
 	private boolean withTrees;
-	private boolean walkable;
 	private float leftBoundary, rightBoundary;
 	private float tmpFloat;
 	Color color;
 	
 	
-	public TerrainLayer(RandomXS128 generator, World w, HeightArray[] hArrays, float[] amps, Vector2 position, float scale, XenoTreeManager xtm, boolean walkable, boolean withTrees, Color col) {
+	public TerrainLayer(RandomXS128 generator, World w, HeightArray[] hArrays, float[] amps, Vector2 position, float scale, XenoTreeManager xtm, boolean withTrees, Color col) {
 		this.world = w;
 		this.generator = generator;
 		this.heightArrays = hArrays;
@@ -38,7 +37,6 @@ public class TerrainLayer {
 		this.scale = scale;
 		this.xtm = xtm;
 		this.withTrees = withTrees;
-		this.walkable = walkable;
 		leftBoundary = position.x;
 		rightBoundary = leftBoundary + TERRAIN_BLOCK_WIDTH;
 		System.out.println("From TerrainLayer.TerrainLayer:");
@@ -58,7 +56,7 @@ public class TerrainLayer {
 		color.fromHsv(hsv[0], colSat, colVal);
 		Vector2[] mesh = createBlockMesh(position.x, position.x+TERRAIN_BLOCK_WIDTH);
 		TerrainBlock block = new TerrainBlock(position, mesh, color);
-		if (walkable)	block.initBody(world);
+		block.initBody(world);
 		if (withTrees) {
 			float[] treeCoords = xtm.getCoordsBetween(leftBoundary, rightBoundary);
 			for (float c : treeCoords) {
@@ -74,26 +72,11 @@ public class TerrainLayer {
 			tmpFloat += amps[j] * heightArrays[j].getHeight(position);
 		return tmpFloat;
 	}
-	
-	public void updateParallaxPosition(Vector2 travelling) {
-		for (TerrainBlock tb: blocks) {
-			tb.updateParallaxPosition(travelling.cpy().scl(1.0f-scale));
-		}
-	}
 
 	public void render(MyRenderer renderer) {
-		Affine2 transform = new Affine2();
-		transform.idt();
-		transform.scale(scale, scale);
-		transform.translate(leftBoundary, 0f);
-
-		renderer.pushMatrix(transform);
-
-		for (TerrainBlock tb: blocks) {
+		for (TerrainBlock tb : blocks) {
 			tb.render(renderer);
 		}
-		renderer.popMatrix();
-		//renderer.flush();
 	}
 
 	private Vector2[] createBlockMesh(float leftCoord, float rightCoord) {		
@@ -152,7 +135,7 @@ public class TerrainLayer {
 			Vector2[] mesh = createBlockMesh(leftBoundary, leftBoundary+TERRAIN_BLOCK_WIDTH);
 			TerrainBlock newBlock = new TerrainBlock(blockPos, mesh, color);			
 			// Initialize collision layer if needed
-			if (walkable)	newBlock.initBody(world);
+			newBlock.initBody(world);
 			// Add trees if needed
 			if (withTrees) {
 				float[] treeCoords = xtm.getCoordsBetween(leftBoundary, leftBoundary+TERRAIN_BLOCK_WIDTH);
@@ -182,7 +165,7 @@ public class TerrainLayer {
 			Vector2[] mesh = createBlockMesh(rightBoundary-TERRAIN_BLOCK_WIDTH, rightBoundary);
 			TerrainBlock newBlock = new TerrainBlock(blockPos, mesh, color);
 			// Initialize collision layer if needed
-			if (walkable)	newBlock.initBody(world);
+			newBlock.initBody(world);
 			// Add trees if needed
 			if (withTrees) {
 				float[] treeCoords = xtm.getCoordsBetween(rightBoundary-TERRAIN_BLOCK_WIDTH, rightBoundary);

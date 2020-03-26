@@ -88,8 +88,8 @@ public class XenoTree {
 		for (TreeSegment seg: segs) {
 			for (TreeLeaf leaf : seg.leaves) {
 				transform.idt();
-				transform.translate(seg.body.getPosition());
-				transform.rotateRad(-seg.body.getAngle());
+				transform.translate(seg.getPosition());
+				transform.rotateRad(-seg.getAngle());
 				renderer.pushMatrix(transform);
 				leaf.render(renderer);
 				renderer.popMatrix();
@@ -99,8 +99,8 @@ public class XenoTree {
 		for (TreeSegment seg: segs) {
 			for (TreeFlower flo : seg.flowers) {
 				transform.idt();
-				transform.translate(seg.body.getPosition());
-				transform.rotateRad(-seg.body.getAngle());
+				transform.translate(seg.getPosition());
+				transform.rotateRad(-seg.getAngle());
 				renderer.pushMatrix(transform);
 				flo.render(renderer);
 				renderer.popMatrix();

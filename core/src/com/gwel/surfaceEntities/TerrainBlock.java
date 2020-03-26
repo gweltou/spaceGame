@@ -51,12 +51,6 @@ public class TerrainBlock {
 		solidTerrainShape.dispose();
 	}
 	
-	public void updateParallaxPosition(Vector2 travelling) {
-		// That'a a shitty way to update the TerrainBlock's position according to the camera translation
-		// so it looks like it's on a different depth
-		position.add(travelling);
-	}
-	
 	public void addTree(XenoTree tree) {
 		trees.add(tree);
 	}
@@ -75,13 +69,13 @@ public class TerrainBlock {
 
 		renderer.setColor(color);
 		for (int i=0; i<mesh.length-1; i++) {
-			renderer.triangle(	new Vector2(position.x+mesh[i].x, -50f),
+			renderer.triangle(	new Vector2(position.x+mesh[i].x, -10f),
 								new Vector2(position.x+mesh[i].x, position.y+mesh[i].y),
 								new Vector2(position.x+mesh[i+1].x, position.y+mesh[i+1].y));
-
 			renderer.triangle(	new Vector2(position.x+mesh[i+1].x, position.y+mesh[i+1].y),
-								new Vector2(position.x+mesh[i+1].x, -50f),
-								new Vector2(position.x+mesh[i+1].x, -50f));
+								new Vector2(position.x+mesh[i+1].x, -10f),
+								new Vector2(position.x+mesh[i].x, -10f));
+
 		}
 
 		//renderer.popMatrix();

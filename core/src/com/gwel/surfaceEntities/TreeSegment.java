@@ -46,12 +46,12 @@ class TreeSegment implements Disposable {
 	     THIS IS A 3D CONE
 	     We calculate the volume of the lower truncated cone
 
-	           |----------|
-	          /|\         |
-	       r2/_|_\ ___    H
-	        /  |  \  |h   |
-	       /___|___\_| ___|
-	        r1
+	              |------------|
+	             /|\           |
+	    r2----p4/_|_\p3____    H
+	           /  |  \    |h   |
+	    r1--p0/___o___\p1_| ___|
+
 		 */
 
 		this.rank = rank;
@@ -73,6 +73,8 @@ class TreeSegment implements Disposable {
 	}
 
 	public void initBody(World world) {
+		/* Initialize physics body
+		 */
 		BodyDef bd = new BodyDef();
 		if (isRoot) {
 			bd.type = BodyType.StaticBody;
@@ -92,6 +94,20 @@ class TreeSegment implements Disposable {
 		fd.shape = ps;
 		fd.density = r1/10;
 		body.createFixture(fd);
+	}
+
+	public Vector2 getPosition() {
+		if (body == null) {
+			return position.cpy();
+		}
+		return body.getPosition();
+	}
+
+	public float getAngle() {
+		if (body == null) {
+			return angle;
+		}
+		return body.getAngle();
 	}
 
 	void render(MyRenderer renderer) {

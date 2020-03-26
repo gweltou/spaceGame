@@ -16,10 +16,8 @@ import com.gwel.entities.Spaceship;
 import com.gwel.spacegame.MyCamera;
 import com.gwel.spacegame.SpaceGame;
 import com.gwel.spacegame.utils;
-import com.gwel.surfaceEntities.XenoTreeManager;
-import com.gwel.surfaceEntities.HeightArray;
-import com.gwel.surfaceEntities.LandedPlayer;
-import com.gwel.surfaceEntities.TerrainLayer;
+import com.gwel.surfaceEntities.*;
+
 
 public class ScreenOnPlanet implements Screen {
 	private final static int NUM_PARALLAX_LAYERS = 6;
@@ -40,7 +38,7 @@ public class ScreenOnPlanet implements Screen {
 	public boolean mustDispose = false;
 		
 	// Terrain data
-	private TerrainLayer[]	parallaxLayers;
+	private ParallaxLayer[]	parallaxLayers;
 	private TerrainLayer	walkingLayer;
 	
 	
@@ -77,11 +75,11 @@ public class ScreenOnPlanet implements Screen {
 		float[] amps = {20f, 8f, 1.0f, 0.15f};
 		
 		Vector2 blockPos = new Vector2(landingHPos-50f, 0.0f);
-		walkingLayer = new TerrainLayer(game.generator, world, hArrays, amps, blockPos, 1f, xtm, true, true, planet.color);
-		parallaxLayers = new TerrainLayer[NUM_PARALLAX_LAYERS];
+		walkingLayer = new TerrainLayer(game.generator, world, hArrays, amps, blockPos, 1f, xtm, true, planet.color);
+		parallaxLayers = new ParallaxLayer[NUM_PARALLAX_LAYERS];
 		for (int i=0; i<NUM_PARALLAX_LAYERS; i++) {
 			float scale = (float) Math.pow(0.5f, i+1);
-			parallaxLayers[i] = new TerrainLayer(game.generator, world, hArrays, amps, blockPos, scale, xtm, false, false, planet.color);
+			parallaxLayers[i] = new ParallaxLayer(game.generator, hArrays, amps, blockPos, scale, xtm, false, planet.color);
 		}
 				
 		// Regenerating ship
@@ -109,9 +107,7 @@ public class ScreenOnPlanet implements Screen {
 		game.camera.rotateTo(0.0f);
 		player.dispose();
 		ship.dispose();
-		for (TerrainLayer layer: parallaxLayers) {
-			layer.dispose();
-		}
+		walkingLayer.dispose();
 		world.dispose();
 		System.out.println("Planet screen disposed");
 	}
@@ -126,7 +122,7 @@ public class ScreenOnPlanet implements Screen {
 	public void render(float timeDelta) {
 		handleInput();
 		Matrix4 normalProjection = new Matrix4().setToOrtho2D(0, 0, Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
-		
+
 		if (landingIntro) {
 			//  Camera update
 			game.camera.glideTo(game.ship.getPosition());
@@ -148,7 +144,6 @@ public class ScreenOnPlanet implements Screen {
 		} else {
 			camera.glideTo(player.getPosition().add(0f, 100.0f/camera.PPU));
 			camera.update();
-			
 			
 			float playerHPos = player.getPosition().x % surfaceLength;
 			if (playerHPos < 0.0f)	playerHPos += surfaceLength;
@@ -191,8 +186,6 @@ public class ScreenOnPlanet implements Screen {
 			}
 			
 			// UPDATE TERRAIN LAYERS
-			for (TerrainLayer layer: parallaxLayers)
-				layer.update(player.getPosition().x);
 			walkingLayer.update(player.getPosition().x);
 			
 			Gdx.gl.glClearColor(skyColor.r, skyColor.g, skyColor.b, 1f);
@@ -206,8 +199,7 @@ public class ScreenOnPlanet implements Screen {
 			
 			game.renderer.setProjectionMatrix(new Matrix4().set(camera.affine));
 			// Draw terrain
-			for (int i = parallaxLayers.length-1; i>=0; i--) {
-				//parallaxLayers[i].updateParallaxPosition(camera.getTravelling());
+			for (int i=parallaxLayers.length-1; i>=0; i--) {
 				parallaxLayers[i].render(game.renderer);
 			}
 			walkingLayer.render(game.renderer);
@@ -287,10 +279,15 @@ public class ScreenOnPlanet implements Screen {
 			camera.zoomOut();
 			camera.autozoom = false;
 		}
-		
-		player.move(new Vector2(x_axis, y_axis));
-		if (y_axis > 0.9f) {
-			 
+		if (Gdx.input.isKeyPressed(Keys.SPACE)) {
+			// TAKE OFF
+			if (player.getPosition().dst2(ship.getPosition()) < 3.0f)	mustDispose = true;
 		}
+		if (Gdx.input.isKeyPressed(Keys.P)) {
+			System.out.println("player pos: " + player.getPosition());
+			System.out.println("Camera center : " + camera.center);
+		}
+
+		player.move(new Vector2(x_axis, y_axis));
 	}
 }
