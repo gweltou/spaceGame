@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 
 import com.badlogic.gdx.graphics.Color;
+import com.badlogic.gdx.math.Affine2;
 import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.RandomXS128;
 import com.badlogic.gdx.math.Vector2;
@@ -23,12 +24,13 @@ public class TerrainLayer {
 	private float[] amps;
 	private XenoTreeManager xtm;
 	private boolean withTrees;
+	private boolean walkable;
 	private float leftBoundary, rightBoundary;
 	private float tmpFloat;
 	Color color;
 	
 	
-	public TerrainLayer(RandomXS128 generator, World w, float surfaceLength, HeightArray[] hArrays, float[] amps, Vector2 position, float scale, XenoTreeManager xtm, boolean walkable, boolean withTrees, Color col) {
+	public TerrainLayer(RandomXS128 generator, World w, HeightArray[] hArrays, float[] amps, Vector2 position, float scale, XenoTreeManager xtm, boolean walkable, boolean withTrees, Color col) {
 		this.world = w;
 		this.generator = generator;
 		this.heightArrays = hArrays;
@@ -36,6 +38,7 @@ public class TerrainLayer {
 		this.scale = scale;
 		this.xtm = xtm;
 		this.withTrees = withTrees;
+		this.walkable = walkable;
 		leftBoundary = position.x;
 		rightBoundary = leftBoundary + TERRAIN_BLOCK_WIDTH;
 		System.out.println("From TerrainLayer.TerrainLayer:");
@@ -79,10 +82,18 @@ public class TerrainLayer {
 	}
 
 	public void render(MyRenderer renderer) {
+		Affine2 transform = new Affine2();
+		transform.idt();
+		transform.scale(scale, scale);
+		transform.translate(leftBoundary, 0f);
+
+		renderer.pushMatrix(transform);
+
 		for (TerrainBlock tb: blocks) {
-			tb.render(renderer, scale);
+			tb.render(renderer);
 		}
-		renderer.flush();
+		renderer.popMatrix();
+		//renderer.flush();
 	}
 
 	private Vector2[] createBlockMesh(float leftCoord, float rightCoord) {		
@@ -96,7 +107,8 @@ public class TerrainLayer {
 			normalizedIdx = normalizedIdx % ha.values.length;
 			// Wrap around if index is negative
 			if (normalizedIdx < 0.0f)	normalizedIdx += ha.values.length;
-			float stepLength = ha.span / ha.values.length;	// length between each value (in game units)
+
+			float stepLength = ha.span / (ha.values.length * scale);	// length between each value (in game units)
 			float stepToNextIndex = ha.vpu * (MathUtils.ceil(normalizedIdx) - normalizedIdx);	// length to next integer (in game units)
 			float nextLength = leftCoord + stepToNextIndex;
 			while (nextLength < rightCoord) {
@@ -140,7 +152,7 @@ public class TerrainLayer {
 			Vector2[] mesh = createBlockMesh(leftBoundary, leftBoundary+TERRAIN_BLOCK_WIDTH);
 			TerrainBlock newBlock = new TerrainBlock(blockPos, mesh, color);			
 			// Initialize collision layer if needed
-			if (leftb.terrainBody != null)	newBlock.initBody(world);
+			if (walkable)	newBlock.initBody(world);
 			// Add trees if needed
 			if (withTrees) {
 				float[] treeCoords = xtm.getCoordsBetween(leftBoundary, leftBoundary+TERRAIN_BLOCK_WIDTH);
@@ -170,7 +182,7 @@ public class TerrainLayer {
 			Vector2[] mesh = createBlockMesh(rightBoundary-TERRAIN_BLOCK_WIDTH, rightBoundary);
 			TerrainBlock newBlock = new TerrainBlock(blockPos, mesh, color);
 			// Initialize collision layer if needed
-			if (leftb.terrainBody != null)	newBlock.initBody(world);
+			if (walkable)	newBlock.initBody(world);
 			// Add trees if needed
 			if (withTrees) {
 				float[] treeCoords = xtm.getCoordsBetween(rightBoundary-TERRAIN_BLOCK_WIDTH, rightBoundary);

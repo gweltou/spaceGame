@@ -31,7 +31,7 @@ public class XenoTree {
 	private Affine2 transform = new Affine2();
 	private World world;
 	
-
+/*
 	public XenoTree(World world, float x, float y, float w, RandomXS128 generator) {
 		this.world = world;
 		tp = new TreeParam(generator);
@@ -44,6 +44,7 @@ public class XenoTree {
 		
 		wm = new WindManager();
 	}
+ */
 	
 	XenoTree(World world, float x, float y, float w, TreeParam tp, TreeParamMod tpm, FlowerParam fp, LeafParam lp, WindManager wm, RandomXS128 generator) {
 		this.world = world;
@@ -59,6 +60,12 @@ public class XenoTree {
 	    println("nSegs", segs.size());
 	    println("nFlowers", nFlowers);
 	    println("maxRank", maxRank);*/
+	}
+
+	public void initBody(World world) {
+		for (TreeSegment segment: segs) {
+			segment.initBody(world);
+		}
 	}
 
 	void applyForce(Vector2 f) {
@@ -113,7 +120,7 @@ public class XenoTree {
 			return segs;
 		maxRank = Math.max(maxRank, rank);
 		float tall = base * tp.wToH;
-		TreeSegment s = new TreeSegment(world, x, y, angle, base, base*tp.wCoeff, tall, root, rank, level);
+		TreeSegment s = new TreeSegment(x, y, angle, base, base*tp.wCoeff, tall, root, rank, level);
 
 		// add Flowers
 		if (rank >= tp.floRank && nFlowers < FLOWER_LIMIT) {
@@ -152,6 +159,7 @@ public class XenoTree {
 			segs.addAll(branch(nextX, nextY, nextAngle, base*tp.wCoeff, newTp, tpm, false, rank+1, level, generator));
 
 			// Add joint if there's a least 2 segments
+			/*
 			if (segs.size()>1) {
 				RevoluteJointDef rjd = new RevoluteJointDef();
 				Body b1 = s.body;
@@ -169,6 +177,8 @@ public class XenoTree {
 				segs.get(1).joints.add((RevoluteJoint) world.createJoint(rjd));
 			}
 
+			 */
+
 			// branch out
 			if (generator.nextFloat() < tp.branchProb) {
 				ArrayList<TreeSegment> newBranch;
@@ -179,6 +189,7 @@ public class XenoTree {
 					angle -= tp.branchAngle + generator.nextFloat()*2*tp.angleChaos - tp.angleChaos;
 					newBranch = branch(nextX, nextY, angle-tp.branchAngle, base*tp.wCoeff, newTp, tpm, false, rank+1, level+1, generator);
 				}
+				/*
 				if (!newBranch.isEmpty()) {
 					RevoluteJointDef rjd = new RevoluteJointDef();
 					Body b1 = s.body;
@@ -193,6 +204,8 @@ public class XenoTree {
 					rjd.maxMotorTorque = s.volume*tp.stiffCoeff;
 					newBranch.get(0).joints.add((RevoluteJoint) world.createJoint(rjd));
 				}
+
+				 */
 				segs.addAll(newBranch);
 			}
 		}

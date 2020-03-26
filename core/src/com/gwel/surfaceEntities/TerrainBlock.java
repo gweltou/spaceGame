@@ -3,6 +3,7 @@ package com.gwel.surfaceEntities;
 import java.util.ArrayList;
 
 import com.badlogic.gdx.graphics.Color;
+import com.badlogic.gdx.math.Affine2;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.physics.box2d.Body;
 import com.badlogic.gdx.physics.box2d.BodyDef;
@@ -60,17 +61,30 @@ public class TerrainBlock {
 		trees.add(tree);
 	}
 	
-	public void render(MyRenderer renderer, float scale) {
+	public void render(MyRenderer renderer) {
+		/*
+		Affine2 transform = new Affine2();
+		transform.idt();
+		renderer.pushMatrix(transform);
+		 */
+
 		for (XenoTree tree: trees) {
 			renderer.setColor(color);
 			tree.render(renderer);
 		}
-		
+
 		renderer.setColor(color);
-		for (Vector2 point: mesh) {
-			renderer.triangleStrip(position.x+point.x, position.y-50f, position.x+point.x, position.y+point.y);
-			//renderer.flush(); // This doesn't work for some reason
+		for (int i=0; i<mesh.length-1; i++) {
+			renderer.triangle(	new Vector2(position.x+mesh[i].x, -50f),
+								new Vector2(position.x+mesh[i].x, position.y+mesh[i].y),
+								new Vector2(position.x+mesh[i+1].x, position.y+mesh[i+1].y));
+
+			renderer.triangle(	new Vector2(position.x+mesh[i+1].x, position.y+mesh[i+1].y),
+								new Vector2(position.x+mesh[i+1].x, -50f),
+								new Vector2(position.x+mesh[i+1].x, -50f));
 		}
+
+		//renderer.popMatrix();
 	}
 	
 	public void dispose() {

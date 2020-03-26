@@ -64,11 +64,9 @@ public class MyRenderer implements Disposable {
 
 	//The index positions
 	private int iTriangle;
-	private int iTrianglestrip;
-	
+
 	public MyCamera camera;
 	private Mesh meshTriangles;
-	private Mesh meshTrianglestrip;
 	private final ShaderProgram shader;
 	private final Color color = new Color(1, 1, 1, 1);
 	private final Matrix4 projectionMatrix = new Matrix4();
@@ -84,11 +82,7 @@ public class MyRenderer implements Disposable {
 	public MyRenderer(MyCamera camera) {
 		this.camera = camera;
 		iTriangle = 0;
-		iTrianglestrip = 0;
-		meshTriangles = new Mesh(true, 3*MAX_TRIS, 0, 
-				new VertexAttribute(Usage.Position, 2, "a_position"),
-				new VertexAttribute(Usage.ColorUnpacked, 4, "a_color"));
-		meshTrianglestrip = new Mesh(true, 2*MAX_TRIS, 0, 
+		meshTriangles = new Mesh(true, 3*MAX_TRIS, 0,
 				new VertexAttribute(Usage.Position, 2, "a_position"),
 				new VertexAttribute(Usage.ColorUnpacked, 4, "a_color"));
 		
@@ -149,14 +143,12 @@ public class MyRenderer implements Disposable {
 		if (matrixStack.isEmpty()) {
 			matrixStack.push(cpy);
 		} else {
-			matrixStack.push(cpy.mul(matrixStack.getFirst()));
+			matrixStack.push(cpy.preMul(matrixStack.getFirst()));
 		}
-		//System.out.println("push");
 	}
 	
 	public void popMatrix() {
 		matrixStack.pop();
-		//System.out.println("pop");
 	}
 	
 	public void triangle(Vector2 p1, Vector2 p2, Vector2 p3) {
@@ -206,29 +198,7 @@ public class MyRenderer implements Disposable {
 		verts_triangle[iTriangle++] = color.b;
 		verts_triangle[iTriangle++] = color.a;
 	}
-	
-	public void triangleStrip(double x1, double y1, double x2, double y2) {
-		triangleStrip(x1, y1, x2, y2, color);
-	}
-	
-	private void triangleStrip(double x1, double y1, double x2, double y2, Color color) {
-		if (iTrianglestrip==verts_trianglestrip.length)
-			flush();
 
-		verts_trianglestrip[iTrianglestrip++] = (float) x1; 			//Position(x, y) 
-		verts_trianglestrip[iTrianglestrip++] = (float) y1;
-		verts_trianglestrip[iTrianglestrip++] = color.r; 	//Color(r, g, b, a)
-		verts_trianglestrip[iTrianglestrip++] = color.g;
-		verts_trianglestrip[iTrianglestrip++] = color.b;
-		verts_trianglestrip[iTrianglestrip++] = color.a;
-
-		verts_trianglestrip[iTrianglestrip++] = (float) x2; 			//Position(x, y) 
-		verts_trianglestrip[iTrianglestrip++] = (float) y2 ;
-		verts_trianglestrip[iTrianglestrip++] = color.r; 	//Color(r, g, b, a)
-		verts_trianglestrip[iTrianglestrip++] = color.g;
-		verts_trianglestrip[iTrianglestrip++] = color.b;
-		verts_trianglestrip[iTrianglestrip++] = color.a;
-	}
 	
 	public void texturedSquare(float xPos, float yPos, float width, float height, Vector2 uv0, Vector2 uv1, Vector2 uv2) {	}
 	
@@ -426,7 +396,7 @@ public class MyRenderer implements Disposable {
 	
 	public void flush() {
 		//if we've not already flushed
-		if (iTriangle>0 || iTrianglestrip>0) {
+		if (iTriangle>0) {
 			//no need for depth...
 			Gdx.gl.glDepthMask(false);
 
@@ -450,12 +420,6 @@ public class MyRenderer implements Disposable {
 				//reset index to zero
 				iTriangle = 0;
 			}
-			if (iTrianglestrip>0) {
-				int vertexCount = (iTrianglestrip/6); // Number of triangles divided by number of components
-				meshTrianglestrip.setVertices(verts_trianglestrip);
-				meshTrianglestrip.render(shader, GL20.GL_TRIANGLE_STRIP, 0, vertexCount);
-				iTrianglestrip = 0;
-			}
 			shader.end();
 
 			//re-enable depth to reset states to their default
@@ -465,7 +429,6 @@ public class MyRenderer implements Disposable {
 	
 	public void dispose() {
 		meshTriangles.dispose();
-		meshTrianglestrip.dispose();
 		shader.dispose();
 	}
 }

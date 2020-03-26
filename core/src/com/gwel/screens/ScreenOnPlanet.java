@@ -77,11 +77,11 @@ public class ScreenOnPlanet implements Screen {
 		float[] amps = {20f, 8f, 1.0f, 0.15f};
 		
 		Vector2 blockPos = new Vector2(landingHPos-50f, 0.0f);
-		walkingLayer = new TerrainLayer(game.generator, world, surfaceLength, hArrays, amps, blockPos, 1f, xtm, true, true, planet.color);
+		walkingLayer = new TerrainLayer(game.generator, world, hArrays, amps, blockPos, 1f, xtm, true, true, planet.color);
 		parallaxLayers = new TerrainLayer[NUM_PARALLAX_LAYERS];
 		for (int i=0; i<NUM_PARALLAX_LAYERS; i++) {
 			float scale = (float) Math.pow(0.5f, i+1);
-			parallaxLayers[i] = new TerrainLayer(game.generator, world, surfaceLength, hArrays, amps, blockPos, scale, xtm, false, false, planet.color);
+			parallaxLayers[i] = new TerrainLayer(game.generator, world, hArrays, amps, blockPos, scale, xtm, false, false, planet.color);
 		}
 				
 		// Regenerating ship
@@ -123,7 +123,7 @@ public class ScreenOnPlanet implements Screen {
 	public void pause() {}
 
 	@Override
-	public void render(float arg0) {
+	public void render(float timeDelta) {
 		handleInput();
 		Matrix4 normalProjection = new Matrix4().setToOrtho2D(0, 0, Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
 		
@@ -207,7 +207,7 @@ public class ScreenOnPlanet implements Screen {
 			game.renderer.setProjectionMatrix(new Matrix4().set(camera.affine));
 			// Draw terrain
 			for (int i = parallaxLayers.length-1; i>=0; i--) {
-				parallaxLayers[i].updateParallaxPosition(camera.getTravelling());
+				//parallaxLayers[i].updateParallaxPosition(camera.getTravelling());
 				parallaxLayers[i].render(game.renderer);
 			}
 			walkingLayer.render(game.renderer);
@@ -223,7 +223,7 @@ public class ScreenOnPlanet implements Screen {
 			game.batch.end();
 		}
 		
-		world.step(1.0f/60f, 8, 3);
+		world.step(timeDelta, 8, 3);
 		
 		if (mustDispose) {
 			game.takeOff();
