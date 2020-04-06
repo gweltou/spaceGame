@@ -29,11 +29,10 @@ public class TerrainLayer {
 	Color color;
 	
 	
-	public TerrainLayer(RandomXS128 generator, World w, HeightArray[] hArrays, float[] amps, Vector2 position, float scale, XenoTreeManager xtm, boolean withTrees, Color col) {
+	public TerrainLayer(RandomXS128 generator, World w, HeightArray[] hArrays, Vector2 position, float scale, XenoTreeManager xtm, boolean withTrees, Color col) {
 		this.world = w;
 		this.generator = generator;
 		this.heightArrays = hArrays;
-		this.amps = amps;
 		this.scale = scale;
 		this.xtm = xtm;
 		this.withTrees = withTrees;
@@ -69,7 +68,7 @@ public class TerrainLayer {
 	public float getHeight(float position) {
 		tmpFloat = 0.0f;
 		for (int j=0; j<heightArrays.length; j++)
-			tmpFloat += amps[j] * heightArrays[j].getHeight(position);
+			tmpFloat += heightArrays[j].getHeight(position);
 		return tmpFloat;
 	}
 

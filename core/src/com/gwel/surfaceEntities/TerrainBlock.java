@@ -24,7 +24,6 @@ public class TerrainBlock {
 	public Vector2 position = new Vector2();
 	public final Color color = new Color();
 	public HeightArray[] heightArrays;
-	public float[] amps;
 	private ArrayList<XenoTree> trees = new ArrayList<XenoTree>();
 	
 	public TerrainBlock(Vector2 position, Vector2[] mesh, Color color) {

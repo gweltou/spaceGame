@@ -20,7 +20,7 @@ import com.gwel.surfaceEntities.*;
 
 
 public class ScreenOnPlanet implements Screen {
-	private final static int NUM_PARALLAX_LAYERS = 6;
+	private final static int NUM_PARALLAX_LAYERS = 4;
 	final SpaceGame game;
 	private MyCamera camera;
 	private World world;
@@ -49,7 +49,7 @@ public class ScreenOnPlanet implements Screen {
 		camera.zoomTo(100.0f);
 		game.renderer.setCamera(camera);
 		planet = p;
-		game.generator.setSeed(planet.seed);
+		MathUtils.random.setSeed(planet.seed);
 		strName = game.getPlanetName(planet.seed);
 		layoutName = new GlyphLayout();
 		layoutName.setText(game.font, strName);
@@ -68,18 +68,18 @@ public class ScreenOnPlanet implements Screen {
 		
 		// GENERATE TERRAIN DATA
 		HeightArray[] hArrays = {
-				new HeightArray(game.generator, surfaceLength, 0.001f, surfaceLength),
-				new HeightArray(game.generator, surfaceLength/3, 0.1f, surfaceLength),
-				new HeightArray(game.generator, 10.0f, 1f, surfaceLength),
-				new HeightArray(game.generator, 10.0f, 3f, surfaceLength)};
-		float[] amps = {20f, 8f, 1.0f, 0.15f};
+				//new HeightArray(game.generator, surfaceLength, 0.001f),
+				//new HeightArray(game.generator, surfaceLength, 0.1f),
+				//new HeightArray(game.generator, surfaceLength, 1f),
+				new HeightArray(surfaceLength, 3f, 0.5f)};
 		
 		Vector2 blockPos = new Vector2(landingHPos-50f, 0.0f);
-		walkingLayer = new TerrainLayer(game.generator, world, hArrays, amps, blockPos, 1f, xtm, true, planet.color);
+		walkingLayer = new TerrainLayer(game.generator, world, hArrays, blockPos, 1f, xtm, true, planet.color);
 		parallaxLayers = new ParallaxLayer[NUM_PARALLAX_LAYERS];
 		for (int i=0; i<NUM_PARALLAX_LAYERS; i++) {
 			float scale = (float) Math.pow(0.5f, i+1);
-			parallaxLayers[i] = new ParallaxLayer(game.generator, hArrays, amps, blockPos, scale, xtm, false, planet.color);
+			Terrain terrain = new Terrain(4, surfaceLength, scale);
+			parallaxLayers[i] = new ParallaxLayer(terrain, scale, xtm, false, planet.color);
 		}
 				
 		// Regenerating ship

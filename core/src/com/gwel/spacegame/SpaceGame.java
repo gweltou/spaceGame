@@ -13,6 +13,7 @@ import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.freetype.FreeTypeFontGenerator;
 import com.badlogic.gdx.graphics.g2d.freetype.FreeTypeFontGenerator.FreeTypeFontParameter;
+import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.RandomXS128;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.utils.TimeUtils;
@@ -92,7 +93,7 @@ public class SpaceGame extends Game {
 			return;
 		}
 		
-		generator = new RandomXS128();
+		generator = (RandomXS128) MathUtils.random;
 		generator.setSeed((long) 6.0f);
 		godNames = new ArrayList<ArrayList<String>>();
 		loadGodNames();
