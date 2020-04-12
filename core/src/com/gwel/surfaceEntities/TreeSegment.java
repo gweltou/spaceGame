@@ -46,7 +46,7 @@ class TreeSegment implements Disposable {
 	     THIS IS A 3D CONE
 	     We calculate the volume of the lower truncated cone
 
-	              |------------|
+	           p5 |------------|
 	             /|\           |
 	    r2----p4/_|_\p3____    H
 	           /  |  \    |h   |
@@ -66,10 +66,10 @@ class TreeSegment implements Disposable {
 		volume *= Math.pow(r1, 3) - Math.pow(r2, 3);
 		surface = 0.5f * h * (r2 + r1);
 
-		vertices[0] = new Vector2(-r1, 0f);
-		vertices[1] = new Vector2(r1, 0f);
-		vertices[2] = new Vector2(r2, h);
-		vertices[3] = new Vector2(-r2, h);
+		vertices[0] = new Vector2(-r1, 0f);	// p0
+		vertices[1] = new Vector2(r1, 0f);	// p1
+		vertices[2] = new Vector2(r2, h);		// p3
+		vertices[3] = new Vector2(-r2, h);		// p4
 	}
 
 	public void initBody(World world) {
@@ -125,6 +125,7 @@ class TreeSegment implements Disposable {
 		renderer.triangle(vertices[0], new Vector2(0f, -r1), vertices[1]);	// base triangle
 		renderer.triangle(vertices[0], vertices[1], vertices[2]);
 		renderer.triangle(vertices[2], vertices[3], vertices[0]);
+		renderer.triangle(vertices[2], new Vector2(0f, h+r2), vertices[3]);
 		renderer.popMatrix();
 	}
 

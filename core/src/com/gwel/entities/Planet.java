@@ -17,6 +17,7 @@ public class Planet implements Collidable {
 	private Vector2 position;
 	public float mass;
 	public float radius;
+	public float surfaceLength;
 	public Color color;
 	public float colorHue;
 	public float colorSat;
@@ -29,9 +30,12 @@ public class Planet implements Collidable {
 	
 
 	public Planet(Vector2 pos, float rad, long seed) {
+		this.seed = seed;
 		position = pos.cpy();
 		radius = rad;
-		this.seed = seed;
+		mass = (float) Math.PI * rad * rad;
+		surfaceLength = MathUtils.PI2 * rad;
+
 		RandomXS128 generator = new RandomXS128(seed);
 		colorHue = generator.nextFloat()*360.0f;
 		colorSat = generator.nextFloat();
@@ -39,7 +43,7 @@ public class Planet implements Collidable {
 		color = new Color().fromHsv(colorHue, colorSat, colorVal);
 		color.a = 1.0f; // We need to set the alpha component manually, for some reason
 		
-		mass = (float) Math.PI * rad * rad;
+
 		// Create satellites configuration, if any (not the actual Satellite instances)
 		n_sat = (int) Math.floor(MathUtils.random(Const.PLANET_MAX_SAT+1));
 		sat_orbit = new float[n_sat];

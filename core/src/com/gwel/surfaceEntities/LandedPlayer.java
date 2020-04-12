@@ -9,7 +9,6 @@ import com.badlogic.gdx.physics.box2d.PolygonShape;
 import com.badlogic.gdx.physics.box2d.BodyDef.BodyType;
 import com.badlogic.gdx.physics.box2d.World;
 import com.gwel.entities.PhysicBody;
-import com.gwel.spacegame.Enums;
 import com.gwel.spacegame.MyRenderer;
 
 public class LandedPlayer extends PhysicBody {
@@ -26,7 +25,7 @@ public class LandedPlayer extends PhysicBody {
 		
 		// Set shape triangles
 		triangles = new float[1][10];
-		float[] triangle = {-0.5f, 0.0f, 0.5f, 0.0f, 0.0f, 1.0f, 1f, 1f, 1f, 1f};
+		float[] triangle = {-0.5f, 0.0f, 0.5f, 0.0f, 0.0f, 1.2f, 1f, 1f, 1f, 1f};
 		triangles[0] = triangle;
 		transform = new Affine2();
 	}

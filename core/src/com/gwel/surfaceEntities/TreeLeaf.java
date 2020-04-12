@@ -52,23 +52,23 @@ class LeafParam {
 	public float bri1, bri2;
 	public Vector2[][] vertices;
 
-	LeafParam(RandomXS128 generator) {
+	LeafParam() {
 		System.out.println("LeafParam created");
-		hue = generator.nextFloat()*0.4f;
-		sat = generator.nextFloat()*0.5f + 0.5f;
-		bri1 = generator.nextFloat()*0.5f + 0.5f;
-		bri2 = generator.nextFloat();
-		type = (int) Math.floor(generator.nextFloat()*32f);  // 5 bits random number
+		hue = MathUtils.random.nextFloat()*0.4f;
+		sat = MathUtils.random.nextFloat()*0.5f + 0.5f;
+		bri1 = MathUtils.random.nextFloat()*0.5f + 0.5f;
+		bri2 = MathUtils.random.nextFloat();
+		type = (int) Math.floor(MathUtils.random.nextFloat()*32f);  // 5 bits random number
 		Vector2[][] vertices_tmp = new Vector2[8][3];
 		n_triangles = 0;
 
-		float sq_width = generator.nextFloat()*0.6f + 0.4f;
-		float sq_height = generator.nextFloat()*0.8f + 0.2f;
-		float up_leaflet_len = generator.nextFloat()*0.4f + 0.2f;
-		float down_leaflet_len = up_leaflet_len + generator.nextFloat()*0.4f + 0.2f;
-		float side_leaflet_len = generator.nextFloat()*0.9f + 0.1f;
-		float updiag_leaflet_len = generator.nextFloat()*0.9f + 0.1f;
-		float downdiag_leaflet_len = generator.nextFloat()*0.9f + 0.1f;
+		float sq_width = MathUtils.random.nextFloat()*0.6f + 0.4f;
+		float sq_height = MathUtils.random.nextFloat()*0.8f + 0.2f;
+		float up_leaflet_len = MathUtils.random.nextFloat()*0.4f + 0.2f;
+		float down_leaflet_len = up_leaflet_len + MathUtils.random.nextFloat()*0.4f + 0.2f;
+		float side_leaflet_len = MathUtils.random.nextFloat()*0.9f + 0.1f;
+		float updiag_leaflet_len = MathUtils.random.nextFloat()*0.9f + 0.1f;
+		float downdiag_leaflet_len = MathUtils.random.nextFloat()*0.9f + 0.1f;
 
 		if ((type & 1) == 0) {  // Type A
 			// Center square

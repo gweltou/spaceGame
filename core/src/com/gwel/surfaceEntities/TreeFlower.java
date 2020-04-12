@@ -3,7 +3,6 @@ package com.gwel.surfaceEntities;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.math.Affine2;
 import com.badlogic.gdx.math.MathUtils;
-import com.badlogic.gdx.math.RandomXS128;
 import com.badlogic.gdx.math.Vector2;
 import com.gwel.spacegame.MyRenderer;
 
@@ -62,18 +61,18 @@ class FlowerParam {
 	public Vector2[][] vertices1;
 	public Vector2[][] vertices2;
 
-	FlowerParam(RandomXS128 generator) {
+	FlowerParam() {
 		System.out.println("FlowerParam created");
-		hue1 = generator.nextFloat()*360.0f;
-		hue2 = generator.nextFloat()*360.0f;
-		sat1 = generator.nextFloat();
-		sat2 = generator.nextFloat();
-		bri1 = generator.nextFloat();
-		bri2 = generator.nextFloat();
-		size = generator.nextFloat()*0.25f + 0.25f; // Radius of flower
-		sizeVar = generator.nextFloat()*1.2f; //120% variation between smallest and largest
-		coreSize = generator.nextFloat()*0.8f + 0.2f; // Proportional to size
-		shape = (int) Math.floor(generator.nextFloat()*2f);
+		hue1 = MathUtils.random.nextFloat()*360.0f;
+		hue2 = MathUtils.random.nextFloat()*360.0f;
+		sat1 = MathUtils.random.nextFloat();
+		sat2 = MathUtils.random.nextFloat();
+		bri1 = MathUtils.random.nextFloat();
+		bri2 = MathUtils.random.nextFloat();
+		size = MathUtils.random.nextFloat()*0.25f + 0.25f; // Radius of flower
+		sizeVar = MathUtils.random.nextFloat()*1.2f; //120% variation between smallest and largest
+		coreSize = MathUtils.random.nextFloat()*0.8f + 0.2f; // Proportional to size
+		shape = (int) Math.floor(MathUtils.random.nextFloat()*2f);
 
 		switch (shape) {
 		case 0:  // 2 squares

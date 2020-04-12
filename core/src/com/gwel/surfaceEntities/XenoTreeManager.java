@@ -1,9 +1,10 @@
 package com.gwel.surfaceEntities;
 
 import java.util.Arrays;
-
-import com.badlogic.gdx.math.RandomXS128;
+import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.physics.box2d.World;
+import com.gwel.entities.Planet;
+
 
 public class XenoTreeManager {
 	private World world;
@@ -13,45 +14,44 @@ public class XenoTreeManager {
 	public LeafParam lp;
     private float surfaceLength;
     private float[] treeCoords;
-    private RandomXS128 generator;
-	
-	public XenoTreeManager(RandomXS128 generator, World world, float surfaceLength) {
-		this.generator = generator;
+
+	public XenoTreeManager(World world, Planet planet) {
 		this.world = world;
-		this.surfaceLength = surfaceLength;
-		float treeDensity = 0.02f;
+		this.surfaceLength = planet.surfaceLength;
+		float treeDensity = Math.max(0.0f, MathUtils.random(-0.1f, 0.2f));
 		int numTrees = (int) (treeDensity * surfaceLength);
 		
-		tp = new TreeParam(generator);
-		tpm = new TreeParamMod(generator);
-		fp = new FlowerParam(generator);
-		lp = new LeafParam(generator);
+		tp = new TreeParam();
+		tpm = new TreeParamMod();
+		fp = new FlowerParam();
+		lp = new LeafParam();
 		
 		treeCoords = new float[numTrees];
 		for (int i=0; i<numTrees; i++) {
-			treeCoords[i] = generator.nextFloat()*surfaceLength;
+			treeCoords[i] = MathUtils.random.nextFloat()*surfaceLength;
 			
 		}
 		Arrays.sort(treeCoords);
 		
-		System.out.print("XenoTreeManager created with " + treeCoords.length + " tree coords");
-		System.out.println(", surface length: " + surfaceLength);
+		System.out.print("XenoTreeManager created with " + treeCoords.length + " trees ");
+		System.out.println("(" + treeDensity + " density)");
 	}
 	
 	XenoTree buildTree(float x, float y) {
-		generator.setSeed((long) y);
-		float width = generator.nextFloat()*5f + 1f;
-		return new XenoTree(world, x, y, width, tp, tpm, fp, lp, null, generator);
+		MathUtils.random.setSeed((long) (y*100));
+		float width = MathUtils.random.nextFloat()*4f + 1f;
+		return new XenoTree(world, x, y, width, tp, tpm, fp, lp, null);
 	}
 
-	public float[] getCoordsBetween(float leftCoord, float rightCoord) {
-		System.out.println("From XenoTreeManager.getCoordsBetween: ");
-		System.out.println("    leftCoord " + leftCoord + " rightCoord " + rightCoord);
-
-		float offset = 0f;
+	public float[] treesBetween(float leftCoord, float rightCoord) {
+		float offset = 0.0f;
 		float[] coords;
 
-		while (leftCoord < 0) {
+		// Add padding around the queried field so trees appear a bit sooner
+		leftCoord -= 20;
+		rightCoord += 20;
+
+		while (leftCoord < 0.0f) {
 			leftCoord += surfaceLength;
 			rightCoord += surfaceLength;
 			offset -= surfaceLength;
@@ -82,7 +82,6 @@ public class XenoTreeManager {
 				coords[i] = treeCoords[leftIndex+i] + offset;
 			}
 		}
-		
 		return coords;
 	}
 	
@@ -91,7 +90,7 @@ public class XenoTreeManager {
 		int right = treeCoords.length - 1;
 		int mid;
 		while (left <= right) {
-			mid = (int) Math.floor((left + right) / 2);
+			mid = (int) Math.floor((left + right) / 2f);
 			if (treeCoords[mid] < xCoord)
 				left = mid + 1;
 			else if (treeCoords[mid] > xCoord)

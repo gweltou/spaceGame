@@ -6,10 +6,7 @@ import com.badlogic.gdx.math.Affine2;
 import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.RandomXS128;
 import com.badlogic.gdx.math.Vector2;
-import com.badlogic.gdx.physics.box2d.Body;
 import com.badlogic.gdx.physics.box2d.World;
-import com.badlogic.gdx.physics.box2d.joints.RevoluteJoint;
-import com.badlogic.gdx.physics.box2d.joints.RevoluteJointDef;
 import com.gwel.spacegame.MyRenderer;
 
 public class XenoTree {
@@ -46,16 +43,16 @@ public class XenoTree {
 	}
  */
 	
-	XenoTree(World world, float x, float y, float w, TreeParam tp, TreeParamMod tpm, FlowerParam fp, LeafParam lp, WindManager wm, RandomXS128 generator) {
+	XenoTree(World world, float x, float y, float w, TreeParam tp, TreeParamMod tpm, FlowerParam fp, LeafParam lp, WindManager wm) {
 		this.world = world;
 		this.tp = tp;
 		this.tpm = tpm;
 		this.fp = fp;
 		this.lp = lp;
 		this.wm = wm;
-		odd = Math.round(generator.nextFloat());
+		odd = Math.round(MathUtils.random.nextFloat());
 		segs = new ArrayList<TreeSegment>();
-		segs.addAll(branch(x, y, 0.0f, w, tp, tpm, true, 0, 0, generator));
+		segs.addAll(branch(x, y, 0.0f, w, tp, tpm, true, 0, 0));
 		/*println();
 	    println("nSegs", segs.size());
 	    println("nFlowers", nFlowers);
@@ -114,7 +111,7 @@ public class XenoTree {
 		}
 	}
 
-	ArrayList<TreeSegment> branch(float x, float y, float angle, float base, TreeParam tp, TreeParamMod tpm, boolean root, int rank, int level, RandomXS128 generator) {
+	ArrayList<TreeSegment> branch(float x, float y, float angle, float base, TreeParam tp, TreeParamMod tpm, boolean root, int rank, int level) {
 		ArrayList<TreeSegment> segs = new ArrayList<TreeSegment>();
 		if (base < 0.1f || segs.size() >= SEG_LIMIT)
 			return segs;
@@ -124,7 +121,7 @@ public class XenoTree {
 
 		// add Flowers
 		if (rank >= tp.floRank && nFlowers < FLOWER_LIMIT) {
-			int nFlo = (int) Math.floor(generator.nextFloat()*2f);
+			int nFlo = (int) Math.floor(MathUtils.random.nextFloat()*2f);
 			for (int i=0; i<nFlo; i++) {
 				s.flowers.add(new TreeFlower(s.r1, tall, fp, wm));
 				nFlowers++;
@@ -132,7 +129,7 @@ public class XenoTree {
 		}
 		// Add Leaves
 		if ((rank >= tp.leafRank || level >= 2) && nLeaves < LEAF_LIMIT) {
-			int n = (int) Math.floor(0.1*generator.nextFloat()*s.surface);
+			int n = (int) Math.floor(0.1*MathUtils.random.nextFloat()*s.surface);
 			for (int i=0; i<n; i++) {
 				s.leaves.add(new TreeLeaf(s, lp, wm));
 				nLeaves++;
@@ -154,9 +151,9 @@ public class XenoTree {
 			if (angle > MathUtils.PI) angle -= MathUtils.PI2;
 			if (angle < -MathUtils.PI) angle += MathUtils.PI2;
 			angle -= angle*tp.heliotropism;
-			float nextAngle = angle + generator.nextFloat()*2*tp.angleChaos - tp.angleChaos;
+			float nextAngle = angle + MathUtils.random.nextFloat()*2*tp.angleChaos - tp.angleChaos;
 
-			segs.addAll(branch(nextX, nextY, nextAngle, base*tp.wCoeff, newTp, tpm, false, rank+1, level, generator));
+			segs.addAll(branch(nextX, nextY, nextAngle, base*tp.wCoeff, newTp, tpm, false, rank+1, level));
 
 			// Add joint if there's a least 2 segments
 			/*
@@ -180,14 +177,14 @@ public class XenoTree {
 			 */
 
 			// branch out
-			if (generator.nextFloat() < tp.branchProb) {
+			if (MathUtils.random.nextFloat() < tp.branchProb) {
 				ArrayList<TreeSegment> newBranch;
-				if (generator.nextFloat() < 0.5f) {
-					angle += tp.branchAngle + generator.nextFloat()*2*tp.angleChaos - tp.angleChaos;
-					newBranch = branch(nextX, nextY, angle, base*tp.wCoeff, newTp, tpm, false, rank+1, level+1, generator);
+				if (MathUtils.random.nextFloat() < 0.5f) {
+					angle += tp.branchAngle + MathUtils.random.nextFloat()*2*tp.angleChaos - tp.angleChaos;
+					newBranch = branch(nextX, nextY, angle, base*tp.wCoeff, newTp, tpm, false, rank+1, level+1);
 				} else {
-					angle -= tp.branchAngle + generator.nextFloat()*2*tp.angleChaos - tp.angleChaos;
-					newBranch = branch(nextX, nextY, angle-tp.branchAngle, base*tp.wCoeff, newTp, tpm, false, rank+1, level+1, generator);
+					angle -= tp.branchAngle + MathUtils.random.nextFloat()*2*tp.angleChaos - tp.angleChaos;
+					newBranch = branch(nextX, nextY, angle-tp.branchAngle, base*tp.wCoeff, newTp, tpm, false, rank+1, level+1);
 				}
 				/*
 				if (!newBranch.isEmpty()) {
@@ -225,19 +222,19 @@ class TreeParam {
 	public int floRank;
 	public int leafRank;
 
-	TreeParam(RandomXS128 generator) {
-		wCoeff = generator.nextFloat() * 0.14f + 0.82f;
-		wToH = generator.nextFloat() * 0.8f + 1.2f;
-		stiffCoeff = generator.nextFloat() * 1000f;
-		branchAngle = generator.nextFloat() + 0.2f;
-		branchProb = generator.nextFloat() * 0.15f + 0.25f;
-		angleChaos = generator.nextFloat() * 0.32f;
+	TreeParam() {
+		wCoeff = MathUtils.random.nextFloat() * 0.14f + 0.82f;
+		wToH = MathUtils.random.nextFloat() * 0.8f + 1.2f;
+		stiffCoeff = MathUtils.random.nextFloat() * 1000f;
+		branchAngle = MathUtils.random.nextFloat() + 0.2f;
+		branchProb = MathUtils.random.nextFloat() * 0.15f + 0.25f;
+		angleChaos = MathUtils.random.nextFloat() * 0.32f;
 		zigZag = 0.0f;
-		if (generator.nextFloat() < 0.3f)
-			zigZag = generator.nextFloat() * 0.5f;
-		heliotropism = generator.nextFloat() * 0.8f - 0.4f;
-		floRank = (int) Math.floor(generator.nextFloat() * (XenoTree.RANK_LIMIT-2f) + 2f);
-		leafRank = (int) Math.floor(generator.nextFloat() * (XenoTree.RANK_LIMIT-2f) + 2f);
+		if (MathUtils.random.nextFloat() < 0.3f)
+			zigZag = MathUtils.random.nextFloat() * 0.5f;
+		heliotropism = MathUtils.random.nextFloat() * 0.8f - 0.4f;
+		floRank = (int) Math.floor(MathUtils.random.nextFloat() * (XenoTree.RANK_LIMIT-2f) + 2f);
+		leafRank = (int) Math.floor(MathUtils.random.nextFloat() * (XenoTree.RANK_LIMIT-2f) + 2f);
 
 		//println();
 		//println("wCoeff", wCoeff);
@@ -286,12 +283,12 @@ class TreeParamMod {
 	public float aChaosMod;
 	public float zzMod;
 	
-	TreeParamMod(RandomXS128 generator) {
-		wCoeffMod = generator.nextFloat()*0.1f + 0.86f;
-		wToHMod = generator.nextFloat()*0.28f + 0.92f;
-		bAngleMod = generator.nextFloat()*0.4f + 0.8f;
-		bProbMod = generator.nextFloat()*0.35f + 0.8f;
-		aChaosMod = generator.nextFloat()*0.5f + 0.7f;
-		zzMod = generator.nextFloat()*0.6f + 0.6f;
+	TreeParamMod() {
+		wCoeffMod = MathUtils.random.nextFloat()*0.1f + 0.86f;
+		wToHMod = MathUtils.random.nextFloat()*0.28f + 0.92f;
+		bAngleMod = MathUtils.random.nextFloat()*0.4f + 0.8f;
+		bProbMod = MathUtils.random.nextFloat()*0.35f + 0.8f;
+		aChaosMod = MathUtils.random.nextFloat()*0.5f + 0.7f;
+		zzMod = MathUtils.random.nextFloat()*0.6f + 0.6f;
 	}
 }

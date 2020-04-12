@@ -21,9 +21,9 @@ public class HeightArray {
 		for (int i=0; i<numValues; i++) {
 			values[i] = MathUtils.random.nextFloat() * amp;
 		}
-		System.out.print("span " + span);
-		System.out.print("  num values " + numValues);
-		System.out.println("  amp: " + amp);
+//		System.out.print("span " + span);
+//		System.out.print("  num values " + numValues);
+//		System.out.println("  amp: " + amp);
 	}
 	
 	public float getHeight(float x) {

@@ -3,33 +3,32 @@ package com.gwel.surfaceEntities;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.math.Affine2;
 import com.badlogic.gdx.math.Vector2;
+import com.gwel.entities.Planet;
 import com.gwel.spacegame.MyRenderer;
 
 
 public class ParallaxLayer {
     private final Terrain terrain;
     private final float scale;
-    private final XenoTreeManager xtm;
+    private XenoTreeManager xtm;
     private final boolean withTrees;
     private final Color color;
 
-    public ParallaxLayer(Terrain terrain, float scale, XenoTreeManager xtm, boolean withTrees, Color col) {
-        this.terrain = terrain;
+    public ParallaxLayer(Planet planet, float scale, boolean withTrees, XenoTreeManager xtm) {
+        this.terrain = new Terrain(4, planet.surfaceLength, scale);
         this.scale = scale;
-        this.xtm = xtm;
         this.withTrees = withTrees;
+        this.xtm = xtm;
 
         // Color
-        float[] hsv = new float[3];
-        col.toHsv(hsv);
         float level = (float) (Math.log(scale)/Math.log(0.5));
-        float colSat = hsv[1]*((float) Math.pow(0.6f, level));
-        float colVal = hsv[2];
+        float colSat = planet.colorSat * ((float) Math.pow(0.6f, level));
+        float colVal = planet.colorVal;
         for (int i=0; i<=level; i++)
-            colVal += (1.0f-colVal)*0.25f;
+            colVal += (1.0f-colVal) * 0.25f;
         color = new Color();
         color.a = 1.0f;
-        color.fromHsv(hsv[0], colSat, colVal);
+        color.fromHsv(planet.colorHue, colSat, colVal);
     }
 
     public float getHeight(float position) {
@@ -45,22 +44,23 @@ public class ParallaxLayer {
 
         // Trees
         if (withTrees) {
-            float[] treeCoords = xtm.getCoordsBetween(leftBoundary, rightBoundary);
-            for (float c : treeCoords) {
-                block.addTree(xtm.buildTree(c, getHeight(c) - 2f));
+            float[] treeCoords = xtm.treesBetween(leftBoundary, rightBoundary);
+            for (float x : treeCoords) {
+                block.addTree(xtm.buildTree(x, getHeight(x) - 2f));
             }
         }
 
         Affine2 transform = new Affine2();
         transform.idt();
-        //transform.translate(0f, 10f);
+        transform.translate(0f, -1.5f/scale);
         transform.scale(scale, scale);
         // Weird translate so the parallax effect works
         transform.translate(-renderer.camera.center.x + renderer.camera.center.x/scale,
                 -renderer.camera.center.y + renderer.camera.center.y/scale);
 
         renderer.pushMatrix(transform);
-        block.render(renderer);
+        block.renderTerrain(renderer);
+        block.renderTrees(renderer);
         renderer.popMatrix();
     }
 }

@@ -12,13 +12,12 @@ public class Terrain {
 
     public Terrain(int nLayers, float surfaceLength, float scale) {
         this.surfaceLength = surfaceLength;
-
         HeightArray[] hArrays = new HeightArray[nLayers];
-        float vpu = MathUtils.randomTriangular(2.0f, 4.0f) ;
-        float amp = MathUtils.randomTriangular(0.01f, 0.02f) ;
+        float vpu = MathUtils.randomTriangular(2.0f, 4.0f) * scale ;
+        float amp = MathUtils.randomTriangular(0.01f, 0.02f) / scale;
         for (int i=0; i<nLayers; i++) {
-            vpu /= Math.pow(MathUtils.randomTriangular(2.0f, 4.0f), i);
-            amp *= Math.pow(MathUtils.randomTriangular(2.0f, 5.0f), i);
+            vpu /= Math.pow(MathUtils.randomTriangular(1.2f, 3.0f), i);
+            amp *= Math.pow(MathUtils.randomTriangular(2.0f, 8.0f), 1);
             hArrays[i] = new HeightArray(surfaceLength, vpu, amp);
         }
 
@@ -30,23 +29,24 @@ public class Terrain {
                 y += ha.getHeight(x);
             coords.add(new Vector2(x, y));
         }
-        System.out.println("Terrain created with " + coords.size() + " values");
-        System.out.println("Scale : " + scale);
+        //System.out.println("Terrain created with " + coords.size() + " values");
+        //System.out.println("Scale : " + scale);
     }
 
     public float getHeight(float x) {
         // x : a horizontal coordinate on planet surface (can be greater than planet length)
-        // Calculate a decimal index (between 0 and values.length) from x
+        // Calculate a decimal index (between 0 and coords.size()) from x
         float floatIdx = coords.size() * (x%surfaceLength) / surfaceLength;
         // Wrap around if index is negative
-        if (floatIdx < 0.0f)	floatIdx += coords.size();
-        int il = MathUtils.floor(floatIdx) % coords.size();
-        float lVal = coords.get(il).x;
-        float rVal = coords.get((il + 1) % coords.size()).x;
+        while (floatIdx < 0.0f)
+            floatIdx += coords.size();
+        int il = MathUtils.floor(floatIdx); // % coords.size();
+        float lVal = coords.get(il).y;
+        float rVal = coords.get((il + 1) % coords.size()).y;
         float wr = floatIdx - il;
         float wl = 1.0f - wr;
         // interpolate between the 2 indices
-        return (lVal * wl + rVal * wr);
+        return lVal*wl + rVal*wr;
     }
 
     public Vector2[] coordsBetween(float leftCoord, float rightCoord) {
