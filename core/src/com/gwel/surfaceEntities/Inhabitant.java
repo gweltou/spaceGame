@@ -63,15 +63,14 @@ public class Inhabitant extends PhysicBody {
     public void render(MyRenderer renderer) {
         transform.idt();
         transform.translate(getPosition());
+        renderer.pushMatrix(transform);
         for (float[] triangle: triangles) {
             p1_tmp.set(triangle[0], triangle[1]);
-            transform.applyTo(p1_tmp);
             p2_tmp.set(triangle[2], triangle[3]);
-            transform.applyTo(p2_tmp);
             p3_tmp.set(triangle[4], triangle[5]);
-            transform.applyTo(p3_tmp);
             renderer.setColor(triangle[6], triangle[7], triangle[8], triangle[9]);
             renderer.triangle(p1_tmp, p2_tmp, p3_tmp);
         }
+        renderer.popMatrix();
     }
 }

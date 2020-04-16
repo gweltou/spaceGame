@@ -10,6 +10,7 @@ public class MyCamera {
 	public final Vector2 center = new Vector2();
 	private Vector2 pCenter;  // Previous center (in game unit coordinates)
 	public boolean autozoom;
+	private float minZoom, maxZoom;
 	public int width;
 	public int height;
 	public Affine2 affine;
@@ -20,10 +21,12 @@ public class MyCamera {
 	public float PPU = 10.0f ; // Pixel per game unit
 
 	public MyCamera(int width, int height) {
-		autozoom = true;
 		this.width = width;
 		this.height = height;
 		affine = new Affine2();
+		autozoom = true;
+		minZoom = 0.02f;
+		maxZoom = 100f;
 		finalPPU = PPU;
 		angle = 0.0f;
 		finalAngle = 0.0f;
@@ -51,17 +54,13 @@ public class MyCamera {
 		setCenter(center.cpy().lerp(pos, 0.5f));
 	}
 
-	public void zoom(float z) {
-		this.PPU = MathUtils.clamp(this.PPU*z, 0.02f, 100.0f);
-	}
-
-	public void setZoom(float ppu) {
-		PPU = MathUtils.clamp(ppu, 0.02f, 100.0f);
-		finalPPU = PPU;
+	public void setZoomLimits(float min, float max) {
+		minZoom = min;
+		maxZoom = max;
 	}
 
 	public void zoomTo(float ppu) {
-		finalPPU = MathUtils.clamp(ppu, 0.02f, 100.0f);
+		finalPPU = MathUtils.clamp(ppu, minZoom, maxZoom);
 	}
 	
 	public void zoomIn() {

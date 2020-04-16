@@ -59,21 +59,17 @@ public class MyRenderer implements Disposable {
 	//    x, y, r, g, b, a, 
 	//    x, y, r, g, b, a, 
 	//    ... etc ...
-	private float[] verts_triangle = new float[3*MAX_TRIS * (2+4)];	// POSITION_ATTRIBUTE + COLOR_ATTRIBUTE
-	private float[] verts_trianglestrip = new float[2*MAX_TRIS * (2+4)];	// POSITION_ATTRIBUTE + COLOR_ATTRIBUTE
+	private final float[] verts_triangle = new float[3*MAX_TRIS * (2+4)];	// POSITION_ATTRIBUTE + COLOR_ATTRIBUTE
 
 	//The index positions
 	private int iTriangle;
 
 	public MyCamera camera;
-	private Mesh meshTriangles;
+	private final Mesh meshTriangles;
 	private final ShaderProgram shader;
 	private final Color color = new Color(1, 1, 1, 1);
 	private final Matrix4 projectionMatrix = new Matrix4();
-	private final Matrix4 transformMatrix = new Matrix4();
-	private final Matrix4 combinedMatrix = new Matrix4();
-	private boolean matrixDirty = false;
-	private final ArrayDeque<Affine2> matrixStack = new ArrayDeque<Affine2>();
+	public final ArrayDeque<Affine2> matrixStack = new ArrayDeque<>();
 	private final Vector2 tmpv1 = new Vector2();
 	private final Vector2 tmpv2 = new Vector2();
 	private final Vector2 tmpv3 = new Vector2();
@@ -105,38 +101,8 @@ public class MyRenderer implements Disposable {
 	
 	public void setProjectionMatrix(Matrix4 matrix) {
 		projectionMatrix.set(matrix);
-		matrixDirty = true;
 	}
 
-//	public void setTransformMatrix(Matrix4 matrix) {
-//		transformMatrix.set(matrix);
-//		matrixDirty = true;
-//	}
-//
-//	/** Sets the transformation matrix to identity. */
-//	public void identity() {
-//		transformMatrix.idt();
-//		matrixDirty = true;
-//	}
-//
-//	/** Multiplies the current transformation matrix by a translation matrix. */
-//	public void translate (float x, float y, float z) {
-//		transformMatrix.translate(x, y, z);
-//		matrixDirty = true;
-//	}
-//
-//	/** Multiplies the current transformation matrix by a rotation matrix. */
-//	public void rotate (float axisX, float axisY, float axisZ, float degrees) {
-//		transformMatrix.rotate(axisX, axisY, axisZ, degrees);
-//		matrixDirty = true;
-//	}
-//
-//	/** Multiplies the current transformation matrix by a scale matrix. */
-//	public void scale (float scaleX, float scaleY, float scaleZ) {
-//		transformMatrix.scale(scaleX, scaleY, scaleZ);
-//		matrixDirty = true;
-//	}
-	
 	public void pushMatrix(Affine2 matrix) {
 		Affine2 cpy = new Affine2();
 		cpy.set(matrix);
@@ -175,33 +141,33 @@ public class MyRenderer implements Disposable {
 		//we are assuming (0, 0) is lower left, and Y is up
 
 		//bottom left vertex
-		verts_triangle[iTriangle++] = x1; 			//Position(x, y) 
+		verts_triangle[iTriangle++] = x1;
 		verts_triangle[iTriangle++] = y1;
-		verts_triangle[iTriangle++] = color.r; 	//Color(r, g, b, a)
+		verts_triangle[iTriangle++] = color.r;
 		verts_triangle[iTriangle++] = color.g;
 		verts_triangle[iTriangle++] = color.b;
 		verts_triangle[iTriangle++] = color.a;
 
 		//top left vertex
-		verts_triangle[iTriangle++] = x2; 			//Position(x, y) 
+		verts_triangle[iTriangle++] = x2;
 		verts_triangle[iTriangle++] = y2 ;
-		verts_triangle[iTriangle++] = color.r; 	//Color(r, g, b, a)
+		verts_triangle[iTriangle++] = color.r;
 		verts_triangle[iTriangle++] = color.g;
 		verts_triangle[iTriangle++] = color.b;
 		verts_triangle[iTriangle++] = color.a;
 
 		//bottom right vertex
-		verts_triangle[iTriangle++] = x3;	 //Position(x, y) 
+		verts_triangle[iTriangle++] = x3;
 		verts_triangle[iTriangle++] = y3;
-		verts_triangle[iTriangle++] = color.r;		 //Color(r, g, b, a)
+		verts_triangle[iTriangle++] = color.r;
 		verts_triangle[iTriangle++] = color.g;
 		verts_triangle[iTriangle++] = color.b;
 		verts_triangle[iTriangle++] = color.a;
 	}
 
-	
+	/*
 	public void texturedSquare(float xPos, float yPos, float width, float height, Vector2 uv0, Vector2 uv1, Vector2 uv2) {	}
-	
+	*/
 	
 	/** Calls circleOpt(Vector2, float, int)} by estimating the number of segments needed for a smooth circle. */
 	public void circleOpt (Vector2 pos, float radius) {
@@ -380,8 +346,6 @@ public class MyRenderer implements Disposable {
 			// Circle center is in the viewport
 			double cx = radius;
 			double cy = 0;
-			newX = 0;
-			newY = 0;
 			for (int i = 0; i < segments-1; i++) {
 				newX = cos*cx - sin*cy;
 				newY = sin*cx + cos*cy;
@@ -390,7 +354,7 @@ public class MyRenderer implements Disposable {
 				cy = newY;
 			}
 			// Ensure the last segment is identical to the first.
-			triangle(pos.x, pos.y, (float) cx+pos.x,(float) cy+pos.y,(float) pos.x+radius, pos.y);
+			triangle(pos.x, pos.y, (float) cx+pos.x,(float) cy+pos.y, pos.x +radius, pos.y);
 		}
 	}
 	
@@ -404,13 +368,8 @@ public class MyRenderer implements Disposable {
 			Gdx.gl.glEnable(GL20.GL_BLEND);
 			Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA);
 
-			if (matrixDirty) {
-				combinedMatrix.set(projectionMatrix);
-				Matrix4.mul(combinedMatrix.val, transformMatrix.val);
-				matrixDirty = false;
-			}
 			shader.begin();
-			shader.setUniformMatrix("u_projModelView", combinedMatrix);
+			shader.setUniformMatrix("u_projModelView", projectionMatrix);
 			
 			if (iTriangle>0) {
 				//number of vertices we need to render

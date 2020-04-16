@@ -45,6 +45,7 @@ public class ScreenOnPlanet implements Screen {
 		this.planet = p;
 		world = new World(new Vector2(0.0f, -10.0f), true);
 		camera = new MyCamera(Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
+		camera.setZoomLimits(10f, 200f);
 		camera.zoomTo(100.0f);
 		game.renderer.setCamera(camera);
 		MathUtils.random.setSeed(planet.seed);
@@ -132,7 +133,8 @@ public class ScreenOnPlanet implements Screen {
 			planet.render(game.renderer);
 			player.render(game.renderer);
 			game.renderer.flush();
-			
+
+			// DRAW HUD
 			game.batch.setProjectionMatrix(normalProjection);
 			game.batch.begin();
 			game.font.draw(game.batch, strName, (Gdx.graphics.getWidth()-layoutName.width)/2, Gdx.graphics.getHeight()-game.font.getXHeight());
@@ -205,9 +207,15 @@ public class ScreenOnPlanet implements Screen {
 			ship.render(game.renderer);
 			player.render(game.renderer);
 			game.renderer.flush();
-			
-			// DISPLAY PLANET NAME
-			game.batch.setProjectionMatrix(normalProjection);
+
+			// DRAW HUD
+			game.renderer.setProjectionMatrix(normalProjection);
+			game.renderer.setColor(1f, 1f, 1f, 0.1f);
+			game.renderer.triangle(10f, 10f, 10f, 80f, camera.width-10f, 10f);
+			game.renderer.triangle(camera.width-10f, 10f, 10f, 80f, camera.width-10f, 80f);
+			game.renderer.flush();
+
+			// Display planet's name
 			game.batch.begin();
 			game.font.draw(game.batch, strName, (Gdx.graphics.getWidth()-layoutName.width)/2, Gdx.graphics.getHeight()-game.font.getXHeight());
 			game.batch.end();

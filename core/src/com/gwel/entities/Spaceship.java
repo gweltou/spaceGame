@@ -125,9 +125,9 @@ public class Spaceship extends PhysicBody implements Ship {
 			String[] values = linesArray[j].split("\t");
 			float[] triangle = new float[10];
 			int ii=0;
-			for (int i=0; i<values.length;i++) {
-				if (!values[i].isEmpty()) {
-					triangle[ii++] = Float.parseFloat(values[i]);
+			for (String value : values) {
+				if (!value.isEmpty()) {
+					triangle[ii++] = Float.parseFloat(value);
 				}
 			}
 
@@ -188,16 +188,15 @@ public class Spaceship extends PhysicBody implements Ship {
 		transform.idt();
 		transform.translate(getPosition());
 		transform.rotateRad(getAngle() + MathUtils.PI/2);
-		for (int i=0; i<triangles.length; i++) {
-			p1_tmp.set(triangles[i][0], triangles[i][1]);
-			transform.applyTo(p1_tmp);
-			p2_tmp.set(triangles[i][2], triangles[i][3]);
-			transform.applyTo(p2_tmp);
-			p3_tmp.set(triangles[i][4], triangles[i][5]);
-			transform.applyTo(p3_tmp);
-			renderer.setColor(triangles[i][6], triangles[i][7], triangles[i][8], triangles[i][9]);
+		renderer.pushMatrix(transform);
+		for (float[] triangle : triangles) {
+			p1_tmp.set(triangle[0], triangle[1]);
+			p2_tmp.set(triangle[2], triangle[3]);
+			p3_tmp.set(triangle[4], triangle[5]);
+			renderer.setColor(triangle[6], triangle[7], triangle[8], triangle[9]);
 			renderer.triangle(p1_tmp, p2_tmp, p3_tmp);
 		}
+		renderer.popMatrix();
 	}
 
 	public float getBoundingRadius() {

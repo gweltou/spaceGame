@@ -65,6 +65,7 @@ public class InhabitantLayer {
                     it.remove();
                     pos.add(offset, 0.0f);
                     npc.setPosition(pos);
+                    npc.initBody(world);
                     alive.add(npc);
                     i++;
                     //System.out.println("  added at " + pos);
@@ -78,12 +79,14 @@ public class InhabitantLayer {
                     it.remove();
                     pos.add(offset, 0);
                     npc.setPosition(pos);
+                    npc.initBody(world);
                     alive.add(npc);
                     i++;
                 } else if (pos.x >= 0.0 && pos.x < rightCoord-surfaceLength) {
                     it.remove();
                     pos.add(offset+surfaceLength, 0);
                     npc.setPosition(pos);
+                    npc.initBody(world);
                     alive.add(npc);
                     i++;
                 }
@@ -104,6 +107,7 @@ public class InhabitantLayer {
                 it.remove();
                 float x = pos.x % surfaceLength;
                 x += x < 0.0f ? surfaceLength : 0.0f;
+                npc.dispose();
                 npc.setPosition(new Vector2(x, pos.y));
                 idle.add(npc);
                 //System.out.println("  removed at " + pos);
