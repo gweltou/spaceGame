@@ -32,9 +32,10 @@ public class SpaceGame extends Game {
 	public Controller controller;
 	public boolean hasController;
 	public String controllerName;
-	FreeTypeFontGenerator fontGenerator;
+	private FreeTypeFontGenerator fontGenerator;
 	public BitmapFont font, fontHUD;
 	public RandomXS128 generator;
+	public UI ui;
 	
 	// GAME UNIVERSE VARIABLES
 	private final static float UNIVERSE_SIZE = 100000.0f;
@@ -95,11 +96,13 @@ public class SpaceGame extends Game {
 		
 		generator = (RandomXS128) MathUtils.random;
 		generator.setSeed((long) 6.0f);
-		godNames = new ArrayList<ArrayList<String>>();
+		godNames = new ArrayList<>();
 		loadGodNames();
 		AABB universe_boundary = new AABB(new Vector2(-UNIVERSE_SIZE/2, -UNIVERSE_SIZE/2), new Vector2(UNIVERSE_SIZE/2, UNIVERSE_SIZE/2));
 		Qt = new QuadTree(universe_boundary);
 		populateUniverse(Qt);
+
+		ui = new UI(this);
 		
 		camera = new MyCamera(Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
 		//camera.setCenter();
@@ -114,6 +117,7 @@ public class SpaceGame extends Game {
 		font = new BitmapFont(Gdx.files.internal("greeknames.fnt"));
 		parameter.size = 24;
 		fontHUD = fontGenerator.generateFont(parameter);
+		fontGenerator.dispose();
 		
 		ship = new Spaceship(new Vector2());
 		
@@ -123,7 +127,7 @@ public class SpaceGame extends Game {
 	}
 
 	@Override
-	public void render () {
+	public void render() {
 		super.render();
 		
 		// Landing on planet
@@ -202,7 +206,7 @@ public class SpaceGame extends Game {
 		long start_time = TimeUtils.millis();
 		int num = 0;
 		for (String filename: god_files) {
-			ArrayList<String> array = new ArrayList<String>();
+			ArrayList<String> array = new ArrayList<>();
 			FileHandle file = Gdx.files.internal("gods/" + filename + ".txt");
 			String content = file.readString();
 			String[] lines = content.split("\n");
@@ -277,26 +281,24 @@ public class SpaceGame extends Game {
 				int i = generator.nextInt(1000);
 				r = generator.nextFloat();
 				if (r < 0.2f) {
-					str = " " + String.valueOf(i);
+					str = " " + i;
 				} else if (r < 0.4f) {
-					str = " " + String.valueOf((char) (generator.nextInt(26) + 'A')) + String.valueOf(i);
+					str = " " + (char) (generator.nextInt(26) + 'A') + i;
 				} else if (r < 0.6f) {
-					str = " " + String.valueOf((char) (generator.nextInt(26) + 'A')) + "-" + String.valueOf(i);
+					str = " " + (char) (generator.nextInt(26) + 'A') + "-" + i;
 				} else if (r < 0.8f) {
 					str = " " +
-							String.valueOf((char) (generator.nextInt(26) + 'A')) +
-							String.valueOf((char) (generator.nextInt(26) + 'A')) +
-							String.valueOf(i);
+							(char) (generator.nextInt(26) + 'A') +
+							(char) (generator.nextInt(26) + 'A') + i;
 				} else {
 					str = " " +
-							String.valueOf((char) (generator.nextInt(26) + 'A')) +
-							String.valueOf((char) (generator.nextInt(26) + 'A')) +
-							"-" +
-							String.valueOf(i);
+							(char) (generator.nextInt(26) + 'A') +
+							(char) (generator.nextInt(26) + 'A') + "-" + i;
 				}
 			}
 			name = name.concat(str);
 		}
 		return name;
 	}
+
 }

@@ -40,18 +40,17 @@ public class ScreenInSpace implements Screen {
 	
 	private final static int NUM_DROIDS_AROUND = 8;
 
-	
-	private ArrayList<Planet> local_planets = new ArrayList<Planet>();
+	private ArrayList<Planet> local_planets = new ArrayList<>();
 	private ArrayList<Planet> local_planets_prev;
-	private LinkedList<Satellite> local_sats = new LinkedList<Satellite>();
+	private LinkedList<Satellite> local_sats = new LinkedList<>();
 	private ListIterator<Satellite> sat_iter;
-	private LinkedList<MovingObject> free_bodies = new LinkedList<MovingObject>();
+	private LinkedList<MovingObject> free_bodies = new LinkedList<>();
 	private ListIterator<MovingObject> iterBodies;
-	private LinkedList<DroidShip> droids = new LinkedList<DroidShip>();
+	private LinkedList<DroidShip> droids = new LinkedList<>();
 	private ListIterator<DroidShip> iterDroids;
-	private LinkedList<Projectile> projectiles = new LinkedList<Projectile>();
+	private LinkedList<Projectile> projectiles = new LinkedList<>();
 	private ListIterator<Projectile> iterProj;
-	private LinkedList<ShipTrail> trails = new LinkedList<ShipTrail>();
+	private LinkedList<ShipTrail> trails = new LinkedList<>();
 	private ListIterator<ShipTrail> iterTrails;
 	private DroidPool droidPool;
 	

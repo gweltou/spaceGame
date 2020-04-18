@@ -97,6 +97,8 @@ public class ScreenOnPlanet implements Screen {
 		player.initBody(world);
 		
 		landingIntro = false;
+
+		game.ui.dialog("Hello stranger, how are you doing today ?");
 	}
 	
 	@Override
@@ -209,11 +211,14 @@ public class ScreenOnPlanet implements Screen {
 			game.renderer.flush();
 
 			// DRAW HUD
+			/*
 			game.renderer.setProjectionMatrix(normalProjection);
 			game.renderer.setColor(1f, 1f, 1f, 0.1f);
 			game.renderer.triangle(10f, 10f, 10f, 80f, camera.width-10f, 10f);
 			game.renderer.triangle(camera.width-10f, 10f, 10f, 80f, camera.width-10f, 80f);
 			game.renderer.flush();
+			 */
+			game.ui.render();
 
 			// Display planet's name
 			game.batch.begin();
