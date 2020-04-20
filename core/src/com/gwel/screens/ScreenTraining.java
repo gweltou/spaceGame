@@ -28,7 +28,7 @@ import com.gwel.ai.NeuralNetwork;
 import com.gwel.ai.DroidPool;
 import com.gwel.entities.*;
 import com.gwel.spacegame.Enums;
-import com.gwel.spacegame.MyContactListener;
+import com.gwel.spacegame.SpaceContactListener;
 import com.gwel.spacegame.SpaceGame;
 
 
@@ -78,7 +78,7 @@ public class ScreenTraining implements Screen {
 		destroy = false;
 		
 		b2world = new World(new Vector2(0.0f, 0.0f), true);
-		b2world.setContactListener(new MyContactListener(game));
+		b2world.setContactListener(new SpaceContactListener(game));
 		
 		debugRenderer=new Box2DDebugRenderer();
 		debugRenderer.setDrawAABBs(false);

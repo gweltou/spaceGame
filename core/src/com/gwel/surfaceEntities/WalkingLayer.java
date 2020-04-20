@@ -1,19 +1,22 @@
 package com.gwel.surfaceEntities;
 
 import java.util.ArrayDeque;
+import java.util.LinkedList;
+
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.physics.box2d.World;
+import com.badlogic.gdx.utils.Disposable;
 import com.gwel.entities.Planet;
 import com.gwel.spacegame.MyRenderer;
 
 
-public class WalkingLayer {
+public class WalkingLayer implements Disposable {
 	public static final float TERRAIN_BLOCK_SPAWN_RADIUS = 100f;
 	public static final float TERRAIN_BLOCK_WIDTH = 100f;
 	private final World world;
 	private final Planet planet;
-	private ArrayDeque<TerrainBlock> blocks = new ArrayDeque<TerrainBlock>();
+	private final ArrayDeque<TerrainBlock> blocks = new ArrayDeque<>();
 	private final Terrain terrain;
 	private final XenoTreeManager xtm;
 	private final InhabitantLayer inm;
@@ -64,6 +67,10 @@ public class WalkingLayer {
 	
 	public float getHeight(float position) {
 		return terrain.getHeight(position);
+	}
+
+	public LinkedList<Inhabitant> getInhabitants() {
+		return inm.alive;
 	}
 
 	public void update(float xCoord) {
@@ -150,5 +157,6 @@ public class WalkingLayer {
 			// We need to pass surfaceLength to reset inhabitants positions
 			block.dispose(planet.surfaceLength);
 		}
+		inm.dispose();
 	}
 }

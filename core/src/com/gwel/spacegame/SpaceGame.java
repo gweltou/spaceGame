@@ -8,11 +8,7 @@ import com.badlogic.gdx.controllers.Controller;
 import com.badlogic.gdx.controllers.Controllers;
 import com.badlogic.gdx.controllers.mappings.Xbox;
 import com.badlogic.gdx.files.FileHandle;
-import com.badlogic.gdx.graphics.Color;
-import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
-import com.badlogic.gdx.graphics.g2d.freetype.FreeTypeFontGenerator;
-import com.badlogic.gdx.graphics.g2d.freetype.FreeTypeFontGenerator.FreeTypeFontParameter;
 import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.RandomXS128;
 import com.badlogic.gdx.math.Vector2;
@@ -32,10 +28,9 @@ public class SpaceGame extends Game {
 	public Controller controller;
 	public boolean hasController;
 	public String controllerName;
-	private FreeTypeFontGenerator fontGenerator;
-	public BitmapFont font, fontHUD;
 	public RandomXS128 generator;
-	public UI ui;
+	public HUD hud;
+	public DialogManager dialogManager;
 	
 	// GAME UNIVERSE VARIABLES
 	private final static float UNIVERSE_SIZE = 100000.0f;
@@ -102,22 +97,13 @@ public class SpaceGame extends Game {
 		Qt = new QuadTree(universe_boundary);
 		populateUniverse(Qt);
 
-		ui = new UI(this);
+		hud = new HUD(this);
+		dialogManager = new DialogManager();
 		
 		camera = new MyCamera(Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
-		//camera.setCenter();
 		camera.update();
 		renderer = new MyRenderer(camera);
 		batch = new SpriteBatch();
-		
-		fontGenerator = new FreeTypeFontGenerator(Gdx.files.internal("minotaur.ttf"));
-		FreeTypeFontParameter parameter = new FreeTypeFontParameter();
-		parameter.size = 48;
-		parameter.color = new Color(1f, 0.5f, 0.4f, 1.0f);
-		font = new BitmapFont(Gdx.files.internal("greeknames.fnt"));
-		parameter.size = 24;
-		fontHUD = fontGenerator.generateFont(parameter);
-		fontGenerator.dispose();
 		
 		ship = new Spaceship(new Vector2());
 		
@@ -129,7 +115,9 @@ public class SpaceGame extends Game {
 	@Override
 	public void render() {
 		super.render();
-		
+
+		hud.update();
+
 		// Landing on planet
 		if (mustLandOnPlanet != null) {
 			setScreen(new ScreenOnPlanet(this, mustLandOnPlanet));
@@ -140,16 +128,16 @@ public class SpaceGame extends Game {
 	@Override
 	public void resize (int width, int height) {
 		super.resize(width, height);
-		camera.width = width;
-		camera.height = height;
-		camera.update();
+		//camera.width = width;
+		//camera.height = height;
+		//camera.update();
 	}
 	
 	@Override
 	public void dispose () {
-		 renderer.dispose();
-		 batch.dispose();
-		 font.dispose();
+		hud.dispose();
+		renderer.dispose();
+		batch.dispose();
 	}
 
 	void land(Planet p) {
@@ -220,7 +208,7 @@ public class SpaceGame extends Game {
 			}
 			godNames.add(array);
 		}
-		System.out.print("Parsed " + String.valueOf(num) + " mythological names (ms): ");
+		System.out.print("Parsed " + num + " mythological names (ms): ");
 		System.out.println(TimeUtils.millis()-start_time);
 	}
 	
@@ -233,11 +221,11 @@ public class SpaceGame extends Game {
 		// Create probability weight array
 		String name = "";
 		float r = generator.nextFloat();
-		for (int i=0; i<godNames.size(); i++) {
-			int numNames = godNames.get(i).size();
-			float prob = (float) numNames/totNames;
+		for (ArrayList<String> godName : godNames) {
+			int numNames = godName.size();
+			float prob = (float) numNames / totNames;
 			if (r < prob) {
-				name = godNames.get(i).get(generator.nextInt(numNames));
+				name = godName.get(generator.nextInt(numNames));
 				break;
 			}
 			r -= prob;
@@ -300,5 +288,4 @@ public class SpaceGame extends Game {
 		}
 		return name;
 	}
-
 }

@@ -1,0 +1,76 @@
+{
+  "greeting_pos" : [
+    "bonjour",
+    "salut",
+    "salutations",
+    "hé"
+  ],
+  "greeting_neg" : [
+    "quoi"
+  ],
+  "pronoun_pos" : [
+    "l'ami",
+    "mon brave"
+  ],
+  "pronoun_neu" : [
+    "voyageur",
+    "vous",
+    "l'inconnu"
+  ],
+  "pronoun_neg" : [
+    "l'étranger"
+  ],
+  "activity_pos": [
+    "j'aimerais pouvoir vous aider",
+    "je ne pense pas pouvoir vous aider",
+    "puissiez-vous atteindre votre objectif",
+    "gardez espoir",
+    "ne baissez pas les bras",
+    "bonne chance dans votre quête",
+    "n'hésitez pas à revenir",
+    "c'est un plaisir de vous voir",
+    "c'est un plaisir de parler avec vous"
+  ],
+  "activity_neu" : [
+    "j'attends quelqu'un",
+    "on m'attend",
+    "je suis occupé",
+    "je suis très occupé",
+    "j'ai des choses à faire",
+    "j'ai des choses importantes à faire",
+    "j'ai du travail",
+    "je ne suis pas disponible",
+    "je suis pressé",
+    "vous me confondez avec quelqu'un d'autre",
+    "je ne peux pas vous répondre"
+  ],
+  "activity_neg" : [
+    "poussez-vous",
+    "je n'ai pas que ça à faire",
+    "je n'ai pas le temps",
+    "vous me marchez sur les pieds",
+    "demandez à quelqu'un d'autre",
+    "je ne parle pas aux inconnus",
+    "je ne parle pas aux étrangers",
+    "je me méfie des étrangers"
+  ],
+  "question_pos" : [
+    "comment allez-vous",
+    "comment vous portez-vous",
+    "quel bon vent vous amène"
+  ],
+  "question_neu" : [
+    "que voulez-vous",
+    "j'ai quelque chose sur le visage"
+  ],
+  "question_neg" : [
+    "pourquoi me parlez-vous ?",
+    "ne voyez-vous pas que je suis occupé ?"
+  ],
+  "phrase" : [
+    ["greeting", " ", "pronoun"],
+    ["greeting", " ", "pronoun", ", ", "question", " ?"],
+    ["question", " ", "pronoun", " ?"],
+    ["activity"]
+  ]
+}

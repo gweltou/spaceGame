@@ -6,11 +6,11 @@ import com.badlogic.gdx.Input.Keys;
 import com.badlogic.gdx.controllers.PovDirection;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.GL20;
-import com.badlogic.gdx.graphics.g2d.GlyphLayout;
 import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Matrix4;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.physics.box2d.World;
+import com.badlogic.gdx.utils.TimeUtils;
 import com.gwel.entities.Planet;
 import com.gwel.entities.Spaceship;
 import com.gwel.spacegame.MyCamera;
@@ -22,45 +22,42 @@ import com.gwel.surfaceEntities.*;
 public class ScreenOnPlanet implements Screen {
 	private final static int NUM_PARALLAX_LAYERS = 4;
 	final SpaceGame game;
-	private MyCamera camera;
-	private World world;
-	private Planet planet;
-	private String strName;
-	private GlyphLayout layoutName;
-	private LandedPlayer player;
+	private final MyCamera camera;
+	private final World world;
+	private final Planet planet;
+	private final LandedPlayer player;
 	private boolean landingIntro;
-	private float sunHPos;
-	private Spaceship ship;
+	private final float sunHPos;
+	private final Spaceship ship;
 	private boolean showShip = false;
 	private final static float SUN_SIZE = 200f;
 	public boolean mustDispose = false;
-		
-	// Terrain data
-	private ParallaxLayer[]	parallaxLayers;
-	private WalkingLayer walkingLayer;
+	private long lastActionKeyPressed = 0L;
 
-	
+	// Terrain data
+	private final ParallaxLayer[] parallaxLayers;
+	private final WalkingLayer walkingLayer;
+
 	public ScreenOnPlanet(final SpaceGame game, Planet p) {
 		this.game = game;
 		this.planet = p;
 		world = new World(new Vector2(0.0f, -10.0f), true);
+
 		camera = new MyCamera(Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
 		camera.setZoomLimits(10f, 200f);
-		camera.zoomTo(100.0f);
+		camera.zoomTo(100f);
 		game.renderer.setCamera(camera);
+
 		MathUtils.random.setSeed(planet.seed);
-		strName = game.getPlanetName(planet.seed);
-		layoutName = new GlyphLayout();
-		layoutName.setText(game.font, strName);
-		
-		System.out.println("Welcome to planet \"" + strName + "\"");
-		System.out.println("Universal position : " + planet.getPosition());
-		System.out.println("Surface length : " + planet.surfaceLength);
-		
-		//surfaceLength = MathUtils.PI2 * planet.radius;
+		String planetName = game.getPlanetName(planet.seed);
+
 		float landingPointAngle = -game.ship.getPosition().sub(planet.getPosition()).angleRad();
 		float landingHPos = planet.surfaceLength * landingPointAngle/MathUtils.PI2;
 		sunHPos = planet.surfaceLength * planet.getPosition().angleRad()/MathUtils.PI2;
+
+		System.out.println("Welcome to planet \"" + planetName + "\"");
+		System.out.println("Universal position : " + planet.getPosition());
+		System.out.println("Surface length : " + planet.surfaceLength);
 		System.out.println("Sun local position : " + sunHPos);
 
 		// XENO TREE MANAGER
@@ -98,7 +95,7 @@ public class ScreenOnPlanet implements Screen {
 		
 		landingIntro = false;
 
-		game.ui.dialog("Hello stranger, how are you doing today ?");
+		game.hud.showPlanetName(planetName);
 	}
 	
 	@Override
@@ -120,7 +117,6 @@ public class ScreenOnPlanet implements Screen {
 	@Override
 	public void render(float timeDelta) {
 		handleInput();
-		Matrix4 normalProjection = new Matrix4().setToOrtho2D(0, 0, Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
 
 		if (landingIntro) {
 			//  Camera update
@@ -136,11 +132,6 @@ public class ScreenOnPlanet implements Screen {
 			player.render(game.renderer);
 			game.renderer.flush();
 
-			// DRAW HUD
-			game.batch.setProjectionMatrix(normalProjection);
-			game.batch.begin();
-			game.font.draw(game.batch, strName, (Gdx.graphics.getWidth()-layoutName.width)/2, Gdx.graphics.getHeight()-game.font.getXHeight());
-			game.batch.end();
 		} else {
 			camera.glideTo(player.getPosition().add(0f, 100.0f/camera.PPU));
 			camera.update();
@@ -167,10 +158,7 @@ public class ScreenOnPlanet implements Screen {
 				dPos -= planet.surfaceLength;
 			else if (dPos < -planet.surfaceLength/2)
 				dPos += planet.surfaceLength;
-//			System.out.println("");
-//			System.out.println("playerHPos " + playerHPos);
-//			System.out.println("xShipPos " + xShipPos);
-//			System.out.println("dPos " + dPos);
+
 			if (showShip) {
 				// Remove ship if outside player's range
 				if (dPos < -WalkingLayer.TERRAIN_BLOCK_SPAWN_RADIUS || dPos > WalkingLayer.TERRAIN_BLOCK_SPAWN_RADIUS) {
@@ -194,7 +182,7 @@ public class ScreenOnPlanet implements Screen {
 			Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
 			
 			// DRAW SUN
-			game.renderer.setProjectionMatrix(normalProjection);
+			game.renderer.setProjectionMatrix(camera.normal);
 			game.renderer.setColor(sunColor);
 			game.renderer.circle(sunPos.x, sunPos.y, SUN_SIZE, 48);
 			game.renderer.flush();
@@ -210,20 +198,7 @@ public class ScreenOnPlanet implements Screen {
 			player.render(game.renderer);
 			game.renderer.flush();
 
-			// DRAW HUD
-			/*
-			game.renderer.setProjectionMatrix(normalProjection);
-			game.renderer.setColor(1f, 1f, 1f, 0.1f);
-			game.renderer.triangle(10f, 10f, 10f, 80f, camera.width-10f, 10f);
-			game.renderer.triangle(camera.width-10f, 10f, 10f, 80f, camera.width-10f, 80f);
-			game.renderer.flush();
-			 */
-			game.ui.render();
-
-			// Display planet's name
-			game.batch.begin();
-			game.font.draw(game.batch, strName, (Gdx.graphics.getWidth()-layoutName.width)/2, Gdx.graphics.getHeight()-game.font.getXHeight());
-			game.batch.end();
+			game.hud.render();
 		}
 		
 		world.step(timeDelta, 8, 3);
@@ -235,9 +210,7 @@ public class ScreenOnPlanet implements Screen {
 
 	@Override
 	public void resize(int width, int height) {
-		camera.width = width;
-		camera.height = height;
-		camera.update();
+		camera.resize(width, height);
 	}
 
 	@Override
@@ -261,8 +234,7 @@ public class ScreenOnPlanet implements Screen {
 				camera.autozoom = false;
 			}
 			if (game.controller.getButton(game.PAD_BOOST)) {
-				// TAKE OFF
-				if (player.getPosition().dst2(ship.getPosition()) < 3.0f)	mustDispose = true;
+				actionKeyPressed();
 			}
 			
 			x_axis = game.controller.getAxis(game.PAD_XAXIS);
@@ -291,8 +263,7 @@ public class ScreenOnPlanet implements Screen {
 			camera.autozoom = false;
 		}
 		if (Gdx.input.isKeyPressed(Keys.SPACE)) {
-			// TAKE OFF
-			if (player.getPosition().dst2(ship.getPosition()) < 3.0f)	mustDispose = true;
+			actionKeyPressed();
 		}
 		if (Gdx.input.isKeyPressed(Keys.P)) {
 			System.out.println("player pos: " + player.getPosition());
@@ -300,5 +271,21 @@ public class ScreenOnPlanet implements Screen {
 		}
 
 		player.move(new Vector2(x_axis, y_axis));
+	}
+
+	void actionKeyPressed() {
+		// TAKE OFF if close to ship
+		if (player.getPosition().dst2(ship.getPosition()) < 3.0f)
+			mustDispose = true;
+
+		// Talk to NPC if close
+		if (TimeUtils.millis() - lastActionKeyPressed > 1000) {
+			for (Inhabitant npc : walkingLayer.getInhabitants()) {
+				if (player.getPosition().dst2(npc.getPosition()) < 2.0f) {
+					game.hud.tempDialog(game.dialogManager.getPosPhrase());
+				}
+			}
+			lastActionKeyPressed = TimeUtils.millis();
+		}
 	}
 }

@@ -7,11 +7,11 @@ import com.gwel.entities.PhysicBody;
 import com.gwel.spacegame.MyRenderer;
 
 public class Inhabitant extends PhysicBody {
-    private float[][] triangles;
-    private Affine2 transform;
-    private Vector2 p1_tmp = new Vector2();
-    private Vector2 p2_tmp = new Vector2();
-    private Vector2 p3_tmp = new Vector2();
+    private final float[][] triangles;
+    private final Affine2 transform;
+    private final Vector2 p1_tmp = new Vector2();
+    private final Vector2 p2_tmp = new Vector2();
+    private final Vector2 p3_tmp = new Vector2();
 
     public Inhabitant(Vector2 pos) {
         super(pos, 0.0f);

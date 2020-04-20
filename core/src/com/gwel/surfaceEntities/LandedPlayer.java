@@ -39,8 +39,7 @@ public class LandedPlayer extends PhysicBody {
 		bodyDef.position.set(getPosition());
 		//bodyDef.angle = getAngle();
 		bodyDef.fixedRotation = true;
-		//bodyDef.linearVelocity.set(getVelocity());
-		
+
 		body = world.createBody(bodyDef);
 		body.setUserData(this);
 		

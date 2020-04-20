@@ -234,7 +234,6 @@ public class MyRenderer implements Disposable {
 				for (int i=0; i<segments/4; i++) {
 					newX = cx*cos - cy*sin;
 					newY = cx*sin + cy*cos;
-					//triangleStrip(x+pos.x, camera.sw.y, newX+pos.x, newY+pos.y);
 					triangle(pos.x, pos.y,(float) cx+pos.x,(float) cy+pos.y,(float) newX+pos.x,(float) newY+pos.y);
 					cx = newX;
 					cy = newY;
@@ -248,7 +247,6 @@ public class MyRenderer implements Disposable {
 				for (int i=0; i<segments/4; i++) {
 					newX = cx*cos - cy*sin;
 					newY = cx*sin + cy*cos;
-					//triangleStrip(x+pos.x, camera.sw.y, newX+pos.x, newY+pos.y);
 					triangle(pos.x, pos.y,(float) cx+pos.x,(float) cy+pos.y,(float) newX+pos.x,(float) newY+pos.y);
 					cx = newX;
 					cy = newY;
@@ -262,7 +260,6 @@ public class MyRenderer implements Disposable {
 				for (int i=0; i<segments/2; i++) {
 					newX = cx*cos - cy*sin;
 					newY = cx*sin + cy*cos;
-					//triangleStrip(x+pos.x, camera.sw.y, newX+pos.x, newY+pos.y);
 					triangle(pos.x, pos.y,(float) cx+pos.x,(float) cy+pos.y,(float) newX+pos.x,(float) newY+pos.y);
 					cx = newX;
 					cy = newY;
@@ -279,7 +276,6 @@ public class MyRenderer implements Disposable {
 				for (int i=0; i<segments/4; i++) {
 					newX = x*cos - y*sin;
 					newY = x*sin + y*cos;
-					//triangleStrip(x+pos.x, camera.sw.y, newX+pos.x, newY+pos.y);
 					triangle(pos.x, pos.y,(float) x+pos.x,(float) y+pos.y,(float) newX+pos.x,(float) newY+pos.y);
 					x = newX;
 					y = newY;
@@ -293,7 +289,6 @@ public class MyRenderer implements Disposable {
 				for (int i=0; i<segments/4; i++) {
 					newX = cx*cos - cy*sin;
 					newY = cx*sin + cy*cos;
-					//triangleStrip(x+pos.x, camera.sw.y, newX+pos.x, newY+pos.y);
 					triangle(pos.x, pos.y,(float) cx+pos.x,(float) cy+pos.y,(float) newX+pos.x,(float) newY+pos.y);
 					cx = newX;
 					cy = newY;
@@ -307,7 +302,6 @@ public class MyRenderer implements Disposable {
 				for (int i=0; i<segments/2; i++) {
 					newX = cx*cos - cy*sin;
 					newY = cx*sin + cy*cos;
-					//triangleStrip(x+pos.x, camera.sw.y, newX+pos.x, newY+pos.y);
 					triangle(pos.x, pos.y,(float) cx+pos.x,(float) cy+pos.y,(float) newX+pos.x,(float) newY+pos.y);
 					cx = newX;
 					cy = newY;
@@ -322,7 +316,6 @@ public class MyRenderer implements Disposable {
 			for (int i=0; i<segments/2; i++) {
 				newX = cx*cos - cy*sin;
 				newY = cx*sin + cy*cos;
-				//triangleStrip(x+pos.x, camera.sw.y, newX+pos.x, newY+pos.y);
 				triangle(pos.x, pos.y,(float) cx+pos.x,(float) cy+pos.y,(float) newX+pos.x,(float) newY+pos.y);
 				cx = newX;
 				cy = newY;
@@ -336,7 +329,6 @@ public class MyRenderer implements Disposable {
 			for (int i=0; i<segments/2; i++) {
 				newX = cx*cos - cy*sin;
 				newY = cx*sin + cy*cos;
-				//triangleStrip(x+pos.x, camera.sw.y, newX+pos.x, newY+pos.y);
 				triangle(pos.x, pos.y,(float) cx+pos.x,(float) cy+pos.y,(float) newX+pos.x,(float) newY+pos.y);
 				cx = newX;
 				cy = newY;

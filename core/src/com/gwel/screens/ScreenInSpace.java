@@ -28,7 +28,7 @@ import com.gwel.entities.*;
 import com.gwel.spacegame.AABB;
 import com.gwel.spacegame.Const;
 import com.gwel.spacegame.Enums;
-import com.gwel.spacegame.MyContactListener;
+import com.gwel.spacegame.SpaceContactListener;
 import com.gwel.spacegame.SpaceGame;
 
 
@@ -67,7 +67,7 @@ public class ScreenInSpace implements Screen {
 		droidPool = importPool("ec8a21fd-4969-495e-8157-5f30e72a0715");
 		
 		b2world = new World(new Vector2(0.0f, 0.0f), true);
-		b2world.setContactListener(new MyContactListener(game));
+		b2world.setContactListener(new SpaceContactListener(game));
 		
 		game.ship.initBody(b2world);
 		
@@ -404,14 +404,16 @@ public class ScreenInSpace implements Screen {
 				proj.render(game.renderer);
 		}
 		game.renderer.flush();
-		
+
+		/*
 		// HUD
 		Matrix4 normalProjection = new Matrix4().setToOrtho2D(0, 0, Gdx.graphics.getWidth(),  Gdx.graphics.getHeight());
 		game.batch.setProjectionMatrix(normalProjection);
 		game.batch.begin();
-		game.fontHUD.draw(game.batch, String.valueOf(game.ship.hitpoints), 20, Gdx.graphics.getHeight()-game.font.getXHeight());
+		game.hud.fontHUD.draw(game.batch, String.valueOf(game.ship.hitpoints), 20, Gdx.graphics.getHeight()-game.font.getXHeight());
 		game.fontHUD.draw(game.batch, String.valueOf(game.ship.ammunition), 20, 30);
 		game.batch.end();
+		 */
 	}
 
 	@Override

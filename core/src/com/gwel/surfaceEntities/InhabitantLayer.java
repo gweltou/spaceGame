@@ -3,6 +3,7 @@ package com.gwel.surfaceEntities;
 import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.physics.box2d.World;
+import com.badlogic.gdx.utils.Disposable;
 import com.gwel.entities.Planet;
 import com.gwel.spacegame.MyRenderer;
 
@@ -10,12 +11,12 @@ import java.util.Iterator;
 import java.util.LinkedList;
 
 
-public class InhabitantLayer {
+public class InhabitantLayer implements Disposable {
     private World world;
     private float surfaceLength;
     private Terrain terrain;
     private LinkedList<Inhabitant> idle;
-    private LinkedList<Inhabitant>  alive;
+    public LinkedList<Inhabitant>  alive;
 
     public InhabitantLayer(World world, Planet planet, Terrain terrain) {
         this.world = world;
@@ -120,6 +121,13 @@ public class InhabitantLayer {
     void render(MyRenderer renderer) {
         for (Inhabitant npc: alive) {
             npc.render(renderer);
+        }
+    }
+
+    @Override
+    public void dispose() {
+        for (Inhabitant npc: alive) {
+            npc.dispose();
         }
     }
 }

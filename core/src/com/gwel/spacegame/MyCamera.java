@@ -1,7 +1,9 @@
 package com.gwel.spacegame;
 
+import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.math.Affine2;
 import com.badlogic.gdx.math.MathUtils;
+import com.badlogic.gdx.math.Matrix4;
 import com.badlogic.gdx.math.Vector2;
 
 public class MyCamera {
@@ -14,22 +16,35 @@ public class MyCamera {
 	public int width;
 	public int height;
 	public Affine2 affine;
+	public static Matrix4 normal;
 	public float angle;
 	private float finalPPU;	// Camera continuously interpolates toward this values
 	private float finalAngle;
-
 	public float PPU = 10.0f ; // Pixel per game unit
 
 	public MyCamera(int width, int height) {
 		this.width = width;
 		this.height = height;
 		affine = new Affine2();
+		normal = new Matrix4().setToOrtho2D(0, 0, width, height);
 		autozoom = true;
 		minZoom = 0.02f;
 		maxZoom = 100f;
 		finalPPU = PPU;
 		angle = 0.0f;
 		finalAngle = 0.0f;
+	}
+
+	public void resize(int width, int height) {
+		this.width = width;
+		this.height = height;
+		this.sw = new Vector2(center.x-width/(2.0f*PPU), center.y-height/(2.0f*PPU));
+		this.ne = new Vector2(center.x+width/(2.0f*PPU), center.y+height/(2.0f*PPU));
+		normal = new Matrix4().setToOrtho2D(0, 0, width, height);
+		affine.idt();
+		affine.scale(2.0f*PPU/width, 2.0f*PPU/height);
+		affine.rotateRad(angle);
+		affine.translate(-center.x, -center.y);
 	}
 
 	public Vector2 world_to_camera(Vector2 position) {
@@ -46,10 +61,6 @@ public class MyCamera {
 		center.set(pos);
 	}
 
-	void translate(float dx, float dy) {
-		center.add(dx, dy);
-	}
-	
 	public void glideTo(Vector2 pos) {
 		setCenter(center.cpy().lerp(pos, 0.5f));
 	}
