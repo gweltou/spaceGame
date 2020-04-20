@@ -3,10 +3,12 @@
     "bonjour",
     "salut",
     "salutations",
-    "hé"
+    "bien le bonjour"
   ],
   "greeting_neg" : [
-    "quoi"
+    "quoi",
+    "hé",
+    "et bien"
   ],
   "pronoun_pos" : [
     "l'ami",
@@ -61,16 +63,19 @@
   ],
   "question_neu" : [
     "que voulez-vous",
+    "que cherchez vous",
     "j'ai quelque chose sur le visage"
   ],
   "question_neg" : [
-    "pourquoi me parlez-vous ?",
-    "ne voyez-vous pas que je suis occupé ?"
+    "pourquoi me parlez-vous",
+    "ne voyez-vous pas que je suis occupé",
+    "vous croyez que je n'ai que ça a faire"
   ],
   "phrase" : [
+    ["greeting", " !"],
     ["greeting", " ", "pronoun"],
     ["greeting", " ", "pronoun", ", ", "question", " ?"],
-    ["question", " ", "pronoun", " ?"],
+    ["question", ", ", "pronoun", " ?"],
     ["activity"]
   ]
 }

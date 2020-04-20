@@ -4,14 +4,14 @@ import com.badlogic.gdx.math.Vector2;
 import com.gwel.spacegame.MyRenderer;
 
 public interface MovingObject {
-	public Vector2 getPosition();
-	public void setPosition(Vector2 pos);
-	public Vector2 getVelocity();
-	public float getAngularVelocity();
-	public float getAngle();
-	public float getAngleDiff(float refAngle);
-	public float getMass();
-	public void push(Vector2 force);
-	public void render(MyRenderer renderer);
+	Vector2 getPosition();
+	void setPosition(Vector2 pos);
+	Vector2 getVelocity();
+	float getAngularVelocity();
+	float getAngle();
+	float getAngleDiff(float refAngle);
+	float getMass();
+	void push(Vector2 force);
+	void render(MyRenderer renderer);
 	void dispose();
 }

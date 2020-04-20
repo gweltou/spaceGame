@@ -1,6 +1,7 @@
 package com.gwel.surfaceEntities;
 
 import com.badlogic.gdx.math.Affine2;
+import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.physics.box2d.*;
 import com.gwel.entities.PhysicBody;
@@ -12,6 +13,8 @@ public class Inhabitant extends PhysicBody {
     private final Vector2 p1_tmp = new Vector2();
     private final Vector2 p2_tmp = new Vector2();
     private final Vector2 p3_tmp = new Vector2();
+    private final float mood = MathUtils.random();
+    private float direction = MathUtils.random() / 4f;
 
     public Inhabitant(Vector2 pos) {
         super(pos, 0.0f);
@@ -56,7 +59,17 @@ public class Inhabitant extends PhysicBody {
     }
 
     public void move(Vector2 dir) {
-        body.applyLinearImpulse(dir.limit2(0.1f), body.getWorldCenter(), true);
+        body.applyLinearImpulse(dir.limit2(0.01f), body.getWorldCenter(), true);
+    }
+
+    public float getMood() {
+        return mood;
+    }
+
+    public void update() {
+        move(new Vector2(direction, 0f));
+        if (MathUtils.random() < 0.002)
+            direction *= -1;
     }
 
     @Override

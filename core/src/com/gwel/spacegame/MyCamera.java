@@ -1,6 +1,5 @@
 package com.gwel.spacegame;
 
-import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.math.Affine2;
 import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Matrix4;

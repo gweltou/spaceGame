@@ -70,7 +70,7 @@ public class WalkingLayer implements Disposable {
 	}
 
 	public LinkedList<Inhabitant> getInhabitants() {
-		return inm.alive;
+		return inm.getInhabitants();
 	}
 
 	public void update(float xCoord) {
@@ -140,6 +140,9 @@ public class WalkingLayer implements Disposable {
 				inm.removeBetween(leftBoundary-TERRAIN_BLOCK_WIDTH, leftBoundary);
 			}
 		}
+
+		// Move inhabitants
+		inm.update();
 	}
 
 	public void render(MyRenderer renderer) {

@@ -12,16 +12,14 @@ import java.util.LinkedList;
 
 
 public class InhabitantLayer implements Disposable {
-    private World world;
-    private float surfaceLength;
-    private Terrain terrain;
-    private LinkedList<Inhabitant> idle;
-    public LinkedList<Inhabitant>  alive;
+    private final World world;
+    private final float surfaceLength;
+    private final LinkedList<Inhabitant> idle;
+    private final LinkedList<Inhabitant>  alive;
 
     public InhabitantLayer(World world, Planet planet, Terrain terrain) {
         this.world = world;
         this.surfaceLength = planet.surfaceLength;
-        this.terrain = terrain;
         this.idle = new LinkedList<>();
         this.alive = new LinkedList<>();
 
@@ -57,7 +55,6 @@ public class InhabitantLayer implements Disposable {
         //System.out.println(" ("+leftCoord+" and "+rightCoord+", offset "+offset+")");
 
         Iterator it = idle.iterator();
-        int i = 0;
         if (rightCoord < surfaceLength) {
             while (it.hasNext()) {
                 Inhabitant npc = (Inhabitant) it.next();
@@ -68,8 +65,6 @@ public class InhabitantLayer implements Disposable {
                     npc.setPosition(pos);
                     npc.initBody(world);
                     alive.add(npc);
-                    i++;
-                    //System.out.println("  added at " + pos);
                 }
             }
         } else {
@@ -82,25 +77,21 @@ public class InhabitantLayer implements Disposable {
                     npc.setPosition(pos);
                     npc.initBody(world);
                     alive.add(npc);
-                    i++;
                 } else if (pos.x >= 0.0 && pos.x < rightCoord-surfaceLength) {
                     it.remove();
                     pos.add(offset+surfaceLength, 0);
                     npc.setPosition(pos);
                     npc.initBody(world);
                     alive.add(npc);
-                    i++;
                 }
             }
         }
-        //System.out.println("  " + i + " NPCs added");
     }
 
     void removeBetween(float leftCoord, float rightCoord) {
         //System.out.println("removeBetween " + leftCoord + " and " + rightCoord);
 
         Iterator it = alive.iterator();
-        int i = 0;
         while (it.hasNext()) {
             Inhabitant npc = (Inhabitant) it.next();
             Vector2 pos = npc.getPosition();
@@ -111,22 +102,29 @@ public class InhabitantLayer implements Disposable {
                 npc.dispose();
                 npc.setPosition(new Vector2(x, pos.y));
                 idle.add(npc);
-                //System.out.println("  removed at " + pos);
-                i++;
             }
         }
-        //System.out.println("  " + i + " NPCs removed");
     }
 
-    void render(MyRenderer renderer) {
-        for (Inhabitant npc: alive) {
+    LinkedList<Inhabitant> getInhabitants() {
+        return alive;
+    }
+
+    public void update() {
+        for (Inhabitant npc : alive) {
+            npc.update();
+        }
+    }
+
+    public void render(MyRenderer renderer) {
+        for (Inhabitant npc : alive) {
             npc.render(renderer);
         }
     }
 
     @Override
     public void dispose() {
-        for (Inhabitant npc: alive) {
+        for (Inhabitant npc : alive) {
             npc.dispose();
         }
     }

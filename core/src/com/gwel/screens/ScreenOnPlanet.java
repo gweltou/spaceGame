@@ -175,14 +175,14 @@ public class ScreenOnPlanet implements Screen {
 				}
 			}
 			
-			// UPDATE WALKING LAYER
+			// UPDATE WALKING LAYER (and everything on it)
 			walkingLayer.update(player.getPosition().x);
 			
 			Gdx.gl.glClearColor(skyColor.r, skyColor.g, skyColor.b, 1f);
 			Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
 			
 			// DRAW SUN
-			game.renderer.setProjectionMatrix(camera.normal);
+			game.renderer.setProjectionMatrix(MyCamera.normal);
 			game.renderer.setColor(sunColor);
 			game.renderer.circle(sunPos.x, sunPos.y, SUN_SIZE, 48);
 			game.renderer.flush();
@@ -282,7 +282,7 @@ public class ScreenOnPlanet implements Screen {
 		if (TimeUtils.millis() - lastActionKeyPressed > 1000) {
 			for (Inhabitant npc : walkingLayer.getInhabitants()) {
 				if (player.getPosition().dst2(npc.getPosition()) < 2.0f) {
-					game.hud.tempDialog(game.dialogManager.getPosPhrase());
+					game.hud.tempDialog(game.dialogManager.getPhrase(npc.getMood()));
 				}
 			}
 			lastActionKeyPressed = TimeUtils.millis();

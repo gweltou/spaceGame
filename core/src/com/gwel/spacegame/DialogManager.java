@@ -40,24 +40,41 @@ public class DialogManager implements Disposable {
         System.out.println("Dialog Manager created");
     }
 
-    public String getPosPhrase() {
+    public String getPhrase(float mood) {
+        String[] greeting, pronoun, question, activity;
+        if (mood > 0.6) {
+            greeting = greetingPos;
+            pronoun = pronounPos;
+            question = questionPos;
+            activity = activityPos;
+        } else if (mood < 0.4) {
+            greeting = greetingNeg;
+            pronoun = pronounNeg;
+            question = questionNeg;
+            activity = activityNeg;
+        } else {
+            greeting = greetingPos;
+            pronoun = pronounNeu;
+            question = questionNeu;
+            activity = activityNeu;
+        }
+
         int r = MathUtils.random(phrase.length-1);
-        String text = new String();
+        StringBuilder text = new StringBuilder();
         for (String element : phrase[r]) {
             if (element.contentEquals("greeting")) {
-                text += greetingPos[MathUtils.random(greetingPos.length-1)];
+                text.append(greeting[MathUtils.random(greeting.length - 1)]);
             } else if (element.contentEquals("pronoun")) {
-                text += pronounPos[MathUtils.random(pronounPos.length-1)];
+                text.append(pronoun[MathUtils.random(pronoun.length - 1)]);
             } else if (element.contentEquals("question")) {
-                text += questionPos[MathUtils.random(questionPos.length-1)];
+                text.append(question[MathUtils.random(question.length - 1)]);
             } else if (element.contentEquals("activity")) {
-                text += activityPos[MathUtils.random(activityPos.length-1)];
+                text.append(activity[MathUtils.random(activity.length - 1)]);
             } else {
-                text += element;
+                text.append(element);
             }
         }
-        System.out.println(text);
-        return capitalize(text);
+        return capitalize(text.toString());
     }
 
     public static String capitalize(String str) {

@@ -1,10 +1,10 @@
 package com.gwel.entities;
 
+import java.util.Arrays;
 import java.util.LinkedList;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.files.FileHandle;
-import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.math.Affine2;
 import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Vector2;
@@ -21,8 +21,8 @@ import com.gwel.spacegame.MyRenderer;
 public class DroidShip extends PhysicBody implements Ship {
 	public final static float MAX_VEL = 20.0f;
 	public final float MAX_ANG_VEL = 6.0f;
-	private final float FIRE_COOLDOWN = 200.0f; // In milliseconds
-	private final int MAX_HITPOINTS = 300;
+	private static final float FIRE_COOLDOWN = 200.0f; // In milliseconds
+	private static final int MAX_HITPOINTS = 300;
 	public final static float SIGHT_DISTANCE = 50.0f;
 	private final static int NN_INPUTS = 15;
 	private final static int NN_OUTPUTS = 3;
@@ -35,23 +35,23 @@ public class DroidShip extends PhysicBody implements Ship {
 	
 	public int hitpoints;
 	private long lastFire;
-	private int amunition;
+	private int ammunition;
 	private float dstCounter = 0; // For NN training
 	private int hitCounter = 0;
 	private float avCounter = 0;	// Angular Velocity Counter (penalty for turning around)
-	private int[] scores = new int[5];
+	private final int[] scores = new int[5];
 	private int iScore = 0;
 	
-	private Affine2 transform;
+	private final Affine2 transform;
 	private float[][] triangles;
-	private Vector2[] vertices;	// Used to set Box2D bounding shape
-	private Vector2 p1_tmp = new Vector2();
-	private Vector2 p2_tmp = new Vector2();
-	private Vector2 p3_tmp = new Vector2();
+	private final Vector2[] vertices;	// Used to set Box2D bounding shape
+	private final Vector2 p1_tmp = new Vector2();
+	private final Vector2 p2_tmp = new Vector2();
+	private final Vector2 p3_tmp = new Vector2();
 	
 	public NeuralNetwork nn = null;
-	private float[] nnInput;
-	private LinkedList<Projectile> projectiles;
+	private final float[] nnInput;
+	private final LinkedList<Projectile> projectiles;
 	
 	
 	public DroidShip(Vector2 position, float angle, LinkedList<Projectile> projectiles) {
@@ -76,8 +76,7 @@ public class DroidShip extends PhysicBody implements Ship {
 		float[] output;
 		output = nn.feedforward(nnInput);
 		// reset nnInput to 0
-		for (int i=0; i<nnInput.length; i++)
-			nnInput[i] = 0.0f;
+		Arrays.fill(nnInput, 0.0f);
 		// Set last NN input to angular velocity
 		nnInput[14] = MathUtils.clamp(getAngularVelocity()/MAX_ANG_VEL, -1, 1);
 
@@ -136,7 +135,7 @@ public class DroidShip extends PhysicBody implements Ship {
 	}
 	
 	public void fire(LinkedList<Projectile> projectiles) {
-		if (amunition == 0) 
+		if (ammunition == 0)
 			return;
 		
 		long now = TimeUtils.millis();
@@ -148,7 +147,7 @@ public class DroidShip extends PhysicBody implements Ship {
 			Projectile proj = new Projectile(this, pos, dir, 100.0f);
 			projectiles.add(proj);
 			lastFire = now;
-			amunition--;
+			ammunition--;
 		}
 	}
 	
@@ -267,7 +266,7 @@ public class DroidShip extends PhysicBody implements Ship {
 		distance = 1 - (distance/SIGHT_DISTANCE);
 		relSpeed = MathUtils.clamp(relSpeed, -2*MAX_VEL, 2*MAX_VEL) / 2*MAX_VEL;
 		// relSpeed is negative when the obstacle is closing in, positive if going away
-		float value = (float) (distance * relSpeed);
+		float value = distance * relSpeed;
 		
 		switch(sensor) {
 		// OBSTACLE SENSORS
@@ -349,9 +348,9 @@ public class DroidShip extends PhysicBody implements Ship {
 			String[] values = linesArray[j].split("\t");
 			float[] triangle = new float[10];
 			int ii=0;
-			for (int i=0; i<values.length;i++) {
-				if (!values[i].isEmpty()) {
-					triangle[ii++] = Float.parseFloat(values[i]);
+			for (String value : values) {
+				if (!value.isEmpty()) {
+					triangle[ii++] = Float.parseFloat(value);
 				}
 			}
 
@@ -407,16 +406,15 @@ public class DroidShip extends PhysicBody implements Ship {
 		transform.idt();
 		transform.translate(getPosition());
 		transform.rotateRad(getAngle() + MathUtils.PI/2);
-		for (int i=0; i<triangles.length; i++) {
-			p1_tmp.set(triangles[i][0], triangles[i][1]);
-			transform.applyTo(p1_tmp);
-			p2_tmp.set(triangles[i][2], triangles[i][3]);
-			transform.applyTo(p2_tmp);
-			p3_tmp.set(triangles[i][4], triangles[i][5]);
-			transform.applyTo(p3_tmp);
-			renderer.setColor(triangles[i][6], triangles[i][7], triangles[i][8], triangles[i][9]);
+		renderer.pushMatrix(transform);
+		for (float[] triangle : triangles) {
+			p1_tmp.set(triangle[0], triangle[1]);
+			p2_tmp.set(triangle[2], triangle[3]);
+			p3_tmp.set(triangle[4], triangle[5]);
+			renderer.setColor(triangle[6], triangle[7], triangle[8], triangle[9]);
 			renderer.triangle(p1_tmp, p2_tmp, p3_tmp);
 		}
+		renderer.popMatrix();
 	}
 
 	//@Override
@@ -431,9 +429,9 @@ public class DroidShip extends PhysicBody implements Ship {
 				// Shift scores to the left
 				scores[i] = scores[i+1];
 			}
-			scores[iScore-1] = (int) (steps + 2*amunition + hitpoints + dstCounter + 50*hitCounter - avCounter/2);
+			scores[iScore-1] = (int) (steps + 2* ammunition + hitpoints + dstCounter + 50*hitCounter - avCounter/2);
 		} else {
-			scores[iScore++] = (int) (steps + 2*amunition + hitpoints + dstCounter + 50*hitCounter - avCounter/2);
+			scores[iScore++] = (int) (steps + 2* ammunition + hitpoints + dstCounter + 50*hitCounter - avCounter/2);
 		}
 	}
 	
@@ -446,7 +444,7 @@ public class DroidShip extends PhysicBody implements Ship {
 	
 	public void resetVars() {
 		hitpoints = MAX_HITPOINTS;
-		amunition = 200;
+		ammunition = 200;
 		dstCounter = 0.0f;
 		hitCounter = 0;
 		lastFire = 0;
