@@ -66,7 +66,6 @@ public class LandedPlayer extends PhysicBody {
 		body.applyLinearImpulse(dir.limit2(0.1f), body.getWorldCenter(), true);
 	}
 
-	@Override
 	public void render(MyRenderer renderer) {
 		transform.idt();
 		transform.translate(getPosition());

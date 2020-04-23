@@ -16,19 +16,19 @@ import com.gwel.spacegame.Enums;
 
 
 public class Spaceship extends PhysicBody implements Ship {
-	public final float MAX_VEL = 35.0f;
-	public final float MAX_ANG_VEL = 8.0f;
-	private final float FIRE_COOLDOWN = 150.0f; // In milliseconds
-	public final int MAX_HITPOINTS = 500;
-	public final int MAX_AMMUNITION = 300;
+	static public final float MAX_VEL = 35.0f;
+	static public final float MAX_ANG_VEL = 8.0f;
+	static private final float FIRE_COOLDOWN = 150.0f; // In milliseconds
+	static public final int MAX_HITPOINTS = 500;
+	static public final int MAX_AMMUNITION = 300;
 	
 	//public float speed_mag;
 	private Vector2 size = new Vector2(1.7f, 1.8f);  // Size of spaceship in game units
 	public int hitpoints;
 	private long last_fire;
-	private Affine2 transform;
 	private float[][] triangles;
 	private Vector2[] vertices;	// Used to set Box2D bounding shape
+	private Affine2 transform;
 	private Vector2 p1_tmp = new Vector2();
 	private Vector2 p2_tmp = new Vector2();
 	private Vector2 p3_tmp = new Vector2();

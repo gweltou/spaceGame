@@ -52,7 +52,7 @@ public class MyCamera {
 		return cam_pos;
 	}
 
-	void setCenter(Vector2 pos) {
+	public void setCenter(Vector2 pos) {
 		if (pCenter == null)
 			pCenter = pos.cpy();
 		else

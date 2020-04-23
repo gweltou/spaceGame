@@ -22,7 +22,6 @@ import com.gwel.screens.ScreenTraining;
 public class SpaceGame extends Game {
 	final boolean TRAINING = false; 
 	
-	public MyCamera camera;
 	public MyRenderer renderer;
 	public SpriteBatch batch;
 	public Controller controller;
@@ -36,8 +35,8 @@ public class SpaceGame extends Game {
 	private final static float UNIVERSE_SIZE = 100000.0f;
 	private final static float GRAVITY_ACTIVE_RADIUS = 800.0f;
 	public final static float LOCAL_RADIUS = GRAVITY_ACTIVE_RADIUS;
-	final static float exit_radius = GRAVITY_ACTIVE_RADIUS+200.0f;
-	public QuadTree Qt;
+	//final static float exit_radius = GRAVITY_ACTIVE_RADIUS+200.0f;
+	public QuadTree quadTree;
 	ArrayList<ArrayList<String>> godNames;
 	
 	// Controller Mapping
@@ -80,10 +79,6 @@ public class SpaceGame extends Game {
         }
 		
 		if (TRAINING) {
-			camera = new MyCamera(Gdx.graphics.getWidth(),Gdx.graphics.getHeight());
-			camera.setCenter(new Vector2(0.0f, 0.0f));
-			camera.update();
-			renderer = new MyRenderer(camera);
 			System.out.println("training");
 			setScreen(new ScreenTraining(this));
 			return;
@@ -94,22 +89,23 @@ public class SpaceGame extends Game {
 		godNames = new ArrayList<>();
 		loadGodNames();
 		AABB universe_boundary = new AABB(new Vector2(-UNIVERSE_SIZE/2, -UNIVERSE_SIZE/2), new Vector2(UNIVERSE_SIZE/2, UNIVERSE_SIZE/2));
-		Qt = new QuadTree(universe_boundary);
-		populateUniverse(Qt);
+		quadTree = new QuadTree(universe_boundary);
+		populateUniverse(quadTree);
 
 		hud = new HUD(this);
 		dialogManager = new DialogManager();
 		
-		camera = new MyCamera(Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
-		camera.update();
-		renderer = new MyRenderer(camera);
+		//camera = new MyCamera(Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
+		//camera.update();
+		renderer = new MyRenderer();
 		batch = new SpriteBatch();
 		
 		ship = new Spaceship(new Vector2());
-		
+
 		spaceScreen = new ScreenInSpace(this);
-		setScreen(spaceScreen);
-		mustLandOnPlanet = Qt.element;
+
+		//setScreen(spaceScreen);
+		mustLandOnPlanet = quadTree.element;
 	}
 
 	@Override
@@ -128,9 +124,6 @@ public class SpaceGame extends Game {
 	@Override
 	public void resize (int width, int height) {
 		super.resize(width, height);
-		//camera.width = width;
-		//camera.height = height;
-		//camera.update();
 	}
 	
 	@Override
@@ -234,12 +227,12 @@ public class SpaceGame extends Game {
 		// Add something at the beginning
 		if (generator.nextFloat() < 0.1) {
 			// Add a sci-fi number to the end
-			String str = null;
+			String str;
 			r = generator.nextFloat();
 			if (r < 0.6f) {
 				String greekChars = "αβγδεζηθλμξπρΣστυφχψΩω";
 				char c = greekChars.charAt(generator.nextInt(greekChars.length()));
-				str = String.valueOf(c) + "-";
+				str = c + "-";
 			} else if (r < 0.8f) {
 				str = "World of ";
 			} else if (r < 0.9f) {
@@ -253,7 +246,7 @@ public class SpaceGame extends Game {
 		// Add something in the end
 		if (generator.nextFloat() < 0.2) {
 			String[] romanNums = {"Prime", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X", "XI", "XII", "XIII", "XIV", "XV"};
-			String str = null;
+			String str;
 			r = generator.nextFloat();
 			if (r < 0.1f) {
 				str = "'s Colony";

@@ -14,7 +14,7 @@ public class Inhabitant extends PhysicBody {
     private final Vector2 p2_tmp = new Vector2();
     private final Vector2 p3_tmp = new Vector2();
     private final float mood = MathUtils.random();
-    private float direction = MathUtils.random() / 4f;
+    private float direction = MathUtils.random(0.15f, 0.2f);
 
     public Inhabitant(Vector2 pos) {
         super(pos, 0.0f);
@@ -62,6 +62,10 @@ public class Inhabitant extends PhysicBody {
         body.applyLinearImpulse(dir.limit2(0.01f), body.getWorldCenter(), true);
     }
 
+    public void jump() {
+        body.applyLinearImpulse(new Vector2(0f, 6f), body.getWorldCenter(), true);
+    }
+
     public float getMood() {
         return mood;
     }
@@ -72,7 +76,6 @@ public class Inhabitant extends PhysicBody {
             direction *= -1;
     }
 
-    @Override
     public void render(MyRenderer renderer) {
         transform.idt();
         transform.translate(getPosition());

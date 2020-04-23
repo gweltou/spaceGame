@@ -2,21 +2,18 @@ package com.gwel.surfaceEntities;
 
 import java.util.Arrays;
 import com.badlogic.gdx.math.MathUtils;
-import com.badlogic.gdx.physics.box2d.World;
 import com.gwel.entities.Planet;
 
 
 public class XenoTreeManager {
-	private World world;
 	public TreeParam tp;
 	public TreeParamMod tpm;
 	public FlowerParam fp;
 	public LeafParam lp;
-    private float surfaceLength;
-    private float[] treeCoords;
+    private final float surfaceLength;
+    private final float[] treeCoords;
 
-	public XenoTreeManager(World world, Planet planet) {
-		this.world = world;
+	public XenoTreeManager(Planet planet) {
 		this.surfaceLength = planet.surfaceLength;
 		float treeDensity = Math.max(0.0f, MathUtils.random(-0.1f, 0.2f));
 		int numTrees = (int) (treeDensity * surfaceLength);
@@ -29,7 +26,6 @@ public class XenoTreeManager {
 		treeCoords = new float[numTrees];
 		for (int i=0; i<numTrees; i++) {
 			treeCoords[i] = MathUtils.random.nextFloat()*surfaceLength;
-			
 		}
 		Arrays.sort(treeCoords);
 		
@@ -40,7 +36,7 @@ public class XenoTreeManager {
 	XenoTree buildTree(float x, float y) {
 		MathUtils.random.setSeed((long) (y*100));
 		float width = MathUtils.random.nextFloat()*4f + 1f;
-		return new XenoTree(world, x, y, width, tp, tpm, fp, lp, null);
+		return new XenoTree(x, y, width, tp, tpm, fp, lp, null);
 	}
 
 	public float[] treesBetween(float leftCoord, float rightCoord) {

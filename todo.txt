@@ -1,0 +1,20 @@
+- Les planètes disparaissent progressivement
+- Astéroides destructibles dans l'espace
+- Dialogues introspectifs dans l'espace
+- Wrapping du système solaire ?
+- Soleil au centre du système solaire (shader ?)
+
+- recurrent neural network pour les droids
+
+- Gros vaisseaux atterri sur planète (fixe, pas de collision)
+- Dessiner les NPC en vectoriel
+
+
+== Non prioritaire ==
+- Wind pour le mouvement des arbres sur planètes
+- Ship trail avec dispersion
+- Lunes dans le ciel à la surface des planètes
+
+== Idées ==
+- La vitesse du vaisseau ralentie à mesure qu'on se rapproche du soleil
+- Les introspections deviennent plus positives

@@ -10,7 +10,7 @@ import com.gwel.spacegame.MyRenderer;
 public class ParallaxLayer {
     private final Terrain terrain;
     private final float scale;
-    private XenoTreeManager xtm;
+    private final XenoTreeManager xtm;
     private final boolean withTrees;
     private final Color color;
 
@@ -40,6 +40,7 @@ public class ParallaxLayer {
         float leftBoundary = camCenter.x + (renderer.camera.sw.x-camCenter.x) / scale;
         float rightBoundary = camCenter.x + (renderer.camera.ne.x-camCenter.x) / scale;
         Vector2[] mesh = terrain.coordsBetween(leftBoundary, rightBoundary);
+        // This could be optimized
         TerrainBlock block = new TerrainBlock(new Vector2(leftBoundary, 0f), mesh, color);
 
         // Trees

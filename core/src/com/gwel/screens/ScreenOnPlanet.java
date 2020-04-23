@@ -15,7 +15,6 @@ import com.gwel.entities.Planet;
 import com.gwel.entities.Spaceship;
 import com.gwel.spacegame.MyCamera;
 import com.gwel.spacegame.SpaceGame;
-import com.gwel.spacegame.utils;
 import com.gwel.surfaceEntities.*;
 
 
@@ -38,15 +37,16 @@ public class ScreenOnPlanet implements Screen {
 	private final ParallaxLayer[] parallaxLayers;
 	private final WalkingLayer walkingLayer;
 
+
 	public ScreenOnPlanet(final SpaceGame game, Planet p) {
 		this.game = game;
 		this.planet = p;
-		world = new World(new Vector2(0.0f, -10.0f), true);
+		world = new World(new Vector2(0.0f, -15.0f), true);
 
 		camera = new MyCamera(Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
 		camera.setZoomLimits(10f, 200f);
 		camera.zoomTo(100f);
-		game.renderer.setCamera(camera);
+		//game.renderer.setCamera(camera);
 
 		MathUtils.random.setSeed(planet.seed);
 		String planetName = game.getPlanetName(planet.seed);
@@ -61,7 +61,7 @@ public class ScreenOnPlanet implements Screen {
 		System.out.println("Sun local position : " + sunHPos);
 
 		// XENO TREE MANAGER
-		XenoTreeManager xtm = new XenoTreeManager(world, planet);
+		XenoTreeManager xtm = new XenoTreeManager(planet);
 
 		// GENERATE TERRAIN DATA
 		Vector2 blockPos = new Vector2(landingHPos-WalkingLayer.TERRAIN_BLOCK_WIDTH/2f, 0.0f);
@@ -77,12 +77,12 @@ public class ScreenOnPlanet implements Screen {
 		}
 
 		// Regenerating ship
-		game.ship.hitpoints = game.ship.MAX_HITPOINTS;
-		game.ship.ammunition = game.ship.MAX_AMMUNITION;
+		game.ship.hitpoints = Spaceship.MAX_HITPOINTS;
+		game.ship.ammunition = Spaceship.MAX_AMMUNITION;
 		
-		Vector2 dPos = game.ship.getPosition().sub(planet.getPosition());
-		float cameraRotate = utils.wrapAngleAroundZero(MathUtils.PI*0.5f-dPos.angleRad());
-		game.camera.rotateTo(cameraRotate);
+		//Vector2 dPos = game.ship.getPosition().sub(planet.getPosition());
+		//float cameraRotate = utils.wrapAngleAroundZero(MathUtils.PI*0.5f-dPos.angleRad());
+		//game.camera.rotateTo(cameraRotate);
 		
 		// Create a mock-up ship to draw
 		float spawningHeight = walkingLayer.getHeight(landingHPos)+3f;
@@ -100,7 +100,7 @@ public class ScreenOnPlanet implements Screen {
 	
 	@Override
 	public void dispose() {
-		game.camera.rotateTo(0.0f);
+		//game.camera.rotateTo(0.0f);
 		player.dispose();
 		ship.dispose();
 		walkingLayer.dispose();
@@ -120,11 +120,11 @@ public class ScreenOnPlanet implements Screen {
 
 		if (landingIntro) {
 			//  Camera update
-			game.camera.glideTo(game.ship.getPosition());
-			game.camera.zoomTo(200.0f);
-			game.camera.update();
+			//game.camera.glideTo(game.ship.getPosition());
+			//game.camera.zoomTo(200.0f);
+			//game.camera.update();
 	
-			game.renderer.setProjectionMatrix(new Matrix4().set(game.camera.affine));
+			//game.renderer.setProjectionMatrix(new Matrix4().set(game.camera.affine));
 			Gdx.gl.glClearColor(0.4f, 1f, 1f, 1f);
 			Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
 			game.ship.render(game.renderer);
@@ -210,6 +210,7 @@ public class ScreenOnPlanet implements Screen {
 
 	@Override
 	public void resize(int width, int height) {
+		game.renderer.setCamera(camera);
 		camera.resize(width, height);
 	}
 
@@ -280,10 +281,20 @@ public class ScreenOnPlanet implements Screen {
 
 		// Talk to NPC if close
 		if (TimeUtils.millis() - lastActionKeyPressed > 1000) {
+			Inhabitant closestNpc = null;
+			float minDistance = 999f;
+			float distance;
+			// Find closest NPC
 			for (Inhabitant npc : walkingLayer.getInhabitants()) {
-				if (player.getPosition().dst2(npc.getPosition()) < 2.0f) {
-					game.hud.tempDialog(game.dialogManager.getPhrase(npc.getMood()));
+				distance = player.getPosition().dst2(npc.getPosition());
+				if (distance < 2.0f && distance < minDistance) {
+					minDistance = distance;
+					closestNpc = npc;
 				}
+			}
+			if (closestNpc != null) {
+				closestNpc.jump();
+				game.hud.tempDialog(game.dialogManager.getPhrase(closestNpc.getMood()));
 			}
 			lastActionKeyPressed = TimeUtils.millis();
 		}

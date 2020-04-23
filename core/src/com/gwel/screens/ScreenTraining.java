@@ -28,39 +28,41 @@ import com.gwel.ai.NeuralNetwork;
 import com.gwel.ai.DroidPool;
 import com.gwel.entities.*;
 import com.gwel.spacegame.Enums;
+import com.gwel.spacegame.MyCamera;
 import com.gwel.spacegame.SpaceContactListener;
 import com.gwel.spacegame.SpaceGame;
 
 
 public class ScreenTraining implements Screen {
-	private final int SIM_SPEED = 32;
-	private final float SPAWN_RADIUS = 30.0f;
-	private final float SMALL_PLANET_RADIUS = 15.0f;
-	private final float MEDIUM_PLANET_RADIUS = 22.0f;
-	private final float BIG_PLANET_RADIUS = 35.0f;
-	private final float WORLD_WIDTH =  2*(SPAWN_RADIUS + 5*SMALL_PLANET_RADIUS + 2*BIG_PLANET_RADIUS + DroidShip.SIGHT_DISTANCE);
-	private final float WORLD_HEIGHT = WORLD_WIDTH;
-	private final float BORDER_LEFT = -WORLD_WIDTH/2.0f;
-	private final float BORDER_RIGHT = WORLD_WIDTH/2.0f;
-	private final float BORDER_UP = WORLD_HEIGHT/2.0f;
-	private final float BORDER_DOWN = -WORLD_HEIGHT/2.0f;
-	private final boolean DEBUG_RENDERING = true;
-	private final int STARTING_POP = 32;
-	private final int WINNERS_PER_GENERATION = 6;
-	private final int N_OFFSPRINGS = 8;
-	private final int BRANCH_OUT_TRIES = 3;
-	private final int SIM_STEPS = 40000;
+	static private final int SIM_SPEED = 32;
+	static private final float SPAWN_RADIUS = 30.0f;
+	static private final float SMALL_PLANET_RADIUS = 15.0f;
+	static private final float MEDIUM_PLANET_RADIUS = 22.0f;
+	static private final float BIG_PLANET_RADIUS = 35.0f;
+	static private final float WORLD_WIDTH =  2*(SPAWN_RADIUS + 5*SMALL_PLANET_RADIUS + 2*BIG_PLANET_RADIUS + DroidShip.SIGHT_DISTANCE);
+	static private final float WORLD_HEIGHT = WORLD_WIDTH;
+	static private final float BORDER_LEFT = -WORLD_WIDTH/2.0f;
+	static private final float BORDER_RIGHT = WORLD_WIDTH/2.0f;
+	static private final float BORDER_UP = WORLD_HEIGHT/2.0f;
+	static private final float BORDER_DOWN = -WORLD_HEIGHT/2.0f;
+	static private final boolean DEBUG_RENDERING = true;
+	static private final int STARTING_POP = 32;
+	static private final int WINNERS_PER_GENERATION = 6;
+	static private final int N_OFFSPRINGS = 8;
+	static private final int BRANCH_OUT_TRIES = 3;
+	static private final int SIM_STEPS = 40000;
 	
 	final SpaceGame game;
-	private World b2world;
+	private final World b2world;
+	private final MyCamera camera;
 	private boolean destroy;
 	
-	private ArrayList<Planet> localPlanets = new ArrayList<>();
-	private LinkedList<DroidShip> droids = new LinkedList<>();
+	private final ArrayList<Planet> localPlanets = new ArrayList<>();
+	private final LinkedList<DroidShip> droids = new LinkedList<>();
 	private ListIterator<DroidShip> droidsIter;
-	private LinkedList<Projectile> projectiles = new LinkedList<>();
+	private final LinkedList<Projectile> projectiles = new LinkedList<>();
 	private ListIterator<Projectile> proj_iter;
-	private PriorityQueue<DroidShip> podium = new PriorityQueue<>(5, new DroidComparator());
+	private final PriorityQueue<DroidShip> podium = new PriorityQueue<>(5, new DroidComparator());
 	private DroidPool currentPool;
 	private int branchTries;
 	
@@ -80,11 +82,13 @@ public class ScreenTraining implements Screen {
 		b2world = new World(new Vector2(0.0f, 0.0f), true);
 		b2world.setContactListener(new SpaceContactListener(game));
 		
-		debugRenderer=new Box2DDebugRenderer();
+		debugRenderer = new Box2DDebugRenderer();
 		debugRenderer.setDrawAABBs(false);
 		renderer = new ShapeRenderer();
-		game.camera.zoomTo(1.5f);
-		game.camera.update();
+		camera = new MyCamera(Gdx.graphics.getWidth(),Gdx.graphics.getHeight());
+		camera.setCenter(new Vector2(0.0f, 0.0f));
+		camera.zoomTo(1.5f);
+		camera.update();
 		
 		populatePlanets();
 		lastFpsDisplay = TimeUtils.millis();
@@ -107,18 +111,17 @@ public class ScreenTraining implements Screen {
 		
 		//  Camera update
 //		if (!droids.isEmpty()) {
-//			game.camera.glideTo(droids.getFirst().getPosition());
+//			camera.glideTo(droids.getFirst().getPosition());
 //		}
-		game.camera.update();
 
 		Gdx.gl.glClearColor(0f, 0f, 0f, 1f);
 		Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
 		
 		if (DEBUG_RENDERING) {
 			// DEBUG RENDERING
-			debugRenderer.render(b2world, new Matrix4().set(game.camera.affine));
+			debugRenderer.render(b2world, new Matrix4().set(camera.affine));
 			// Render projectiles
-			renderer.setProjectionMatrix(new Matrix4().set(game.camera.affine));		
+			renderer.setProjectionMatrix(new Matrix4().set(camera.affine));
 			renderer.begin(ShapeType.Line);
 			renderer.setColor(1, 0, 0, 1);
 			for (Projectile proj: projectiles) {
@@ -127,11 +130,12 @@ public class ScreenTraining implements Screen {
 			renderer.end();
 		} else {
 			// CLASSIC RENDERING
-			game.renderer.setProjectionMatrix(new Matrix4().set(game.camera.affine));
+			camera.update();
+			game.renderer.setProjectionMatrix(new Matrix4().set(camera.affine));
 			for (Planet p : localPlanets) {
 				p.render(game.renderer);
 			}
-			for (MovingObject b : droids) {
+			for (DroidShip b : droids) {
 				b.render(game.renderer);
 			}
 			for (Projectile proj: projectiles) {
@@ -508,7 +512,7 @@ public class ScreenTraining implements Screen {
 			isEmpty = false;
 			float posX = 0;
 			float posY = 0;
-			while (isEmpty == false) {
+			while (!isEmpty) {
 				isEmpty = true;
 				posX = MathUtils.random(BORDER_LEFT, BORDER_RIGHT);
 				posY = MathUtils.random(BORDER_DOWN, BORDER_UP);
@@ -565,9 +569,7 @@ public class ScreenTraining implements Screen {
 				newPool.add(offspring);
 			}
 		}
-		for (DroidShip droid: winners) {
-			newPool.add(droid);
-		}
+		newPool.addAll(winners);
 		
 		System.out.println(newPool.size() + " new Droids created from " + winners.size());
 		return newPool;
@@ -587,21 +589,21 @@ public class ScreenTraining implements Screen {
 		if (game.hasController) {
 			PovDirection pov = game.controller.getPov(0);
 			if (pov == PovDirection.north) {
-				game.camera.zoomIn();
-				game.camera.autozoom = false;
+				camera.zoomIn();
+				camera.autozoom = false;
 			}
 			if (pov == PovDirection.south) {
-				game.camera.zoomOut();
-				game.camera.autozoom = false;
+				camera.zoomOut();
+				camera.autozoom = false;
 			}
 		}
 		if (Gdx.input.isKeyPressed(Keys.A)) {
-			game.camera.zoomIn();
-			game.camera.autozoom = false;
+			camera.zoomIn();
+			camera.autozoom = false;
 		}
 		if (Gdx.input.isKeyPressed(Keys.Z)) {
-			game.camera.zoomOut();
-			game.camera.autozoom = false;
+			camera.zoomOut();
+			camera.autozoom = false;
 		}
 	}
 	

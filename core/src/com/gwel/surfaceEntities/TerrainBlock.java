@@ -1,6 +1,7 @@
 package com.gwel.surfaceEntities;
 
 import java.util.ArrayList;
+
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.physics.box2d.Body;
@@ -18,11 +19,11 @@ public class TerrainBlock {
 	   position is in absolute planet coordinates
 	 */
 	public Body terrainBody;
-	private Vector2[] mesh;
+	private final Vector2[] mesh;
 	public Vector2 position = new Vector2();
 	public final Color color = new Color();
-	private ArrayList<XenoTree> trees = new ArrayList<XenoTree>();
-	public ArrayList<Inhabitant> inhabitants = new ArrayList<Inhabitant>();
+	private final ArrayList<XenoTree> trees = new ArrayList<>();
+	private DelaunayRock[] rocks;
 	
 	public TerrainBlock(Vector2 position, Vector2[] mesh, Color color) {
 		this.position.set(position);
@@ -52,6 +53,10 @@ public class TerrainBlock {
 		trees.add(tree);
 	}
 
+	public void addRocks(DelaunayRock[] rocks) {
+		this.rocks = rocks;
+	}
+
 	public void renderTerrain(MyRenderer renderer) {
 		renderer.setColor(color);
 		for (int i=0; i<mesh.length-1; i++) {
@@ -64,6 +69,12 @@ public class TerrainBlock {
 		}
 	}
 
+	public void renderRocks(MyRenderer renderer) {
+		for (DelaunayRock rock: rocks) {
+			rock.render(renderer);
+		}
+	}
+
 	public void renderTrees(MyRenderer renderer) {
 		for (XenoTree tree: trees) {
 			renderer.setColor(color);
@@ -72,7 +83,7 @@ public class TerrainBlock {
 	}
 	
 	public void dispose(float surfaceLength) {
-		for (XenoTree tree: trees)
+		for (XenoTree tree : trees)
 			tree.dispose();
 
 		if (terrainBody != null)	terrainBody.getWorld().destroyBody(terrainBody);

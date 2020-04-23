@@ -20,24 +20,26 @@ public class WalkingLayer implements Disposable {
 	private final Terrain terrain;
 	private final XenoTreeManager xtm;
 	private final InhabitantLayer inm;
+	private final RockLayer rocks;
 	private final boolean withTrees;
 	private float leftBoundary, rightBoundary;
 	private final Color color;
-	
-	
+
+
 	public WalkingLayer(World w, Planet planet, Vector2 position, float scale, boolean withTrees, XenoTreeManager xtm) {
-		this.world = w;
+		world = w;
 		this.planet = planet;
-		this.terrain = new Terrain(4, planet.surfaceLength, scale);
+		terrain = new Terrain(4, planet.surfaceLength, scale);
 		this.withTrees = withTrees;
 		this.xtm = xtm;
 		this.inm = new InhabitantLayer(world, planet, terrain);
+		rocks = new RockLayer(planet, terrain);
 
 		leftBoundary = position.x;
 		rightBoundary = leftBoundary + TERRAIN_BLOCK_WIDTH;
-		System.out.println("From WalkingLayer:");
-		System.out.print("    leftBoundary " + leftBoundary);
-		System.out.println(" rightBoundary" + rightBoundary);
+		//System.out.println("From WalkingLayer:");
+		//System.out.print("    leftBoundary " + leftBoundary);
+		//System.out.println(" rightBoundary " + rightBoundary);
 		
 		// CREATE 1 INITIAL BLOCK
 		float level = (float) (Math.log(scale)/Math.log(0.5));
@@ -61,6 +63,9 @@ public class WalkingLayer implements Disposable {
 
 		// Add people
 		inm.addBetween(leftBoundary, rightBoundary);
+
+		// Add rocks
+		block.addRocks(rocks.rocksBetween(leftBoundary, rightBoundary));
 
 		blocks.add(block);
 	}
@@ -97,6 +102,9 @@ public class WalkingLayer implements Disposable {
 					newBlock.addTree(xtm.buildTree(treeXpos, treeYpos));
 				}
 			}
+			// Add rocks
+			newBlock.addRocks(rocks.rocksBetween(leftBoundary, leftBoundary+TERRAIN_BLOCK_WIDTH));
+
 			// Add NPC
 			inm.addBetween(leftBoundary, leftBoundary+TERRAIN_BLOCK_WIDTH);
 
@@ -128,6 +136,9 @@ public class WalkingLayer implements Disposable {
 					newBlock.addTree(xtm.buildTree(treeXpos, treeYpos));
 				}
 			}
+			// Add rocks
+			newBlock.addRocks(rocks.rocksBetween(rightBoundary-TERRAIN_BLOCK_WIDTH, rightBoundary));
+
 			// Add NPC
 			inm.addBetween(rightBoundary-TERRAIN_BLOCK_WIDTH, rightBoundary);
 
@@ -146,6 +157,9 @@ public class WalkingLayer implements Disposable {
 	}
 
 	public void render(MyRenderer renderer) {
+		for (TerrainBlock tb : blocks) {
+			tb.renderRocks(renderer);
+		}
 		for (TerrainBlock tb : blocks) {
 			tb.renderTerrain(renderer);
 		}

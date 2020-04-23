@@ -4,7 +4,6 @@ import java.util.ArrayList;
 
 import com.badlogic.gdx.math.Affine2;
 import com.badlogic.gdx.math.MathUtils;
-import com.badlogic.gdx.math.RandomXS128;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.physics.box2d.World;
 import com.gwel.spacegame.MyRenderer;
@@ -19,15 +18,14 @@ public class XenoTree {
 	public TreeParamMod tpm;
 	public FlowerParam fp;
 	public LeafParam lp;
-	private ArrayList<TreeSegment> segs;
+	private final ArrayList<TreeSegment> segs;
 	public int nFlowers;
 	public int nLeaves;
-	private int odd;
+	private final int odd;
 	public int maxRank = 0;
-	private WindManager wm;
-	private Affine2 transform = new Affine2();
-	private World world;
-	
+	private final WindManager wm;
+	private final Affine2 transform = new Affine2();
+
 /*
 	public XenoTree(World world, float x, float y, float w, RandomXS128 generator) {
 		this.world = world;
@@ -43,17 +41,16 @@ public class XenoTree {
 	}
  */
 	
-	XenoTree(World world, float x, float y, float w, TreeParam tp, TreeParamMod tpm, FlowerParam fp, LeafParam lp, WindManager wm) {
-		this.world = world;
+	XenoTree(float x, float y, float w, TreeParam tp, TreeParamMod tpm, FlowerParam fp, LeafParam lp, WindManager wm) {
 		this.tp = tp;
 		this.tpm = tpm;
 		this.fp = fp;
 		this.lp = lp;
 		this.wm = wm;
 		odd = Math.round(MathUtils.random.nextFloat());
-		segs = new ArrayList<TreeSegment>();
+		segs = new ArrayList<>();
 		segs.addAll(branch(x, y, 0.0f, w, tp, tpm, true, 0, 0));
-		/*println();
+		/*
 	    println("nSegs", segs.size());
 	    println("nFlowers", nFlowers);
 	    println("maxRank", maxRank);*/
@@ -112,7 +109,7 @@ public class XenoTree {
 	}
 
 	ArrayList<TreeSegment> branch(float x, float y, float angle, float base, TreeParam tp, TreeParamMod tpm, boolean root, int rank, int level) {
-		ArrayList<TreeSegment> segs = new ArrayList<TreeSegment>();
+		ArrayList<TreeSegment> segs = new ArrayList<>();
 		if (base < 0.1f || segs.size() >= SEG_LIMIT)
 			return segs;
 		maxRank = Math.max(maxRank, rank);

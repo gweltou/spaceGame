@@ -4,7 +4,6 @@ import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.physics.box2d.Body;
 import com.badlogic.gdx.physics.box2d.BodyDef;
 import com.badlogic.gdx.physics.box2d.World;
-import com.gwel.spacegame.MyRenderer;
 import com.gwel.spacegame.utils;
 
 
@@ -47,6 +46,10 @@ public abstract class PhysicBody implements MovingObject, Collidable {
 			return body.getAngularVelocity();
 		return angleVel;
 	}
+
+	public void setAngularVelocity(float angVel) {
+		angleVel = angVel;
+	}
 	
 	public float getAngle() {
 		if (body != null)
@@ -77,8 +80,6 @@ public abstract class PhysicBody implements MovingObject, Collidable {
 		body.applyForce(force, point, true);
 	}
 
-	public abstract void render(MyRenderer renderer);
-	
 	public void initBody(World world) {
 		disposable = false;
 		

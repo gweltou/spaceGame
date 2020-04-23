@@ -25,18 +25,15 @@ import com.badlogic.gdx.utils.Json;
 import com.badlogic.gdx.utils.ScreenUtils;
 import com.gwel.ai.DroidPool;
 import com.gwel.entities.*;
-import com.gwel.spacegame.AABB;
-import com.gwel.spacegame.Const;
-import com.gwel.spacegame.Enums;
-import com.gwel.spacegame.SpaceContactListener;
-import com.gwel.spacegame.SpaceGame;
+import com.gwel.spacegame.*;
 
 
 public class ScreenInSpace implements Screen {
 	final SpaceGame game;
-	private World b2world;
+	private final World b2world;
+	private final MyCamera camera;
 	private boolean mustDestroy;
-	private float game_speed;	// set to <1.0 for slow-mo
+	private final float game_speed;	// set to <1.0 for slow-mo
 	
 	private final static int NUM_DROIDS_AROUND = 8;
 
@@ -65,9 +62,11 @@ public class ScreenInSpace implements Screen {
 		mustDestroy = false;
 		game_speed = 1.0f;
 		droidPool = importPool("ec8a21fd-4969-495e-8157-5f30e72a0715");
-		
+
 		b2world = new World(new Vector2(0.0f, 0.0f), true);
 		b2world.setContactListener(new SpaceContactListener(game));
+		camera = new MyCamera(Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
+		camera.setCenter(game.ship.getPosition());
 		
 		game.ship.initBody(b2world);
 		
@@ -102,7 +101,7 @@ public class ScreenInSpace implements Screen {
 		AABB local_range = new AABB(game.ship.getPosition().sub(SpaceGame.LOCAL_RADIUS, SpaceGame.LOCAL_RADIUS),
 				game.ship.getPosition().add(SpaceGame.LOCAL_RADIUS, SpaceGame.LOCAL_RADIUS));
 		local_planets_prev = local_planets;
-		local_planets = game.Qt.query(local_range);
+		local_planets = game.quadTree.query(local_range);
 
 		// Check for planets that newly entered the local zone
 		for (Planet pl : local_planets) {
@@ -356,17 +355,17 @@ public class ScreenInSpace implements Screen {
 		}
 		
 		//  Camera update
-		game.camera.glideTo(game.ship.getPosition());
-		if (game.camera.autozoom)
-			game.camera.zoomTo(200.0f/game.ship.getVelocity().len());
-		game.camera.update();
+		camera.glideTo(game.ship.getPosition());
+		if (camera.autozoom)
+			camera.zoomTo(200.0f/game.ship.getVelocity().len());
+		camera.update();
 		
-		starfield.update(game.camera.getTravelling(), game.camera.PPU);
-		deepfield.update(game.camera.getTravelling(), game.camera.PPU);
+		starfield.update(camera.getTravelling(), camera.PPU);
+		deepfield.update(camera.getTravelling(), camera.PPU);
 		
 		// North and East directions are POSITIVE !
-		AABB camera_range = new AABB(game.camera.sw.cpy().sub(Const.PLANET_MAX_RADIUS, Const.PLANET_MAX_RADIUS), 
-				game.camera.ne.cpy().add(Const.PLANET_MAX_RADIUS, Const.PLANET_MAX_RADIUS));
+		AABB camera_range = new AABB(camera.sw.cpy().sub(Const.PLANET_MAX_RADIUS, Const.PLANET_MAX_RADIUS),
+				camera.ne.cpy().add(Const.PLANET_MAX_RADIUS, Const.PLANET_MAX_RADIUS));
 		
 		float shipSpaceAngle = game.ship.getPosition().angle();
 		spaceColor.fromHsv(shipSpaceAngle, 0.15f, 1.0f);
@@ -377,8 +376,8 @@ public class ScreenInSpace implements Screen {
 		shipSpaceAngle = (shipSpaceAngle+180f)%360f;
 		starfield.render(game.renderer, shipSpaceAngle);
 		deepfield.render(game.renderer, shipSpaceAngle);
-		game.renderer.setProjectionMatrix(new Matrix4().set(game.camera.affine));
-		for (Planet p : game.Qt.query(camera_range)) {
+		game.renderer.setProjectionMatrix(new Matrix4().set(camera.affine));
+		for (Planet p : game.quadTree.query(camera_range)) {
 			p.render(game.renderer);
 		}
 		for (ShipTrail trail: trails) {
@@ -389,7 +388,7 @@ public class ScreenInSpace implements Screen {
 				b.render(game.renderer);
 			}
 		}
-		for (MovingObject b : droids) {
+		for (DroidShip b : droids) {
 			if (camera_range.containsPoint(b.getPosition())) {
 				b.render(game.renderer);
 			}
@@ -420,7 +419,7 @@ public class ScreenInSpace implements Screen {
 	public void resize(int width, int height) {
 		starfield = new Starfield(Gdx.graphics.getWidth(), Gdx.graphics.getHeight(), 0.0001f, 0.9f, 1.5f);
 		deepfield = new Starfield(Gdx.graphics.getWidth(), Gdx.graphics.getHeight(), 0.004f, 0.15f, 0.8f);
-		game.renderer.setCamera(game.camera);
+		game.renderer.setCamera(camera);
 	}
 	
 	DroidPool importPool(String filename) {
@@ -482,16 +481,16 @@ public class ScreenInSpace implements Screen {
 		if (game.hasController) {
 			if(game.controller.getButton(game.PAD_BOOST)) {
 				game.ship.accelerate(2.5f);
-				game.camera.autozoom = true;
+				camera.autozoom = true;
 			}
 			PovDirection pov = game.controller.getPov(0);
 			if (pov == PovDirection.north) {
-				game.camera.zoomIn();
-				game.camera.autozoom = false;
+				camera.zoomIn();
+				camera.autozoom = false;
 			}
 			if (pov == PovDirection.south) {
-				game.camera.zoomOut();
-				game.camera.autozoom = false;
+				camera.zoomOut();
+				camera.autozoom = false;
 			}
 			
 			// Fire
@@ -516,12 +515,12 @@ public class ScreenInSpace implements Screen {
 		}
 		
 		if (Gdx.input.isKeyPressed(Keys.A)) {
-			game.camera.zoomIn();
-			game.camera.autozoom = false;
+			camera.zoomIn();
+			camera.autozoom = false;
 		}
 		if (Gdx.input.isKeyPressed(Keys.Z)) {
-			game.camera.zoomOut();
-			game.camera.autozoom = false;
+			camera.zoomOut();
+			camera.autozoom = false;
 		}
 		if (Gdx.input.isKeyPressed(Keys.SPACE)) {
 			game.ship.fire(projectiles);

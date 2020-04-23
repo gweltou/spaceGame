@@ -75,8 +75,7 @@ public class MyRenderer implements Disposable {
 	private final Vector2 tmpv3 = new Vector2();
 	
 	
-	public MyRenderer(MyCamera camera) {
-		this.camera = camera;
+	public MyRenderer() {
 		iTriangle = 0;
 		meshTriangles = new Mesh(true, 3*MAX_TRIS, 0,
 				new VertexAttribute(Usage.Position, 2, "a_position"),
