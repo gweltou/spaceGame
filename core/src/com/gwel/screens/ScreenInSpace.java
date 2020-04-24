@@ -30,7 +30,7 @@ import com.gwel.spacegame.*;
 
 public class ScreenInSpace implements Screen {
 	final SpaceGame game;
-	private final World b2world;
+	private final World world;
 	private final MyCamera camera;
 	private boolean mustDestroy;
 	private final float game_speed;	// set to <1.0 for slow-mo
@@ -38,39 +38,39 @@ public class ScreenInSpace implements Screen {
 	private final static int NUM_DROIDS_AROUND = 8;
 
 	private ArrayList<Planet> local_planets = new ArrayList<>();
-	private ArrayList<Planet> local_planets_prev;
-	private LinkedList<Satellite> local_sats = new LinkedList<>();
-	private ListIterator<Satellite> sat_iter;
-	private LinkedList<MovingObject> free_bodies = new LinkedList<>();
-	private ListIterator<MovingObject> iterBodies;
-	private LinkedList<DroidShip> droids = new LinkedList<>();
-	private ListIterator<DroidShip> iterDroids;
-	private LinkedList<Projectile> projectiles = new LinkedList<>();
-	private ListIterator<Projectile> iterProj;
-	private LinkedList<ShipTrail> trails = new LinkedList<>();
-	private ListIterator<ShipTrail> iterTrails;
-	private DroidPool droidPool;
+	private final LinkedList<Satellite> local_sats = new LinkedList<>();
+	private final LinkedList<MovingObject> freeBodies = new LinkedList<>();
+	private final LinkedList<DroidShip> droids = new LinkedList<>();
+	private final LinkedList<Projectile> projectiles = new LinkedList<>();
+	private final LinkedList<ShipTrail> trails = new LinkedList<>();
+	private final DroidPool droidPool;
 	
 	private Starfield starfield;
 	private Starfield deepfield;
 	private boolean empty;
 	private static final Color spaceColor = new Color();
 
-	
+	Asteroid as;
+
+
 	public ScreenInSpace(final SpaceGame game) {
 		this.game = game;
 		mustDestroy = false;
 		game_speed = 1.0f;
 		droidPool = importPool("ec8a21fd-4969-495e-8157-5f30e72a0715");
 
-		b2world = new World(new Vector2(0.0f, 0.0f), true);
-		b2world.setContactListener(new SpaceContactListener(game));
+		world = new World(new Vector2(0.0f, 0.0f), true);
+		world.setContactListener(new SpaceContactListener(game));
 		camera = new MyCamera(Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
 		camera.setCenter(game.ship.getPosition());
 		
-		game.ship.initBody(b2world);
+		game.ship.initBody(world);
 		
-		free_bodies.add(game.ship);
+		freeBodies.add(game.ship);
+
+		as = new Asteroid(game.ship.getPosition().add(5f, 5f));
+		as.initBody(world);
+		freeBodies.add(as);
 	}
 	
 	@Override
@@ -79,7 +79,7 @@ public class ScreenInSpace implements Screen {
 		if (mustDestroy) {
 			System.out.println("Destroying space");
 			game.ship.dispose();	// Important, so the ship position and angle is saved
-			b2world.dispose();
+			world.dispose();
 		} else {
 			mustDestroy = true;
 		}
@@ -97,18 +97,18 @@ public class ScreenInSpace implements Screen {
 		if (droids.size() < NUM_DROIDS_AROUND/2) {
 			spawnDroids(NUM_DROIDS_AROUND);
 		}
-		b2world.step(game_speed/60f, 8, 3);
+		world.step(game_speed/60f, 8, 3);
 		AABB local_range = new AABB(game.ship.getPosition().sub(SpaceGame.LOCAL_RADIUS, SpaceGame.LOCAL_RADIUS),
 				game.ship.getPosition().add(SpaceGame.LOCAL_RADIUS, SpaceGame.LOCAL_RADIUS));
-		local_planets_prev = local_planets;
+		ArrayList<Planet> local_planets_prev = local_planets;
 		local_planets = game.quadTree.query(local_range);
 
 		// Check for planets that newly entered the local zone
 		for (Planet pl : local_planets) {
 			if (!local_planets_prev.contains(pl)) {
-				pl.initBody(b2world);
+				pl.initBody(world);
 				// Register its satellites
-				local_sats.addAll(pl.activateSatellites(b2world));
+				local_sats.addAll(pl.activateSatellites(world));
 			}
 		}
 		// Check for planets that exited the local zone
@@ -117,19 +117,19 @@ public class ScreenInSpace implements Screen {
 				pl.dispose();
 			}
 		}
-		sat_iter = local_sats.listIterator();
-		while (sat_iter.hasNext()) {
-			Satellite sat = sat_iter.next(); // Can be optimized by declaring a tmp variable
+		ListIterator<Satellite> iterSat = local_sats.listIterator();
+		while (iterSat.hasNext()) {
+			Satellite sat = iterSat.next(); // Can be optimized by declaring a tmp variable
 			// Removing satellites belonging to planets outside of local zone
 			if (sat.disposable || sat.detachable)
-				sat_iter.remove();
+				iterSat.remove();
 			// Register detached satellites as free bodies 
 			if (sat.detachable)
-				free_bodies.add(sat);
+				freeBodies.add(sat);
 		}
 		
 		// Removing free bodies outside of local zone
-		iterBodies = free_bodies.listIterator();
+		ListIterator<MovingObject> iterBodies = freeBodies.listIterator();
 		while (iterBodies.hasNext()) {
 			MovingObject bod = iterBodies.next();
 			if (!local_range.containsPoint(bod.getPosition())) {
@@ -139,7 +139,7 @@ public class ScreenInSpace implements Screen {
 		}
 		
 		// Removing dead Droids and droids outside of local zone
-		iterDroids = droids.listIterator();
+		ListIterator<DroidShip> iterDroids = droids.listIterator();
 		while (iterDroids.hasNext()) {
 			DroidShip bod = iterDroids.next();
 			if (!local_range.containsPoint(bod.getPosition())) {
@@ -156,7 +156,7 @@ public class ScreenInSpace implements Screen {
 		// Applying gravity to the free bodies and droids
 		for (Planet pl: local_planets) {
 			pl.update(); // Apply gravity force to attached satellites
-			for (MovingObject bod: free_bodies) {
+			for (MovingObject bod: freeBodies) {
 				bod.push(pl.getGravityAccel(bod.getPosition()).scl(bod.getMass()));
 			}
 			for (MovingObject bod: droids) {
@@ -164,16 +164,16 @@ public class ScreenInSpace implements Screen {
 			}
 		}
 		// Removing projectiles outside of local zone
-		iterProj = projectiles.listIterator();
+		ListIterator<Projectile> iterProj = projectiles.listIterator();
 		while (iterProj.hasNext()) {
 			Projectile proj = iterProj.next();
 			if (!local_range.containsPoint(proj.position) || proj.disposable)
 				iterProj.remove();
 			else
-			    proj.update(b2world, game_speed);
+			    proj.update(world, game_speed);
 		}
 		// Updating and removing ship trails
-		iterTrails = trails.listIterator();
+		ListIterator<ShipTrail> iterTrails = trails.listIterator();
 		while (iterTrails.hasNext()) {
 			ShipTrail trail = iterTrails.next();
 			if (trail.disposable)
@@ -182,7 +182,7 @@ public class ScreenInSpace implements Screen {
 			    trail.update();
 		}
 		
-		for (Contact c: b2world.getContactList()) {
+		for (Contact c: world.getContactList()) {
 			Fixture f1 = c.getFixtureA();
 			Fixture f2 = c.getFixtureB();
 			Fixture sensor, object;
@@ -383,7 +383,7 @@ public class ScreenInSpace implements Screen {
 		for (ShipTrail trail: trails) {
 			trail.render(game.renderer);
 		}
-		for (MovingObject b : free_bodies) {
+		for (MovingObject b : freeBodies) {
 			if (camera_range.containsPoint(b.getPosition())) {
 				b.render(game.renderer);
 			}
@@ -448,7 +448,7 @@ public class ScreenInSpace implements Screen {
 			empty = true;
 			float posX = MathUtils.random(game.ship.getPosition().x-SpaceGame.LOCAL_RADIUS, game.ship.getPosition().x+SpaceGame.LOCAL_RADIUS);
 			float posY = MathUtils.random(game.ship.getPosition().y-SpaceGame.LOCAL_RADIUS, game.ship.getPosition().y+SpaceGame.LOCAL_RADIUS);
-			b2world.QueryAABB(new QueryCallback() {
+			world.QueryAABB(new QueryCallback() {
 			@Override
 			public boolean reportFixture(Fixture fixture) {
 				empty = false;
@@ -462,7 +462,7 @@ public class ScreenInSpace implements Screen {
 				DroidShip droid = new DroidShip(pos, angle, projectiles);
 				droid.initNN(droidPool.activationFunc);
 				droid.nn.weights = droidPool.nnBest.get(i).clone();
-				droid.initBody(b2world);
+				droid.initBody(world);
 				droids.add(droid);
 				// Add ship trails
 				trails.add(new ShipTrail(droid, new Vector2(0.7f, 0.08f), 0.2f, 256, new Color(0xFF0000FF), new Color(0xFFFF0000)));

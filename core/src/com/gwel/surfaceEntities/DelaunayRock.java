@@ -22,11 +22,7 @@ public class DelaunayRock {
         this.alpha = alpha;
 
         // Generate random points cloud
-        float[] points = new float[2 * nPoints];
-        for (int i = 0; i < points.length;) {
-            points[i++] = MathUtils.random(-radius, radius);
-            points[i++] = MathUtils.random(-radius, radius);
-        }
+        float[] points = pointCloud(nPoints, radius);
 
         // Triangles is a list of point indices, with each triad making a triangle
         ShortArray triangleIndices = new DelaunayTriangulator().computeTriangles(points, false);
@@ -53,6 +49,21 @@ public class DelaunayRock {
         }
     }
 
+    private float[] pointCloud(int n, float radius) {
+        // All points in a circle + 2 points for bottom base
+        float[] points = new float[2*n];
+        points[0] = -radius;
+        points[1] = 0f;
+        points[2] = radius;
+        points[3] = 0f;
+        for (int i=4; i<points.length;) {
+            float a = MathUtils.random(MathUtils.PI2);
+            points[i++] = MathUtils.random(radius) * MathUtils.cos(a);
+            points[i++] = MathUtils.random(radius) * MathUtils.sin(a) + radius;
+        }
+        return points;
+    }
+
     public Vector2 getPosition() {
         return position.cpy();
     }
@@ -68,7 +79,6 @@ public class DelaunayRock {
     public void render(MyRenderer renderer) {
         transform.idt();
         transform.translate(getPosition());
-        //transform.rotateRad(getAngle() + MathUtils.PI/2);
         renderer.pushMatrix(transform);
         for (int i=0; i< triangles.length;) {
             p1_tmp.set(triangles[i], triangles[i+1]);

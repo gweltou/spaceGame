@@ -23,22 +23,23 @@ public class Spaceship extends PhysicBody implements Ship {
 	static public final int MAX_AMMUNITION = 300;
 	
 	//public float speed_mag;
-	private Vector2 size = new Vector2(1.7f, 1.8f);  // Size of spaceship in game units
+	private final Vector2 size = new Vector2(1.7f, 1.8f);  // Size of spaceship in game units
 	public int hitpoints;
 	private long last_fire;
 	private float[][] triangles;
-	private Vector2[] vertices;	// Used to set Box2D bounding shape
-	private Affine2 transform;
-	private Vector2 p1_tmp = new Vector2();
-	private Vector2 p2_tmp = new Vector2();
-	private Vector2 p3_tmp = new Vector2();
-	private ShipTrail tail1, tail2;
+	private final Vector2[] vertices;	// Used to set Box2D bounding shape
+	private final Affine2 transform;
+	private final Vector2 p1_tmp = new Vector2();
+	private final Vector2 p2_tmp = new Vector2();
+	private final Vector2 p3_tmp = new Vector2();
+	private final ShipTrail tail1;
+	private final ShipTrail tail2;
 	private int damageCounter = 0;
 	public int ammunition;
 	
 	
 	public Spaceship(Vector2 pos) {
-		super(pos, (float) (Math.PI/2.0f)); // Initially pointing up
+		super(pos, MathUtils.PI/2.0f); // Initially pointing up
 		
 		transform = new Affine2();
 		vertices = new Vector2[4];

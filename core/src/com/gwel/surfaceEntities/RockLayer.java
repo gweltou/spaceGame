@@ -18,7 +18,7 @@ public class RockLayer {
         this.surfaceLength = planet.surfaceLength;
         this.terrain = terrain;
         float transparency = Math.min(1f, MathUtils.random(0.6f, 4f));
-        float rockDensity = Math.max(0.0f, MathUtils.random(-0.05f, 0.15f));
+        float rockDensity = Math.max(0.0f, MathUtils.random(-0.1f, 0.15f));
         int numRocks = (int) (rockDensity * surfaceLength);
 
         long time0 = TimeUtils.millis();
@@ -64,13 +64,13 @@ public class RockLayer {
             for (; i<rocks.length-leftIndex; i++) {
                 DelaunayRock r = rocks[leftIndex+i];
                 float x = xCoords[leftIndex+i] + offset;
-                r.setPosition(new Vector2(x, terrain.getHeight(x)));
+                r.setPosition(new Vector2(x, terrain.getHeight(x)-2f));
                 selectedRocks[i] = r;
             }
             for (int j=0; j<rightIndex; j++) {
                 DelaunayRock r = rocks[j];
                 float x = xCoords[j] + offset + surfaceLength;
-                r.setPosition(new Vector2(x, terrain.getHeight(x)));
+                r.setPosition(new Vector2(x, terrain.getHeight(x)-2f));
                 selectedRocks[i+j] = r;
             }
         } else {
@@ -80,7 +80,7 @@ public class RockLayer {
             for (int i=0; i<selectedRocks.length; i++) {
                 DelaunayRock r = rocks[leftIndex+i];
                 float x = xCoords[leftIndex+i] + offset;
-                r.setPosition(new Vector2(x, terrain.getHeight(x)));
+                r.setPosition(new Vector2(x, terrain.getHeight(x)-2f));
                 selectedRocks[i] = r;
             }
         }
