@@ -11,11 +11,13 @@ public class Satellite extends PhysicBody {
 	public static final float MAX_RADIUS = 5.0f;
 	public Planet parent;
 	public float radius;
-	private Color color;
-	public boolean detachable;
+	private final Color color;
+	public boolean freeFlying;
 
 	public Satellite(World world, Planet parent, Vector2 pos, float rad, Color col) {
-		super(pos, 0);
+		super();
+
+		setPosition(pos);
 		radius = rad;
 		initBody(world);
 		body.setUserData(this);
@@ -30,7 +32,7 @@ public class Satellite extends PhysicBody {
 		Fixture fixture = body.createFixture(fixtureDef);
 		fixture.setUserData(Enums.SATELLITE);
 		circle.dispose();
-		detachable = false;
+		freeFlying = false;
 		
 		this.parent = parent;
 		color = col;
@@ -38,7 +40,7 @@ public class Satellite extends PhysicBody {
 	
 	public void detach() {
 		parent.satellites.remove(this);
-		detachable = true;
+		freeFlying = true;
 	}
 	
 	public void render(MyRenderer renderer) {

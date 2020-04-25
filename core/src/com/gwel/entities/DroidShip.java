@@ -31,7 +31,8 @@ public class DroidShip extends PhysicBody implements Ship {
 	
 	//public float speed_mag;
 	private static final Vector2 size = new Vector2(2.2f, 2.2f);  // Size of spaceship in game units
-	private Vector2 pPosition;
+	private final Vector2 prevPosition = new Vector2();
+	private final Vector2 currentPosition = new Vector2();
 	
 	public int hitpoints;
 	private long lastFire;
@@ -54,8 +55,10 @@ public class DroidShip extends PhysicBody implements Ship {
 	private final LinkedList<Projectile> projectiles;
 	
 	
-	public DroidShip(Vector2 position, float angle, LinkedList<Projectile> projectiles) {
-		super(position, angle);
+	public DroidShip(Vector2 pos, float angle, LinkedList<Projectile> projectiles) {
+		super();
+		setPosition(pos);
+		setAngle(angle);
 		this.projectiles = projectiles;
 		
 		transform = new Affine2();
@@ -68,9 +71,9 @@ public class DroidShip extends PhysicBody implements Ship {
 	}
 
 	public void update() {
-		pPosition = position;
-		position = body.getPosition().cpy();
-		dstCounter += position.dst(pPosition);
+		prevPosition.set(position);
+		currentPosition.set(body.getPosition());
+		dstCounter += position.dst(prevPosition);
 		avCounter += Math.abs(getAngularVelocity());
 		
 		float[] output;

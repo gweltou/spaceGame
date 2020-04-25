@@ -17,8 +17,8 @@ public class Inhabitant extends PhysicBody {
     private float direction = MathUtils.random(0.15f, 0.2f);
 
     public Inhabitant(Vector2 pos) {
-        super(pos, 0.0f);
-
+        super();
+        setPosition(pos);
         disposable = false;
 
         // Set shape triangles
@@ -30,7 +30,9 @@ public class Inhabitant extends PhysicBody {
 
     @Override
     public void initBody(World world) {
-        bodyDef = new BodyDef();
+        disposable = false;
+
+        BodyDef bodyDef = new BodyDef();
         bodyDef.type = BodyDef.BodyType.DynamicBody;
         bodyDef.position.set(getPosition());
         bodyDef.fixedRotation = true;

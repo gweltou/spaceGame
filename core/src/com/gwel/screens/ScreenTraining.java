@@ -53,15 +53,13 @@ public class ScreenTraining implements Screen {
 	static private final int SIM_STEPS = 40000;
 	
 	final SpaceGame game;
-	private final World b2world;
+	private final World world;
 	private final MyCamera camera;
 	private boolean destroy;
 	
 	private final ArrayList<Planet> localPlanets = new ArrayList<>();
 	private final LinkedList<DroidShip> droids = new LinkedList<>();
-	private ListIterator<DroidShip> droidsIter;
 	private final LinkedList<Projectile> projectiles = new LinkedList<>();
-	private ListIterator<Projectile> proj_iter;
 	private final PriorityQueue<DroidShip> podium = new PriorityQueue<>(5, new DroidComparator());
 	private DroidPool currentPool;
 	private int branchTries;
@@ -79,8 +77,8 @@ public class ScreenTraining implements Screen {
 		this.game = game;
 		destroy = false;
 		
-		b2world = new World(new Vector2(0.0f, 0.0f), true);
-		b2world.setContactListener(new SpaceContactListener(game));
+		world = new World(new Vector2(0.0f, 0.0f), true);
+		world.setContactListener(new SpaceContactListener(game));
 		
 		debugRenderer = new Box2DDebugRenderer();
 		debugRenderer.setDrawAABBs(false);
@@ -119,7 +117,7 @@ public class ScreenTraining implements Screen {
 		
 		if (DEBUG_RENDERING) {
 			// DEBUG RENDERING
-			debugRenderer.render(b2world, new Matrix4().set(camera.affine));
+			debugRenderer.render(world, new Matrix4().set(camera.affine));
 			// Render projectiles
 			renderer.setProjectionMatrix(new Matrix4().set(camera.affine));
 			renderer.begin(ShapeType.Line);
@@ -246,9 +244,9 @@ public class ScreenTraining implements Screen {
 		}
 
 		// UPDATING GAME STATE
-		b2world.step(1.0f/60f, 8, 3);
+		world.step(1.0f/60f, 8, 3);
 		
-		for (Contact c: b2world.getContactList()) {
+		for (Contact c: world.getContactList()) {
 			Fixture f1 = c.getFixtureA();
 			Fixture f2 = c.getFixtureB();
 			Fixture sensor, object;
@@ -421,7 +419,7 @@ public class ScreenTraining implements Screen {
 		}	
 		
 		// Clean up dead Droids and wrap-around screen borders
-		droidsIter = droids.listIterator();
+		ListIterator<DroidShip> droidsIter = droids.listIterator();
 		while (droidsIter.hasNext()) {
 			DroidShip droid = droidsIter.next();
 			droid.update();
@@ -433,19 +431,19 @@ public class ScreenTraining implements Screen {
 			} else if (droid.getPosition().x > BORDER_RIGHT) {
 				droid.dispose();
 				droid.setPosition(droid.getPosition().sub(WORLD_WIDTH, 0));
-				droid.initBody(b2world);
+				droid.initBody(world);
 			} else if (droid.getPosition().x < BORDER_LEFT) {
 				droid.dispose();
 				droid.setPosition(droid.getPosition().add(WORLD_WIDTH, 0));
-				droid.initBody(b2world);
+				droid.initBody(world);
 			} else if (droid.getPosition().y > BORDER_UP) {
 				droid.dispose();
 				droid.setPosition(droid.getPosition().sub(0, WORLD_HEIGHT));
-				droid.initBody(b2world);
+				droid.initBody(world);
 			} else if (droid.getPosition().y < BORDER_DOWN) {
 				droid.dispose();
 				droid.setPosition(droid.getPosition().add(0, WORLD_HEIGHT));
-				droid.initBody(b2world);
+				droid.initBody(world);
 			}	
 		}
 		
@@ -456,14 +454,14 @@ public class ScreenTraining implements Screen {
 			}
 		}
 		// Removing projectiles outside of local zone
-		proj_iter = projectiles.listIterator();
-		while (proj_iter.hasNext()) {
-			Projectile proj = proj_iter.next();
+		ListIterator<Projectile> projIter = projectiles.listIterator();
+		while (projIter.hasNext()) {
+			Projectile proj = projIter.next();
 			if (proj.disposable || proj.position.x < BORDER_LEFT || proj.position.x > BORDER_RIGHT ||
 					proj.position.y < BORDER_DOWN || proj.position.y > BORDER_UP)
-				proj_iter.remove();
+				projIter.remove();
 			else
-			    proj.update(b2world, 1.0f);
+			    proj.update(world, 1.0f);
 		}
 		
 		steps++;
@@ -479,12 +477,12 @@ public class ScreenTraining implements Screen {
 			Planet p = new Planet(new Vector2(	(float) (Math.cos(angle)*radius1),
 												(float) (Math.sin(angle)*radius1)),
 									SMALL_PLANET_RADIUS, 0);
-			p.initBody(b2world);
+			p.initBody(world);
 			localPlanets.add(p);
 			p = new Planet(new Vector2(	(float) (Math.cos(angle+Math.PI/6)*radius2),
 					 						(float) (Math.sin(angle+Math.PI/6)*radius2)),
 					 						BIG_PLANET_RADIUS, 0);
-			p.initBody(b2world);
+			p.initBody(world);
 			localPlanets.add(p);
 			angle += MathUtils.PI2/6;
 		}
@@ -493,7 +491,7 @@ public class ScreenTraining implements Screen {
 			Planet p = new Planet(new Vector2(	(float) (Math.cos(a)*radius3),
 					(float) (Math.sin(a)*radius3)),
 					MEDIUM_PLANET_RADIUS, 0);
-			p.initBody(b2world);
+			p.initBody(world);
 			localPlanets.add(p);
 		}
 	}
@@ -516,7 +514,7 @@ public class ScreenTraining implements Screen {
 				isEmpty = true;
 				posX = MathUtils.random(BORDER_LEFT, BORDER_RIGHT);
 				posY = MathUtils.random(BORDER_DOWN, BORDER_UP);
-				b2world.QueryAABB(new QueryCallback() {
+				world.QueryAABB(new QueryCallback() {
 					@Override
 					public boolean reportFixture(Fixture fixture) {
 						isEmpty = false;
@@ -531,7 +529,7 @@ public class ScreenTraining implements Screen {
 			droid.resetVars();
 			droid.setPosition(pos);
 			droid.setAngle(angle);
-			droid.initBody(b2world);
+			droid.initBody(world);
 			droids.add(droid);
 
 			/*
@@ -657,7 +655,7 @@ public class ScreenTraining implements Screen {
 		// This test case prevents the world from being destroyed during a step
 		if (destroy) {
 			System.out.println("Destroying space");
-			b2world.dispose();
+			world.dispose();
 		} else {
 			destroy = true;
 		}

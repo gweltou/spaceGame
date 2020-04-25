@@ -8,17 +8,15 @@ import com.gwel.spacegame.utils;
 
 
 public abstract class PhysicBody implements MovingObject, Collidable {
-	protected BodyDef bodyDef;
 	protected Body body;
-	protected Vector2 position;
+	protected final Vector2 position;
 	protected Vector2 velocity;
 	protected float angle;
 	protected float angleVel;
 	public boolean disposable;
 
-	protected PhysicBody(Vector2 pos, float angle) {
-		position = pos.cpy();
-		this.angle = angle;
+	protected PhysicBody() {
+		position = new Vector2();
 		velocity = new Vector2();
 		angleVel = 0f;
 		body = null;
@@ -32,7 +30,7 @@ public abstract class PhysicBody implements MovingObject, Collidable {
 	}
 	
 	public void setPosition(Vector2 pos) {
-		position = pos.cpy();
+		position.set(pos);
 	}
 	
 	public Vector2 getVelocity() {
@@ -40,6 +38,8 @@ public abstract class PhysicBody implements MovingObject, Collidable {
 			return body.getLinearVelocity().cpy();
 		return velocity;
 	}
+
+	public void setVelocity(Vector2 vel) { velocity.set(vel);}
 	
 	public float getAngularVelocity() {
 		if (body != null)
@@ -83,7 +83,7 @@ public abstract class PhysicBody implements MovingObject, Collidable {
 	public void initBody(World world) {
 		disposable = false;
 		
-		bodyDef = new BodyDef();
+		BodyDef bodyDef = new BodyDef();
 		bodyDef.type = BodyDef.BodyType.DynamicBody;
 		bodyDef.position.set(getPosition());
 		bodyDef.angle = getAngle();
@@ -98,7 +98,7 @@ public abstract class PhysicBody implements MovingObject, Collidable {
 		// TODO : next few lines not needed anymore
 		angle = getAngle();
 		angleVel = getAngularVelocity();
-		position = getPosition();
+		position.set(getPosition());
 		velocity = getVelocity();
 		if (body != null) {
 			body.getWorld().destroyBody(body);

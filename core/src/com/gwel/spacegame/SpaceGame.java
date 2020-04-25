@@ -33,8 +33,6 @@ public class SpaceGame extends Game {
 	
 	// GAME UNIVERSE VARIABLES
 	private final static float UNIVERSE_SIZE = 100000.0f;
-	private final static float GRAVITY_ACTIVE_RADIUS = 800.0f;
-	public final static float LOCAL_RADIUS = GRAVITY_ACTIVE_RADIUS;
 	//final static float exit_radius = GRAVITY_ACTIVE_RADIUS+200.0f;
 	public QuadTree quadTree;
 	ArrayList<ArrayList<String>> godNames;

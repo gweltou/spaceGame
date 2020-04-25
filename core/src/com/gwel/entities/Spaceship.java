@@ -39,7 +39,9 @@ public class Spaceship extends PhysicBody implements Ship {
 	
 	
 	public Spaceship(Vector2 pos) {
-		super(pos, MathUtils.PI/2.0f); // Initially pointing up
+		super();
+		setPosition(pos);
+		setAngle(MathUtils.PI/2.0f); // Initially pointing up
 		
 		transform = new Affine2();
 		vertices = new Vector2[4];

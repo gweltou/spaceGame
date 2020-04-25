@@ -16,10 +16,7 @@ import com.badlogic.gdx.graphics.PixmapIO;
 import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Matrix4;
 import com.badlogic.gdx.math.Vector2;
-import com.badlogic.gdx.physics.box2d.Contact;
-import com.badlogic.gdx.physics.box2d.Fixture;
-import com.badlogic.gdx.physics.box2d.QueryCallback;
-import com.badlogic.gdx.physics.box2d.World;
+import com.badlogic.gdx.physics.box2d.*;
 import com.badlogic.gdx.utils.BufferUtils;
 import com.badlogic.gdx.utils.Json;
 import com.badlogic.gdx.utils.ScreenUtils;
@@ -34,23 +31,26 @@ public class ScreenInSpace implements Screen {
 	private final MyCamera camera;
 	private boolean mustDestroy;
 	private final float game_speed;	// set to <1.0 for slow-mo
-	
-	private final static int NUM_DROIDS_AROUND = 8;
 
-	private ArrayList<Planet> local_planets = new ArrayList<>();
-	private final LinkedList<Satellite> local_sats = new LinkedList<>();
+	static private final float GRAVITY_ACTIVE_RADIUS = 800.0f;
+	static private final float LOCAL_RADIUS = GRAVITY_ACTIVE_RADIUS;
+
+	private ArrayList<Planet> localPlanets = new ArrayList<>();
+	private final LinkedList<Satellite> localSats = new LinkedList<>();
 	private final LinkedList<MovingObject> freeBodies = new LinkedList<>();
 	private final LinkedList<DroidShip> droids = new LinkedList<>();
 	private final LinkedList<Projectile> projectiles = new LinkedList<>();
+	private int numAsteroids;
 	private final LinkedList<ShipTrail> trails = new LinkedList<>();
 	private final DroidPool droidPool;
+	private final AsteroidPool asteroidPool;
 	
 	private Starfield starfield;
 	private Starfield deepfield;
 	private boolean empty;
 	private static final Color spaceColor = new Color();
 
-	Asteroid as;
+	//Box2DDebugRenderer b2renderer;
 
 
 	public ScreenInSpace(final SpaceGame game) {
@@ -58,6 +58,8 @@ public class ScreenInSpace implements Screen {
 		mustDestroy = false;
 		game_speed = 1.0f;
 		droidPool = importPool("ec8a21fd-4969-495e-8157-5f30e72a0715");
+		asteroidPool = new AsteroidPool();
+		numAsteroids = 0;
 
 		world = new World(new Vector2(0.0f, 0.0f), true);
 		world.setContactListener(new SpaceContactListener(game));
@@ -68,9 +70,7 @@ public class ScreenInSpace implements Screen {
 		
 		freeBodies.add(game.ship);
 
-		as = new Asteroid(game.ship.getPosition().add(5f, 5f));
-		as.initBody(world);
-		freeBodies.add(as);
+		//b2renderer = new Box2DDebugRenderer();
 	}
 	
 	@Override
@@ -94,37 +94,43 @@ public class ScreenInSpace implements Screen {
 
 		// UPDATING GAME STATE
 		// Adding Droids
-		if (droids.size() < NUM_DROIDS_AROUND/2) {
-			spawnDroids(NUM_DROIDS_AROUND);
+		if (droids.size() < Const.NUMBER_DROIDS/2) {
+			spawnDroids(Const.NUMBER_DROIDS);
 		}
+		// Adding asteroids
+		if (numAsteroids < Const.NUMBER_ASTEROIDS) {
+			spawnAsteroid();
+		}
+
 		world.step(game_speed/60f, 8, 3);
-		AABB local_range = new AABB(game.ship.getPosition().sub(SpaceGame.LOCAL_RADIUS, SpaceGame.LOCAL_RADIUS),
-				game.ship.getPosition().add(SpaceGame.LOCAL_RADIUS, SpaceGame.LOCAL_RADIUS));
-		ArrayList<Planet> local_planets_prev = local_planets;
-		local_planets = game.quadTree.query(local_range);
+		AABB localArea = new AABB(game.ship.getPosition().sub(LOCAL_RADIUS, LOCAL_RADIUS),
+				game.ship.getPosition().add(LOCAL_RADIUS, LOCAL_RADIUS));
+		ArrayList<Planet> localPlanetsPrev = localPlanets;
+		localPlanets = game.quadTree.query(localArea);
 
 		// Check for planets that newly entered the local zone
-		for (Planet pl : local_planets) {
-			if (!local_planets_prev.contains(pl)) {
+		for (Planet pl : localPlanets) {
+			if (!localPlanetsPrev.contains(pl)) {
 				pl.initBody(world);
 				// Register its satellites
-				local_sats.addAll(pl.activateSatellites(world));
+				localSats.addAll(pl.activateSatellites(world));
 			}
 		}
 		// Check for planets that exited the local zone
-		for (Planet pl : local_planets_prev) {
-			if (!local_range.containsPoint(pl.getPosition())) {
+		for (Planet pl : localPlanetsPrev) {
+			if (!localArea.containsPoint(pl.getPosition())) {
 				pl.dispose();
 			}
 		}
-		ListIterator<Satellite> iterSat = local_sats.listIterator();
+
+		ListIterator<Satellite> iterSat = localSats.listIterator();
 		while (iterSat.hasNext()) {
 			Satellite sat = iterSat.next(); // Can be optimized by declaring a tmp variable
 			// Removing satellites belonging to planets outside of local zone
-			if (sat.disposable || sat.detachable)
+			if (sat.disposable || sat.freeFlying)
 				iterSat.remove();
 			// Register detached satellites as free bodies 
-			if (sat.detachable)
+			if (sat.freeFlying)
 				freeBodies.add(sat);
 		}
 		
@@ -132,7 +138,11 @@ public class ScreenInSpace implements Screen {
 		ListIterator<MovingObject> iterBodies = freeBodies.listIterator();
 		while (iterBodies.hasNext()) {
 			MovingObject bod = iterBodies.next();
-			if (!local_range.containsPoint(bod.getPosition())) {
+			if (!localArea.containsPoint(bod.getPosition())) {
+				if (bod.getClass() == Asteroid.class) {
+					asteroidPool.free((Asteroid) bod);
+					numAsteroids--;
+				}
 				bod.dispose();
 				iterBodies.remove();
 			}
@@ -141,20 +151,20 @@ public class ScreenInSpace implements Screen {
 		// Removing dead Droids and droids outside of local zone
 		ListIterator<DroidShip> iterDroids = droids.listIterator();
 		while (iterDroids.hasNext()) {
-			DroidShip bod = iterDroids.next();
-			if (!local_range.containsPoint(bod.getPosition())) {
-				bod.dispose();
+			DroidShip droid = iterDroids.next();
+			if (!localArea.containsPoint(droid.getPosition())) {
+				droid.dispose();
 			} else {
-				bod.update();
+				droid.update();
 			}
-			if (bod.disposable) {
+			if (droid.disposable) {
 				System.out.println("removing droid");
 				iterDroids.remove();
 			}
 		}
 		
 		// Applying gravity to the free bodies and droids
-		for (Planet pl: local_planets) {
+		for (Planet pl: localPlanets) {
 			pl.update(); // Apply gravity force to attached satellites
 			for (MovingObject bod: freeBodies) {
 				bod.push(pl.getGravityAccel(bod.getPosition()).scl(bod.getMass()));
@@ -167,7 +177,7 @@ public class ScreenInSpace implements Screen {
 		ListIterator<Projectile> iterProj = projectiles.listIterator();
 		while (iterProj.hasNext()) {
 			Projectile proj = iterProj.next();
-			if (!local_range.containsPoint(proj.position) || proj.disposable)
+			if (!localArea.containsPoint(proj.position) || proj.disposable)
 				iterProj.remove();
 			else
 			    proj.update(world, game_speed);
@@ -364,7 +374,7 @@ public class ScreenInSpace implements Screen {
 		deepfield.update(camera.getTravelling(), camera.PPU);
 		
 		// North and East directions are POSITIVE !
-		AABB camera_range = new AABB(camera.sw.cpy().sub(Const.PLANET_MAX_RADIUS, Const.PLANET_MAX_RADIUS),
+		AABB cameraRange = new AABB(camera.sw.cpy().sub(Const.PLANET_MAX_RADIUS, Const.PLANET_MAX_RADIUS),
 				camera.ne.cpy().add(Const.PLANET_MAX_RADIUS, Const.PLANET_MAX_RADIUS));
 		
 		float shipSpaceAngle = game.ship.getPosition().angle();
@@ -373,36 +383,38 @@ public class ScreenInSpace implements Screen {
 		Gdx.gl.glClearColor(spaceColor.r, spaceColor.g, spaceColor.b, 1f);
 		Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
 		
-		shipSpaceAngle = (shipSpaceAngle+180f)%360f;
+		shipSpaceAngle = (shipSpaceAngle+180f) % 360f;
 		starfield.render(game.renderer, shipSpaceAngle);
 		deepfield.render(game.renderer, shipSpaceAngle);
 		game.renderer.setProjectionMatrix(new Matrix4().set(camera.affine));
-		for (Planet p : game.quadTree.query(camera_range)) {
+		for (Planet p : game.quadTree.query(cameraRange)) {
 			p.render(game.renderer);
 		}
 		for (ShipTrail trail: trails) {
 			trail.render(game.renderer);
 		}
 		for (MovingObject b : freeBodies) {
-			if (camera_range.containsPoint(b.getPosition())) {
+			if (cameraRange.containsPoint(b.getPosition())) {
 				b.render(game.renderer);
 			}
 		}
 		for (DroidShip b : droids) {
-			if (camera_range.containsPoint(b.getPosition())) {
+			if (cameraRange.containsPoint(b.getPosition())) {
 				b.render(game.renderer);
 			}
 		}
-		for (Satellite sat: local_sats) {
-			if (camera_range.containsPoint(sat.getPosition())) {
+		for (Satellite sat: localSats) {
+			if (cameraRange.containsPoint(sat.getPosition())) {
 				sat.render(game.renderer);
 			}
 		}
 		for (Projectile proj: projectiles) {
-			if (camera_range.containsPoint(proj.position))
+			if (cameraRange.containsPoint(proj.position))
 				proj.render(game.renderer);
 		}
 		game.renderer.flush();
+
+		//b2renderer.render(world, new Matrix4().set(camera.affine));
 
 		/*
 		// HUD
@@ -446,8 +458,8 @@ public class ScreenInSpace implements Screen {
 		System.out.println("Spawning droids");
 		while (number>0) {
 			empty = true;
-			float posX = MathUtils.random(game.ship.getPosition().x-SpaceGame.LOCAL_RADIUS, game.ship.getPosition().x+SpaceGame.LOCAL_RADIUS);
-			float posY = MathUtils.random(game.ship.getPosition().y-SpaceGame.LOCAL_RADIUS, game.ship.getPosition().y+SpaceGame.LOCAL_RADIUS);
+			float posX = MathUtils.random(game.ship.getPosition().x-LOCAL_RADIUS, game.ship.getPosition().x+LOCAL_RADIUS);
+			float posY = MathUtils.random(game.ship.getPosition().y-LOCAL_RADIUS, game.ship.getPosition().y+LOCAL_RADIUS);
 			world.QueryAABB(new QueryCallback() {
 			@Override
 			public boolean reportFixture(Fixture fixture) {
@@ -470,6 +482,41 @@ public class ScreenInSpace implements Screen {
 				
 				number--;
 			}
+		}
+	}
+
+	private void spawnAsteroid() {
+		// Spawn a new Asteroid (from pool) in local area
+		System.out.println("trying to spawn " + numAsteroids);
+		Vector2 shipPosition = game.ship.getPosition();
+		float asRad = Const.ASTEROID_MAX_RADIUS;
+		int numTries = 4;
+		while (numTries>0) {
+			float angle = MathUtils.random(MathUtils.PI2);
+			Vector2 queryPos = new Vector2(MathUtils.cos(angle), MathUtils.sin(angle));
+			queryPos.scl(Const.ASTEROID_SPAWN_RADIUS).add(shipPosition);
+			world.QueryAABB(new QueryCallback() {
+				@Override
+				public boolean reportFixture(Fixture fixture) {
+					empty = false;
+					return true;
+				}}, queryPos.x-asRad, queryPos.y-asRad, queryPos.x+asRad, queryPos.y-asRad);
+
+			if (empty) {
+				Asteroid asteroid = asteroidPool.obtain();
+				asteroid.setPosition(queryPos);
+				Vector2 vel = game.ship.getPosition().sub(queryPos);
+				vel.setLength2(MathUtils.random(Const.ASTEROID_MIN_VEL, Const.ASTEROID_MAX_VEL));
+				vel.rotateRad(MathUtils.random(-0.1f, 0.1f));
+				asteroid.setVelocity(vel);
+				asteroid.setAngularVelocity(MathUtils.random(-0.6f, 0.6f));
+				asteroid.initBody(world);
+				freeBodies.add(asteroid);
+				numAsteroids++;
+				System.out.println("Asteroid spawned");
+				break;
+			}
+			numTries--;
 		}
 	}
 	

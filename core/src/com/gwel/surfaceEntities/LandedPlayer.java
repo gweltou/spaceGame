@@ -19,8 +19,9 @@ public class LandedPlayer extends PhysicBody {
 	private Vector2 p3_tmp = new Vector2();
 	
 	public LandedPlayer(Vector2 pos) {
-		super(pos, 0.0f);
-		
+		super();
+
+		setPosition(pos);
 		disposable = false;
 		
 		// Set shape triangles
@@ -33,11 +34,10 @@ public class LandedPlayer extends PhysicBody {
 	@Override
 	public void initBody(World world) {
 		//super.initBody(world);
-		
-		bodyDef = new BodyDef();
+
+		BodyDef bodyDef = new BodyDef();
 		bodyDef.type = BodyType.DynamicBody;
 		bodyDef.position.set(getPosition());
-		//bodyDef.angle = getAngle();
 		bodyDef.fixedRotation = true;
 
 		body = world.createBody(bodyDef);

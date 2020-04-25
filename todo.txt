@@ -1,3 +1,4 @@
+= Espace =
 - Les planètes disparaissent progressivement
 - Astéroides destructibles dans l'espace
 - Dialogues introspectifs dans l'espace
@@ -6,8 +7,11 @@
 
 - recurrent neural network pour les droids
 
+
+= Planet surface =
 - Gros vaisseaux atterri sur planète (fixe, pas de collision)
 - Dessiner les NPC en vectoriel
+- Taille du soleil en fct de la distance avec le centre du sys solaire
 
 
 == Non prioritaire ==

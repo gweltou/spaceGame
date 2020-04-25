@@ -6,12 +6,15 @@ import com.badlogic.gdx.physics.box2d.Fixture;
 import com.badlogic.gdx.physics.box2d.FixtureDef;
 import com.badlogic.gdx.physics.box2d.PolygonShape;
 import com.badlogic.gdx.physics.box2d.World;
+import com.badlogic.gdx.utils.Pool;
 import com.badlogic.gdx.utils.ShortArray;
-import com.gwel.spacegame.Enums;
+import com.gwel.spacegame.Const;
 import com.gwel.spacegame.MyRenderer;
 
+import java.util.Arrays;
 
-public class Asteroid extends PhysicBody {
+
+public class Asteroid extends PhysicBody implements Pool.Poolable {
     private final float[] convexHull;
     private final float[] triangles;
     private final Affine2 transform = new Affine2();
@@ -20,16 +23,18 @@ public class Asteroid extends PhysicBody {
     private final Vector2 p3_tmp = new Vector2();
     private final float radius;
 
-    public Asteroid(Vector2 pos) {
-        super(pos, MathUtils.PI/2.0f); // Initially pointing up
+    public Asteroid() {
+        super();
 
         // Generate random points cloud
-        radius = MathUtils.random(2f, 6f);
+        radius = MathUtils.random(Const.ASTEROID_MIN_RADIUS, Const.ASTEROID_MAX_RADIUS);
         int nPoints = (int) Math.ceil(2*radius);
         float[] points = pointCloud(nPoints, radius);
 
         // Compute convex hull
-        convexHull = new ConvexHull().computePolygon(points, false).toArray();
+        float[] rawConvexHull = new ConvexHull().computePolygon(points, false).toArray();
+        // Remove last point (same as first) and limit to 8 points (Box2d limit for polyShape)
+        convexHull = Arrays.copyOf(rawConvexHull, Math.min(rawConvexHull.length-2, 16));
 
         // Triangles is a list of point indices, with each triad making a triangle
         ShortArray triangleIndices = new DelaunayTriangulator().computeTriangles(points, false);
@@ -49,7 +54,7 @@ public class Asteroid extends PhysicBody {
             pi = triangleIndices.get(ti++);
             triangles[i++] = points[2*pi];
             triangles[i++] = points[2*pi+1];
-            Color col = new Color().fromHsv(120f, 0.5f, MathUtils.random(0.3f, 0.4f));
+            Color col = new Color().fromHsv(320f, 0.4f, MathUtils.random(0.4f, 0.5f));
             triangles[i++] = col.r;
             triangles[i++] = col.g;
             triangles[i++] = col.b;
@@ -74,10 +79,10 @@ public class Asteroid extends PhysicBody {
         shape.set(convexHull);
         FixtureDef fixtureDef = new FixtureDef();
         fixtureDef.shape = shape;
-        fixtureDef.density = 0.1f;
+        fixtureDef.density = 0.6f;
         fixtureDef.friction = 0.4f;
         fixtureDef.restitution = 0.6f;
-        fixtureDef.filter.categoryBits = 0x0002;
+        //fixtureDef.filter.categoryBits = 0x0002;
         Fixture fixture = body.createFixture(fixtureDef);
         //fixture.setUserData(Enums.SHIP);
         shape.dispose();
@@ -86,7 +91,7 @@ public class Asteroid extends PhysicBody {
     public void render(MyRenderer renderer) {
         transform.idt();
         transform.translate(getPosition());
-        transform.rotateRad(getAngle() + MathUtils.PI/2);
+        transform.rotateRad(getAngle());
         renderer.pushMatrix(transform);
         for (int i=0; i< triangles.length;) {
             p1_tmp.set(triangles[i], triangles[i+1]);
@@ -105,5 +110,10 @@ public class Asteroid extends PhysicBody {
     @Override
     public float getBoundingRadius() {
         return radius;
+    }
+
+    @Override
+    public void reset() {
+        dispose();
     }
 }
