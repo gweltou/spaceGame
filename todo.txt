@@ -9,7 +9,6 @@
 
 
 = Planet surface =
-- Gros vaisseaux atterri sur planète (fixe, pas de collision)
 - Dessiner les NPC en vectoriel
 - Taille du soleil en fct de la distance avec le centre du sys solaire
 
@@ -17,6 +16,7 @@
 == Non prioritaire ==
 - Wind pour le mouvement des arbres sur planètes
 - Ship trail avec dispersion
+- Camera shake lorsque zoom maximum dans l'espace (lié à l'acceleration)
 - Lunes dans le ciel à la surface des planètes
 
 == Idées ==

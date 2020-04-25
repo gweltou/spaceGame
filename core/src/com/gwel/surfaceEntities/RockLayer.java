@@ -30,7 +30,7 @@ public class RockLayer {
             float radius = MathUtils.random(3f, 8f);
             int nPoints = (int) Math.ceil(2*radius);
             float hue = planet.colorHue + MathUtils.random(-16f, 16f);
-            rocks[i] = new DelaunayRock(new Vector2(), nPoints, radius, hue, transparency);
+            rocks[i] = new DelaunayRock(nPoints, radius, hue, transparency);
         }
         Arrays.sort(xCoords);
 
@@ -64,13 +64,13 @@ public class RockLayer {
             for (; i<rocks.length-leftIndex; i++) {
                 DelaunayRock r = rocks[leftIndex+i];
                 float x = xCoords[leftIndex+i] + offset;
-                r.setPosition(new Vector2(x, terrain.getHeight(x)-2f));
+                r.setPosition(new Vector2(x, terrain.getHeight(x)-3f));
                 selectedRocks[i] = r;
             }
             for (int j=0; j<rightIndex; j++) {
                 DelaunayRock r = rocks[j];
                 float x = xCoords[j] + offset + surfaceLength;
-                r.setPosition(new Vector2(x, terrain.getHeight(x)-2f));
+                r.setPosition(new Vector2(x, terrain.getHeight(x)-3f));
                 selectedRocks[i+j] = r;
             }
         } else {
@@ -80,7 +80,7 @@ public class RockLayer {
             for (int i=0; i<selectedRocks.length; i++) {
                 DelaunayRock r = rocks[leftIndex+i];
                 float x = xCoords[leftIndex+i] + offset;
-                r.setPosition(new Vector2(x, terrain.getHeight(x)-2f));
+                r.setPosition(new Vector2(x, terrain.getHeight(x)-3f));
                 selectedRocks[i] = r;
             }
         }

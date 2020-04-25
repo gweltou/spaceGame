@@ -14,7 +14,7 @@ import com.badlogic.gdx.math.RandomXS128;
 public class Planet implements Collidable {	
 	public long seed;
 	private Body body;
-	private Vector2 position;
+	private final Vector2 position;
 	public float mass;
 	public float radius;
 	public float surfaceLength;

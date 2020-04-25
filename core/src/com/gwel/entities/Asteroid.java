@@ -54,7 +54,7 @@ public class Asteroid extends PhysicBody implements Pool.Poolable {
             pi = triangleIndices.get(ti++);
             triangles[i++] = points[2*pi];
             triangles[i++] = points[2*pi+1];
-            Color col = new Color().fromHsv(320f, 0.4f, MathUtils.random(0.4f, 0.5f));
+            Color col = new Color().fromHsv(30f, 0.4f, MathUtils.random(0.4f, 0.5f));
             triangles[i++] = col.r;
             triangles[i++] = col.g;
             triangles[i++] = col.b;

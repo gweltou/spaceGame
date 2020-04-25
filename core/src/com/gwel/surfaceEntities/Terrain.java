@@ -6,7 +6,7 @@ import java.util.ArrayList;
 
 
 public class Terrain {
-    private ArrayList<Vector2> coords = new ArrayList<Vector2>();
+    private final ArrayList<Vector2> coords = new ArrayList<>();
     private final float surfaceLength;
     private final float step;
 
@@ -66,7 +66,8 @@ public class Terrain {
 
         int leftIndex = MathUtils.floor(leftCoord / step);
         float pre_leftCoord = leftIndex * step;
-        Vector2[] mesh = new Vector2[MathUtils.ceil((rightCoord-pre_leftCoord)/step) + 1];
+        Vector2[] mesh = new Vector2[MathUtils.ceil((rightCoord-pre_leftCoord)/step) + 2];
+        // I don't really get the "+2" above either...
         for (int i=0; i<mesh.length; i++) {
             mesh[i] = coords.get(leftIndex).cpy().add(offset, 0);
             leftIndex += 1;

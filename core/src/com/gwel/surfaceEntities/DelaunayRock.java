@@ -17,8 +17,7 @@ public class DelaunayRock {
     private final Vector2 position = new Vector2();
     private final float alpha;
 
-    public DelaunayRock(Vector2 pos, int nPoints, float radius, float hue, float alpha) {
-        position.set(pos);
+    public DelaunayRock(int nPoints, float radius, float hue, float alpha) {
         this.alpha = alpha;
 
         // Generate random points cloud

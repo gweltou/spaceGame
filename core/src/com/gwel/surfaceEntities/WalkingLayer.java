@@ -12,8 +12,8 @@ import com.gwel.spacegame.MyRenderer;
 
 
 public class WalkingLayer implements Disposable {
-	public static final float TERRAIN_BLOCK_SPAWN_RADIUS = 100f;
-	public static final float TERRAIN_BLOCK_WIDTH = 100f;
+	public static final float TERRAIN_BLOCK_SPAWN_RADIUS = 60f;
+	public static final float TERRAIN_BLOCK_WIDTH = 60f;
 	private final World world;
 	private final Planet planet;
 	private final ArrayDeque<TerrainBlock> blocks = new ArrayDeque<>();
@@ -156,15 +156,18 @@ public class WalkingLayer implements Disposable {
 		inm.update();
 	}
 
-	public void render(MyRenderer renderer) {
+	public void renderBack(MyRenderer renderer) {
 		for (TerrainBlock tb : blocks) {
 			tb.renderRocks(renderer);
 		}
 		for (TerrainBlock tb : blocks) {
-			tb.renderTerrain(renderer);
-		}
-		for (TerrainBlock tb : blocks) {
 			tb.renderTrees(renderer);
+		}
+	}
+
+	public void renderFront(MyRenderer renderer) {
+		for (TerrainBlock tb : blocks) {
+			tb.renderTerrain(renderer);
 		}
 		inm.render(renderer);
 	}

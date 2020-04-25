@@ -64,6 +64,7 @@ public class ScreenInSpace implements Screen {
 		world = new World(new Vector2(0.0f, 0.0f), true);
 		world.setContactListener(new SpaceContactListener(game));
 		camera = new MyCamera(Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
+		camera.setZoomLimits(0.5f, 50f);
 		camera.setCenter(game.ship.getPosition());
 		
 		game.ship.initBody(world);

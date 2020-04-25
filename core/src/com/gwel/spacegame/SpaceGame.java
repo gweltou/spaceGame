@@ -83,7 +83,7 @@ public class SpaceGame extends Game {
 		}
 		
 		generator = (RandomXS128) MathUtils.random;
-		generator.setSeed((long) 6.0f);
+		//generator.setSeed((long) 6.0f);
 		godNames = new ArrayList<>();
 		loadGodNames();
 		AABB universe_boundary = new AABB(new Vector2(-UNIVERSE_SIZE/2, -UNIVERSE_SIZE/2), new Vector2(UNIVERSE_SIZE/2, UNIVERSE_SIZE/2));
@@ -92,18 +92,20 @@ public class SpaceGame extends Game {
 
 		hud = new HUD(this);
 		dialogManager = new DialogManager();
-		
-		//camera = new MyCamera(Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
-		//camera.update();
+
 		renderer = new MyRenderer();
 		batch = new SpriteBatch();
-		
-		ship = new Spaceship(new Vector2());
+
+		// Game starting place
+		mustLandOnPlanet = quadTree.element;	// First planet in QuadTree
+		float angle = MathUtils.random(MathUtils.PI2);
+		float radius = mustLandOnPlanet.radius;
+		Vector2 startPos = mustLandOnPlanet.getPosition();
+		startPos.add(radius*MathUtils.cos(angle), radius*MathUtils.sin(angle));
+		ship = new Spaceship();
+		ship.setPosition(startPos);
 
 		spaceScreen = new ScreenInSpace(this);
-
-		//setScreen(spaceScreen);
-		mustLandOnPlanet = quadTree.element;
 	}
 
 	@Override
@@ -153,10 +155,10 @@ public class SpaceGame extends Game {
 			Vector2 position = new Vector2(generator.nextFloat()*UNIVERSE_SIZE - UNIVERSE_SIZE/2,
 					generator.nextFloat()*UNIVERSE_SIZE - UNIVERSE_SIZE/2);
 			
-			float radius = generator.nextFloat() * (Const.PLANET_MAX_RADIUS-Const.PLANET_MIN_RADIUS) + Const.PLANET_MIN_RADIUS;
+			float radius = MathUtils.random(Const.PLANET_MIN_RADIUS, Const.PLANET_MAX_RADIUS);
 
 			// Check if other planets are near this position
-			float min_dist = 3*Const.PLANET_MAX_RADIUS;
+			float min_dist = 4*Const.PLANET_MAX_RADIUS;
 			// North and East directions are POSITIVE !
 			AABB range = new AABB(position.cpy().sub(min_dist, min_dist),
 								  position.cpy().add(min_dist, min_dist));
