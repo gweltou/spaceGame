@@ -1,0 +1,57 @@
+# Hiérarchie
+On peut créer une hiérarchie en groupant les éléments graphiques.
+Les éléments groupés sont rassemblés sous une balise de type "g" dans le fichier SVG.
+
+# Charnières
+Les éléments cercles no remplis (fill:none) sont considérés comme des charnières utilisées pour l'animation (rotation). Il ne peut y en avoir qu'une par groupe.
+La charnière du groupe racine sera utilisé comme point d'origine s'il est présent.
+
+# Éléments SVG
+## Path
+Attribut "d":
+m dx,dy   Move to dx, dy (relative to previous point)
+M x,y   Move to x, y (absolute point)
+l dx,dy   Line to dx, dy (relative to previous point)
+L x,y   Line to x, y (absolute point)
+h dx    Draw a horizontal line to dx
+v dy    Draw a vertical line to dy
+z       (closePath) Draw a straight line from the current position to the first point in the path
+
+Additional coordinates beyond the first pair are treated as implicit lineto commands
+
+## Polygon
+A <polygon> is similar to a <polyline>, in that it is composed of straight line segments connecting a list of points. For polygons though, the path automatically connects the last point with the first, creating a closed shape.
+No polygons in inkscape, must convert paths to polygons.
+Coordinates are absolute.
+Ex : <polygon points="50, 160 55, 180 70, 180 60, 190 65, 205 50, 195 35, 205 40, 190 30, 180 45, 180"/>
+
+Des polygones de plus de 3 vertices sont autorisés. Ils seront triangulés par libGdx avec l'algo ear clipping triangulator (com.badlogic.gdx.math.EarClippingTriangulator)
+
+
+# Format "tdat"
+## Commandes:
+### 'p' / Polygon
+Format : pNRVBAxyxyxyxy...
+    p : caractère 'p'
+    N : nombre de vertex (max 256) sur 1 octet
+    RVBA : couleur, 1 octet par canal
+    xy : coordonnées de chaque vertex (float sur 4 octet en Big-endian)
+
+### 'c' / Cercle
+
+### 'go' / Group Open
+
+### 'gc' / Group Close
+
+### 'h' / Hinge (repère d'origine et charnières d'animation)
+1 seul repère/charnière par groupe
+
+### 'i' / Id
+Identifiant unique pour chaque groupe
+Format : iNccccc...
+    i : caractère 'i'
+    N : nombre de caractères dans l'identifiant
+    c : série de caractères de l'identifiant (format ASCII)
+
+### 'a' / Animation
+Définit une animation pour le groupe
